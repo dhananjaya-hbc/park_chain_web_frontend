@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Park Chain Web Frontend
 
-## Getting Started
+A Next.js + TypeScript frontend for the Park Chain project. This repository contains the web UI built with Next.js 16, React 19, and Tailwind CSS (Tailwind v4). It uses modern React features and the new Next.js App Router structure (files under `app/`).
 
-First, run the development server:
+## What's in this project
+
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS v4
+- **Icons**: Lucide React
+- **Linting**: ESLint
+
+## Prerequisites
+
+- Node.js 18+ (recommended)
+- npm 9+ (or use pnpm/bun if you prefer)
+
+Verify you have Node and npm installed:
+
+```bash
+node -v
+npm -v
+```
+
+## Install
+
+Install dependencies with npm:
+
+```bash
+npm install
+```
+
+If you use pnpm or yarn:
+
+```bash
+pnpm install
+# or
+yarn
+```
+
+## Available Scripts
+
+All scripts are defined in `package.json`.
+
+| Script | Description |
+| :--- | :--- |
+| `npm run dev` | Run the development server. Opens on http://localhost:3000. |
+| `npm run build` | Build the production application. |
+| `npm run start` | Start the production server after building. |
+| `npm run lint` | Run ESLint to check for code quality issues. |
+
+### Running in Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Building for Production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+## Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+If the app requires any environment variables, create a `.env.local` file at the project root. Next.js automatically loads `.env.local` during development.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Example `.env.local`:
+```
+NEXT_PUBLIC_API_URL=https://api.example.com
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+- `app/` — Next.js App Router pages, layouts, and global styles.
+  - `page.tsx` — The main entry page.
+  - `layout.tsx` — Root layout and providers.
+  - `globals.css` — Global styles (imports Tailwind CSS).
+- `lib/` — Utility functions (e.g., `utils.ts` for class merging).
+- `public/` — Static assets like images and fonts.
+- `components.json` — Configuration for UI components (shadcn/ui compatible).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
