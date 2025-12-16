@@ -1,29 +1,30 @@
 "use client";
 
-import { useWeb3Auth } from '@/lib/web3/Web3AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useRole } from '@/hooks/useRole';
+import ProtectedRoute from '@/components/custom/ProtectedRoute';
 
 const navItems = [
-  { name: 'Dashboard', href: '/seller/dashboard', icon: '📊' },
-  { name: 'Spot Management', href: '/seller/spots', icon: '🅿️' },
-  { name: 'Bookings', href: '/seller/bookings', icon: '📅' },
-  { name: 'Approvals', href: '/seller/approvals', icon: '✅' },
-  { name: 'Reviews', href: '/seller/reviews', icon: '⭐' },
+  { name: 'Dashboard', href: '/seller/dashboard' },
+  { name: 'Spot Management', href: '/seller/spots' },
+  { name: 'Bookings', href: '/seller/bookings' },
+  { name: 'Approvals', href: '/seller/approvals' },
+  { name: 'Reviews', href: '/seller/reviews' },
 ];
 
-export default function SellerLayout({
+function SellerLayoutContent({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, logout, isLoading } = useWeb3Auth();
+  const { clearRole, isLoading } = useRole();
   const router = useRouter();
   const pathname = usePathname();
 
   const handleLogout = async () => {
-    await logout();
+    clearRole();
     router.push('/login');
   };
 
@@ -59,13 +60,12 @@ export default function SellerLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                className={`flex items-center px-4 py-3 rounded-lg transition-all ${
                   isActive
                     ? 'bg-[#D8D8D8] text-[#111827] font-semibold shadow-md'
                     : 'text-[#111827] hover:bg-[#8C8C8C]'
                 }`}
               >
-                <span className="text-xl">{item.icon}</span>
                 <span>{item.name}</span>
               </Link>
             );
@@ -76,10 +76,9 @@ export default function SellerLayout({
         <div className="p-4 border-t border-[#8C8C8C]">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg w-full text-[#111827] hover:bg-[#8C8C8C] transition-all"
+            className="flex items-center px-4 py-3 rounded-lg w-full text-[#111827] hover:bg-[#8C8C8C] transition-all"
           >
-            <span className="text-xl">⚙️</span>
-            <span>Account & Settings</span>
+            <span>Logout</span>
           </button>
         </div>
       </aside>
@@ -92,11 +91,11 @@ export default function SellerLayout({
             <h1 className="text-2xl font-bold text-[#111827]">Seller Dashboard</h1>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="text-sm text-[#111827] font-medium">{user?.name || 'Seller'}</p>
-                <p className="text-xs text-gray-500">{user?.email || user?.walletAddress?.slice(0, 10) + '...'}</p>
+                <p className="text-sm text-[#111827] font-medium">Seller</p>
+                <p className="text-xs text-gray-500">seller@parkchain.com</p>
               </div>
               <div className="w-10 h-10 bg-[#111827] rounded-full flex items-center justify-center text-white font-bold">
-                {user?.name?.[0] || 'S'}
+                S
               </div>
             </div>
           </div>
@@ -108,5 +107,17 @@ export default function SellerLayout({
         </div>
       </main>
     </div>
+  );
+}
+
+export default function SellerLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <ProtectedRoute allowedRoles={['seller']}>
+      <SellerLayoutContent>{children}</SellerLayoutContent>
+    </ProtectedRoute>
   );
 }

@@ -5,24 +5,30 @@ import { useRouter } from 'next/navigation';
 import { useWeb3Auth } from '@/lib/web3/Web3AuthProvider';
 import { useWeb3AuthConnect } from "@web3auth/modal/react";
 import { UserRole } from '@/types';
+import { saveRoleToStorage, getRoleDashboard } from '@/lib/utils/roleUtils';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const [error, setError] = useState<string>('');
-  const { setSelectedRole: setContextRole } = useWeb3Auth();
+  const { setSelectedRole } = useWeb3Auth();
   const { connect, isConnected, loading: connectLoading, error: connectError } = useWeb3AuthConnect();
   const router = useRouter();
 
   useEffect(() => {
     if (isConnected) {
-      // Save role to cookies and localStorage (always seller)
-      localStorage.setItem('park_chain_role', 'seller');
-      document.cookie = `park_chain_role=seller; path=/; max-age=86400; SameSite=Lax`;
+      const role: UserRole = 'seller';
       
-      // Redirect to seller dashboard
-      router.push('/seller/dashboard');
+      // Save role to storage
+      saveRoleToStorage(role);
+      
+      // Update context
+      setSelectedRole(role);
+      
+      // Redirect to appropriate dashboard
+      const dashboardUrl = getRoleDashboard(role);
+      router.push(dashboardUrl);
     }
-  }, [isConnected, router]);
+  }, [isConnected, router, setSelectedRole]);
 
   useEffect(() => {
     if (connectError) {
@@ -33,7 +39,8 @@ export default function LoginPage() {
   const handleLogin = async () => {
     try {
       setError('');
-      setContextRole('seller');
+      const role: UserRole = 'seller';
+      setSelectedRole(role);
       await connect();
     } catch (err) {
       console.error('Login failed:', err);

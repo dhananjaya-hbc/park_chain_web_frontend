@@ -1,30 +1,31 @@
 "use client";
 
-import { useWeb3Auth } from '@/lib/web3/Web3AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useRole } from '@/hooks/useRole';
+import ProtectedRoute from '@/components/custom/ProtectedRoute';
 
 const navItems = [
-  { name: 'Dashboard', href: '/admin/dashboard', icon: '📊' },
-  { name: 'User Management', href: '/admin/users', icon: '👥' },
-  { name: 'Seller Verification', href: '/admin/verification', icon: '✓' },
-  { name: 'Feedback', href: '/admin/feedback', icon: '💬' },
-  { name: 'Account & Settings', href: '/admin/settings', icon: '⚙️' },
+  { name: 'Dashboard', href: '/admin/dashboard' },
+  { name: 'Spot Management', href: '/admin/spots' },
+  { name: 'Bookings', href: '/admin/bookings' },
+  { name: 'Approvals', href: '/admin/approvals' },
+  { name: 'Reviews', href: '/admin/reviews' },
 ];
 
-export default function AdminLayout({
+function AdminLayoutContent({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, logout, isLoading } = useWeb3Auth();
+  const { clearRole, isLoading } = useRole();
   const router = useRouter();
   const pathname = usePathname();
 
   const handleLogout = async () => {
-    await logout();
-    router.push('/login');
+    clearRole();
+    router.push('/admin-login');
   };
 
   if (isLoading) {
@@ -59,14 +60,13 @@ export default function AdminLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                className={`flex items-center px-4 py-3 rounded-lg transition-all ${
                   isActive
                     ? 'bg-[#D8D8D8] text-[#111827] font-semibold shadow-md'
                     : 'text-[#111827] hover:bg-[#8C8C8C]'
                 }`}
               >
-                <span className="text-xl">{item.icon}</span>
-                <span className="text-sm">{item.name}</span>
+                <span>{item.name}</span>
               </Link>
             );
           })}
@@ -76,10 +76,9 @@ export default function AdminLayout({
         <div className="p-4">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg w-full text-[#111827] hover:bg-[#8C8C8C] transition-all"
+            className="flex items-center px-4 py-3 rounded-lg w-full text-[#111827] hover:bg-[#8C8C8C] transition-all"
           >
-            <span className="text-xl">🚪</span>
-            <span className="text-sm">Logout</span>
+            <span>Logout</span>
           </button>
         </div>
       </aside>
@@ -92,11 +91,11 @@ export default function AdminLayout({
             <h1 className="text-2xl font-bold text-[#111827]">Admin Dashboard</h1>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="text-sm text-[#111827] font-medium">{user?.name || 'Admin'}</p>
-                <p className="text-xs text-gray-500">{user?.email || user?.walletAddress?.slice(0, 10) + '...'}</p>
+                <p className="text-sm text-[#111827] font-medium">Admin</p>
+                <p className="text-xs text-gray-500">admin@parkchain.com</p>
               </div>
               <div className="w-10 h-10 bg-[#111827] rounded-full flex items-center justify-center text-white font-bold">
-                {user?.name?.[0] || 'A'}
+                A
               </div>
             </div>
           </div>
@@ -108,5 +107,17 @@ export default function AdminLayout({
         </div>
       </main>
     </div>
+  );
+}
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <ProtectedRoute allowedRoles={['admin']}>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </ProtectedRoute>
   );
 }

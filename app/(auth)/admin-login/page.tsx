@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useWeb3Auth } from '@/lib/web3/Web3AuthProvider';
+import { UserRole } from '@/types';
+import { saveRoleToStorage, getRoleDashboard } from '@/lib/utils/roleUtils';
 import Link from 'next/link';
 
 // Hardcoded admin credentials
@@ -14,6 +17,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { setSelectedRole } = useWeb3Auth();
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -25,13 +29,18 @@ export default function AdminLoginPage() {
 
       // Validate admin credentials
       if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        // Save admin session
-        localStorage.setItem('park_chain_role', 'admin');
+        const role: UserRole = 'admin';
+        
+        // Save role to storage
+        saveRoleToStorage(role);
         localStorage.setItem('admin_wallet', ADMIN_WALLET);
-        document.cookie = `park_chain_role=admin; path=/; max-age=86400; SameSite=Lax`;
+        
+        // Update context
+        setSelectedRole(role);
         
         // Redirect to admin dashboard
-        router.push('/admin/dashboard');
+        const dashboardUrl = getRoleDashboard(role);
+        router.push(dashboardUrl);
       } else {
         setError('Invalid email or password');
       }
