@@ -53,7 +53,7 @@ export default function LoginPage() {
               </svg>
             </div>
           </div>
-          <h1 className="text-5xl font-bold text-[#1a4d2e] mb-2">Park Chain</h1>
+          <h1 className="text-5xl font-bold text-white mb-2">Park Chain</h1>
           <p className="text-[#2d5f42] text-sm">Sign in to your seller account</p>
         </div>
 

@@ -59,7 +59,7 @@ export default function SignupPage() {
               </svg>
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-[#1a4d2e] mb-2">Join Park Chain</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">Join Park Chain</h1>
           <p className="text-[#2d5f42] text-sm">Create your account to get started</p>
         </div>
 

@@ -55,7 +55,7 @@ export default function AdminLoginPage() {
               </svg>
             </div>
           </div>
-          <h1 className="text-5xl font-bold text-[#2d5f42] mb-2">Admin Portal</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">Admin Portal</h1>
           <p className="text-[#2d5f42] text-sm">Park Chain Administration</p>
         </div>
 
