@@ -1,0 +1,123 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useWeb3Auth } from '@/lib/web3/Web3AuthProvider';
+import { useWeb3AuthConnect } from "@web3auth/modal/react";
+import { UserRole } from '@/types';
+import Link from 'next/link';
+
+export default function LoginPage() {
+  const [error, setError] = useState<string>('');
+  const { setSelectedRole: setContextRole } = useWeb3Auth();
+  const { connect, isConnected, loading: connectLoading, error: connectError } = useWeb3AuthConnect();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isConnected) {
+      // Save role to cookies and localStorage (always seller)
+      localStorage.setItem('park_chain_role', 'seller');
+      document.cookie = `park_chain_role=seller; path=/; max-age=86400; SameSite=Lax`;
+      
+      // Redirect to seller dashboard
+      router.push('/seller/dashboard');
+    }
+  }, [isConnected, router]);
+
+  useEffect(() => {
+    if (connectError) {
+      setError('Failed to connect. Please try again.');
+    }
+  }, [connectError]);
+
+  const handleLogin = async () => {
+    try {
+      setError('');
+      setContextRole('seller');
+      await connect();
+    } catch (err) {
+      console.error('Login failed:', err);
+      setError('Failed to connect. Please try again.');
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#41ab5d] via-[#52b86d] to-[#41ab5d]">
+      <div className="w-full max-w-md p-8 space-y-8">
+        {/* Logo */}
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <div className="w-12 h-12 bg-[#1a4d2e] rounded-lg flex items-center justify-center">
+              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
+              </svg>
+            </div>
+          </div>
+          <h1 className="text-5xl font-bold text-[#1a4d2e] mb-2">Park Chain</h1>
+          <p className="text-[#2d5f42] text-sm">Sign in to your seller account</p>
+        </div>
+
+        {/* Login Card */}
+        <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-8 border border-[#2d5f42]/20 shadow-xl">
+          <div className="space-y-6">
+            {/* Error Message */}
+            {error && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+
+            {/* Login Button */}
+            <button
+              onClick={handleLogin}
+              disabled={connectLoading}
+              className="w-full py-4 px-6 bg-[#41ab5d] text-white rounded-xl font-semibold hover:bg-[#368a4d] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            >
+              {connectLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                  </svg>
+                  Connecting...
+                </span>
+              ) : (
+                'Connect with Web3Auth'
+              )}
+            </button>
+
+            {/* Admin Login Link */}
+            <div className="text-center pt-2">
+              <Link 
+                href="/admin-login" 
+                className="text-[#2d5f42] text-sm hover:text-[#1a4d2e] transition-colors font-medium"
+              >
+                Login as Admin →
+              </Link>
+            </div>
+
+            {/* Sign Up Link */}
+            <div className="text-center pt-4 border-t border-[#2d5f42]/20">
+              <p className="text-[#2d5f42] text-sm">
+                Don&apos;t have an account?{' '}
+                <Link 
+                  href="/signup" 
+                  className="text-[#1a4d2e] font-medium hover:underline"
+                >
+                  Sign up
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Additional Info */}
+        <div className="text-center">
+          <p className="text-[#2d5f42] text-xs">
+            Secured with Web3Auth • XRPL Blockchain
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
