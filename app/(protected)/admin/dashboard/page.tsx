@@ -32,10 +32,10 @@ export default function DashboardPage() {
     return (
        <>
        <div className='flex min-h-screen h-screen overflow-y-hidden bg-gray-100'>
-        <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} handleLogout={handleLogout} disconnectLoading={disconnectLoading}/>
+        <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} handleLogout={handleLogout} disconnectLoading={disconnectLoading} currentPage="dashboard"/>
         
         <div className='flex-1 bg-gray-100 h-screen min-h-screen overflow-y-scroll'>
-            <Navbar setIsOpen={setIsOpen} handleLogout={handleLogout} disconnectLoading={disconnectLoading} adminWallet={adminWallet}/>
+            <Navbar setIsOpen={setIsOpen} handleLogout={handleLogout} disconnectLoading={disconnectLoading} adminWallet={adminWallet} title="Dashboard" showSearch={true}/>
 
             <div className='main-content px-6 pt-5 pb-6 bg-gray-100'>
                 <Main/>
