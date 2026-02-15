@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWeb3Auth } from '@/lib/web3/Web3AuthProvider';
 import { UserRole } from '@/types';
-import { saveRoleToStorage, getRoleDashboard } from '@/lib/utils/roleUtils';
+import { getRoleDashboard } from '@/lib/utils/roleUtils';
+import { useSessionStore } from '@/lib/stores/sessionStore';
 import Link from 'next/link';
 
 // Hardcoded admin credentials
@@ -18,6 +19,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { setSelectedRole } = useWeb3Auth();
+  const { setRole } = useSessionStore();
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -31,8 +33,8 @@ export default function AdminLoginPage() {
       if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
         const role: UserRole = 'admin';
         
-        // Save role to storage
-        saveRoleToStorage(role);
+        // Save role to session store
+        setRole(role);
         localStorage.setItem('admin_wallet', ADMIN_WALLET);
         
         // Update context

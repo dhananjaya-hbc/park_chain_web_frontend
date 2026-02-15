@@ -9,18 +9,26 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-regular-svg-icons": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.2.0",
     "@web3auth/base": "^9.7.0",
     "@web3auth/modal": "^10.9.0-alpha.0",
     "@web3auth/xrpl-provider": "^9.7.0",
+    "chart.js": "^4.5.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.552.0",
     "next": "16.0.1",
+    "ox": "^0.12.1",
     "react": "19.2.0",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.0",
     "tailwind-merge": "^3.3.1",
     "viem": "^2.42.1",
-    "xrpl": "^2.14.3"
+    "xrpl": "^2.14.3",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
