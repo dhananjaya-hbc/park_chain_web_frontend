@@ -64,7 +64,7 @@ export default function Navbar({ setIsOpen, handleLogout, disconnectLoading, adm
                 </div>
                 <div>
                     <span className=" text-[#212529] sora-font text-lg">Ronald Richards</span>
-                    <p className="text-[#010102] text-xs"> you can stitch between artboards </p>
+                    <p className="text-[#010102] text-xs">New parking reservation received. Review details in the dashboard.</p>
                 </div>
             </div>
             <span className= " text-[#4f586d] text-xs font-medium"> 23 Mins ago</span> 
