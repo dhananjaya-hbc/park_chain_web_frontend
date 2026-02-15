@@ -1,3 +1,6 @@
+import { faClipboard, faHome, faMessage, faUserCircle } from "@fortawesome/free-regular-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome" 
+
 import Link from "next/link"
 
 interface SidebarProps {
@@ -10,7 +13,7 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, setIsOpen, handleLogout, disconnectLoading }: SidebarProps) {
     return (
         <> 
-            <div className={`h-[calc(100vh-6rem)] w-[280px] pb-2 p-5 ml-4 mt-4 sidebar bg-white shadow-lg rounded-l-2xl  rounded-r-2xl fixed lg:relative transition-transform duration-300 z-50 flex flex-col ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
+            <div className={`h-[calc(111vh-6rem)] w-[280px] pb-2 p-5 ml-4 mt-4 sidebar bg-white shadow-lg rounded-l-2xl  rounded-r-2xl fixed lg:relative transition-transform duration-300 z-50 flex flex-col ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
                 <div className="nav-logo text-left py-4 mb-6">
                     <div className="flex items-center gap-3">
                         <div className="relative w-14 h-14 rounded-lg flex items-center justify-center overflow-hidden shadow-md">
@@ -35,8 +38,8 @@ export default function Sidebar({ isOpen, setIsOpen, handleLogout, disconnectLoa
                 <ul className="flex flex-col gap-2 sidebar-nav relative z-20 flex-1">
                     <li className="py-3 px-4 rounded-xl bg-[#197729] text-white font-sora transition-colors duration-300 relative overflow-hidden">
                         <div className="absolute left-0 top-0 bottom-0 w-12 bg-[#71b98c]">
-                            <div className="h-full w-10 ml-auto bg-[#197729] rounded-l-xl"></div>
-                        </div>
+        <div className="absolute right-0 top-0 bottom-0 w-10 bg-[#197729] rounded-l-xl"></div>
+    </div>
                         <Link href="/admin/dashboard" className="text-sm font-medium flex items-center gap-3 relative z-10">
                             <i className="ri-dashboard-line text-white text-lg"></i>
                             Dashboard
