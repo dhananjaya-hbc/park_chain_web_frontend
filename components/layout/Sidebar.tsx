@@ -38,8 +38,8 @@ export default function Sidebar({ isOpen, setIsOpen, handleLogout, disconnectLoa
                 <ul className="flex flex-col gap-2 sidebar-nav relative z-20 flex-1">
                     <li className="py-3 px-4 rounded-xl bg-[#197729] text-white font-sora transition-colors duration-300 relative overflow-hidden">
                         <div className="absolute left-0 top-0 bottom-0 w-12 bg-[#71b98c]">
-        <div className="absolute right-0 top-0 bottom-0 w-10 bg-[#197729] rounded-l-xl"></div>
-    </div>
+                            <div className="h-full w-10 ml-auto bg-[#197729] rounded-l-xl"></div>
+                        </div>
                         <Link href="/admin/dashboard" className="text-sm font-medium flex items-center gap-3 relative z-10">
                             <i className="ri-dashboard-line text-white text-lg"></i>
                             Dashboard
