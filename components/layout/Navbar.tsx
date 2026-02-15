@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { faSearch, faBars, faBell, faUser } from "@fortawesome/free-solid-svg-icons"  
+import { faSearch, faBars, faUser } from "@fortawesome/free-solid-svg-icons"  
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
