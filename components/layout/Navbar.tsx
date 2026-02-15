@@ -63,7 +63,7 @@ export default function Navbar({ setIsOpen, handleLogout, disconnectLoading, adm
                     <FontAwesomeIcon icon={faUser} className="text-white text-2xl"/>
                 </div>
                 <div>
-                    <span className=" text-[#212529] sora -font text-lg">Ronald Richards</span>
+                    <span className=" text-[#212529] sora-font text-lg">Ronald Richards</span>
                     <p className="text-[#010102] text-xs"> you can stitch between artboards </p>
                 </div>
             </div>
