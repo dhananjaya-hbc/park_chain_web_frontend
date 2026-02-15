@@ -31,7 +31,7 @@ export default function MyChart() {
       {
         label: 'Revenue',
         data: [1200, 1850, 1750, 2350, 2200, 2600, 3400, 3800, 4200, 3900, 4500, 5200],
-        borderColor: '#06ca27',
+        borderColor: '#197729',
         backgroundColor: (context: { chart: { ctx: CanvasRenderingContext2D } }) => {
           const ctx = context.chart.ctx
           const gradient = ctx.createLinearGradient(0, 0, 0, 300)
@@ -44,7 +44,7 @@ export default function MyChart() {
         tension: 0.4,
         pointRadius: 0,
         pointHoverRadius: 6,
-        pointHoverBackgroundColor: '#06ca27',
+        pointHoverBackgroundColor: '#197729',
         pointHoverBorderColor: '#fff',
         pointHoverBorderWidth: 2,
       },
@@ -118,7 +118,7 @@ export default function MyChart() {
         <h3 className='font-semibold text-xl font-sora'>Revenue Analytics</h3>
         <div className='flex items-center gap-3'>
           <span className='text-sm text-[#4f586d] font-sora'>This Year</span>
-          <span className='px-3 py-1 bg-green-50 text-[#06ca27] rounded-full text-sm font-medium font-sora'>+18%</span>
+          <span className='px-3 py-1 bg-green-50 text-[#197729] rounded-full text-sm font-medium font-sora'>+18%</span>
         </div>
       </div>
       <div className='h-75'>

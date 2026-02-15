@@ -8,6 +8,20 @@ import { useSessionStore } from '@/lib/stores/sessionStore';
 
 const clientId = process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID || "";
 
+// Validate clientId is provided
+if (!clientId || clientId === "your_client_id_here") {
+  const errorMessage =
+    "❌ Web3Auth Client ID is missing or invalid!\n" +
+    "📝 Please follow these steps:\n" +
+    "1. Go to https://dashboard.web3auth.io/\n" +
+    "2. Sign up or login\n" +
+    "3. Create a new project\n" +
+    "4. Copy your Client ID\n" +
+    "5. Add it to .env.local as NEXT_PUBLIC_WEB3AUTH_CLIENT_ID=your_actual_client_id";
+  console.error(errorMessage);
+  throw new Error(errorMessage);
+}
+
 const web3AuthContextConfig: Web3AuthContextConfig = {
   web3AuthOptions: {
     clientId,
