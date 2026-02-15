@@ -1,32 +1,20 @@
-import { useState, useEffect } from 'react';
-import { UserRole } from '@/types';
-import { getRoleFromStorage, saveRoleToStorage, clearRoleFromStorage } from '@/lib/utils/roleUtils';
+import { useEffect } from 'react';
+import { useSessionStore } from '@/lib/stores/sessionStore';
 
 export function useRole() {
-  const [role, setRole] = useState<UserRole | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { role, isLoading, initSession, setRole, clearSession } = useSessionStore();
 
   useEffect(() => {
-    const storedRole = getRoleFromStorage();
-    setRole(storedRole);
-    setIsLoading(false);
-  }, []);
-
-  const updateRole = (newRole: UserRole) => {
-    saveRoleToStorage(newRole);
-    setRole(newRole);
-  };
-
-  const clearRole = () => {
-    clearRoleFromStorage();
-    setRole(null);
-  };
+    if (isLoading) {
+      initSession();
+    }
+  }, [isLoading, initSession]);
 
   return {
     role,
     isLoading,
-    updateRole,
-    clearRole,
+    updateRole: setRole,
+    clearRole: clearSession,
     isAdmin: role === 'admin',
     isSeller: role === 'seller',
     hasRole: role !== null

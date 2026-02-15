@@ -21,12 +21,14 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.552.0",
     "next": "16.0.1",
+    "ox": "^0.12.1",
     "react": "19.2.0",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.0",
     "tailwind-merge": "^3.3.1",
     "viem": "^2.42.1",
-    "xrpl": "^2.14.3"
+    "xrpl": "^2.14.3",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

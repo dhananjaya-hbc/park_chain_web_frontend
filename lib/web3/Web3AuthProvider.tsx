@@ -1,9 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { Web3AuthProvider as Web3AuthModalProvider, type Web3AuthContextConfig } from "@web3auth/modal/react";
 import { WEB3AUTH_NETWORK } from "@web3auth/modal";
 import { UserRole } from '@/types';
+import { useSessionStore } from '@/lib/stores/sessionStore';
 
 const clientId = process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID || "";
 
@@ -43,14 +44,14 @@ export const useWeb3Auth = () => {
 };
 
 export const Web3AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const { role, setRole } = useSessionStore();
 
   return (
     <Web3AuthModalProvider config={web3AuthContextConfig}>
       <Web3AuthContext.Provider
         value={{
-          selectedRole,
-          setSelectedRole,
+          selectedRole: role,
+          setSelectedRole: setRole,
         }}
       >
         {children}

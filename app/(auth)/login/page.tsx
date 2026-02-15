@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useWeb3Auth } from '@/lib/web3/Web3AuthProvider';
 import { useWeb3AuthConnect } from "@web3auth/modal/react";
 import { UserRole } from '@/types';
-import { saveRoleToStorage, getRoleDashboard } from '@/lib/utils/roleUtils';
+import { getRoleDashboard } from '@/lib/utils/roleUtils';
+import { useSessionStore } from '@/lib/stores/sessionStore';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const [error, setError] = useState<string>('');
   const { setSelectedRole } = useWeb3Auth();
+  const { setRole } = useSessionStore();
   const { connect, isConnected, loading: connectLoading, error: connectError } = useWeb3AuthConnect();
   const router = useRouter();
 
@@ -18,8 +20,8 @@ export default function LoginPage() {
     if (isConnected) {
       const role: UserRole = 'seller';
       
-      // Save role to storage
-      saveRoleToStorage(role);
+      // Save role to session store
+      setRole(role);
       
       // Update context
       setSelectedRole(role);
@@ -28,7 +30,7 @@ export default function LoginPage() {
       const dashboardUrl = getRoleDashboard(role);
       router.push(dashboardUrl);
     }
-  }, [isConnected, router, setSelectedRole]);
+  }, [isConnected, router, setSelectedRole, setRole]);
 
   useEffect(() => {
     if (connectError) {
