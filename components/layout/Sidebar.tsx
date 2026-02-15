@@ -13,7 +13,7 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, setIsOpen, handleLogout, disconnectLoading }: SidebarProps) {
     return (
         <> 
-            <div className={`h-[calc(111vh-6rem)] w-[280px] pb-2 p-5 ml-4 mt-4 sidebar bg-white shadow-lg rounded-l-2xl  rounded-r-2xl fixed lg:relative transition-transform duration-300 z-50 flex flex-col ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
+            <div className={`h-[calc(100vh-6rem)] w-[280px] pb-2 p-5 ml-4 mt-4 sidebar bg-white shadow-lg rounded-l-2xl  rounded-r-2xl fixed lg:relative transition-transform duration-300 z-50 flex flex-col ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
                 <div className="nav-logo text-left py-4 mb-6">
                     <div className="flex items-center gap-3">
                         <div className="relative w-14 h-14 rounded-lg flex items-center justify-center overflow-hidden shadow-md">
