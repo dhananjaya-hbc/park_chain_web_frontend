@@ -8,9 +8,10 @@ interface SidebarProps {
     setIsOpen: (isOpen: boolean) => void;
     handleLogout: () => void;
     disconnectLoading: boolean;
+    currentPage?: string;
 }
 
-export default function Sidebar({ isOpen, setIsOpen, handleLogout, disconnectLoading }: SidebarProps) {
+export default function Sidebar({ isOpen, setIsOpen, handleLogout, disconnectLoading, currentPage = "dashboard" }: SidebarProps) {
     return (
         <> 
             <div className={`h-[calc(111vh-6rem)] w-[280px] pb-2 p-5 ml-4 mt-4 sidebar bg-white shadow-lg rounded-l-2xl  rounded-r-2xl fixed lg:relative transition-transform duration-300 z-50 flex flex-col ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
@@ -36,12 +37,21 @@ export default function Sidebar({ isOpen, setIsOpen, handleLogout, disconnectLoa
                 </div>
                 <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-gray-300/60 to-transparent mb-3 shadow-sm"></div>
                 <ul className="flex flex-col gap-2 sidebar-nav relative z-20 flex-1">
-                    <li className="py-3 px-4 rounded-xl bg-[#197729] text-white font-sora transition-colors duration-300 relative overflow-hidden">
-                        <div className="absolute left-0 top-0 bottom-0 w-12 bg-[#71b98c]">
-        <div className="absolute right-0 top-0 bottom-0 w-10 bg-[#197729] rounded-l-xl"></div>
-    </div>
+                    <li className={`py-3 px-4 rounded-xl font-sora transition-colors duration-300 relative overflow-hidden ${
+                        currentPage === "dashboard" 
+                        ? "bg-[#197729] text-white" 
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}>
+                        {currentPage === "dashboard" && (
+                            <div className="absolute left-0 top-0 bottom-0 w-12 bg-[#71b98c]">
+                                <div className="absolute right-0 top-0 bottom-0 w-10 bg-[#197729] rounded-l-xl"></div>
+                            </div>
+                        )}
+                        {currentPage !== "dashboard" && (
+                            <div className="absolute inset-0 bg-gradient-to-br from-gray-200/40 via-transparent to-transparent pointer-events-none rounded-xl"></div>
+                        )}
                         <Link href="/admin/dashboard" className="text-sm font-medium flex items-center gap-3 relative z-10">
-                            <i className="ri-dashboard-line text-white text-lg"></i>
+                            <i className={`ri-dashboard-line text-lg ${currentPage === "dashboard" ? "text-white" : "text-[#197729]"}`}></i>
                             Dashboard
                         </Link>
                     </li>
@@ -54,10 +64,21 @@ export default function Sidebar({ isOpen, setIsOpen, handleLogout, disconnectLoa
                         </Link>
                     </li>
 
-                    <li className="py-3 px-4 rounded-xl bg-white text-gray-700 font-sora transition-colors duration-300 hover:bg-gray-50 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-gray-200/40 via-transparent to-transparent pointer-events-none rounded-xl"></div>
+                    <li className={`py-3 px-4 rounded-xl font-sora transition-colors duration-300 relative overflow-hidden ${
+                        currentPage === "verification" 
+                        ? "bg-[#197729] text-white" 
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}>
+                        {currentPage === "verification" && (
+                            <div className="absolute left-0 top-0 bottom-0 w-12 bg-[#71b98c]">
+                                <div className="absolute right-0 top-0 bottom-0 w-10 bg-[#197729] rounded-l-xl"></div>
+                            </div>
+                        )}
+                        {currentPage !== "verification" && (
+                            <div className="absolute inset-0 bg-gradient-to-br from-gray-200/40 via-transparent to-transparent pointer-events-none rounded-xl"></div>
+                        )}
                         <Link href="/admin/seller-verification" className="text-sm font-medium flex items-center gap-3 relative z-10">
-                            <i className="ri-shield-check-line text-[#197729] text-lg"></i>
+                            <i className={`ri-shield-check-line text-lg ${currentPage === "verification" ? "text-white" : "text-[#197729]"}`}></i>
                             Verifications
                         </Link>
                     </li>

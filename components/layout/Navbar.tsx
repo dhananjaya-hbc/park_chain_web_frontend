@@ -11,9 +11,11 @@ interface NavbarProps {
     handleLogout: () => void;
     disconnectLoading: boolean;
     adminWallet: string;
+    title?: string;
+    showSearch?: boolean;
 }
 
-export default function Navbar({ setIsOpen, handleLogout, disconnectLoading, adminWallet }: NavbarProps) {
+export default function Navbar({ setIsOpen, handleLogout, disconnectLoading, adminWallet, title = "Dashboard", showSearch = true }: NavbarProps) {
     
     const [isUserMenuOpen, setUserMenuOpen] = useState(false);
     const [isNotificationOpen, setNotificationOpen] = useState(false);
@@ -35,9 +37,10 @@ export default function Navbar({ setIsOpen, handleLogout, disconnectLoading, adm
             <FontAwesomeIcon icon={faBars}/>
         </div>
         
-        <h2 className="text-xl font-bold text-green-700 hidden lg:flex items-center pl-4 border-l-4 border-green-700 h-12">Dashboard</h2>
+        <h2 className="text-xl font-bold text-green-700 hidden lg:flex items-center pl-4 border-l-4 border-green-700 h-12">{title}</h2>
     </div>
 
+    {showSearch && (
     <div className="search-box border border-gray-300 relative h-11 hidden lg:flex items-center rounded-lg flex-1 max-w-xl bg-gray-100">
         <FontAwesomeIcon icon={faSearch} className="absolute left-4 text-green-700 text-sm"/>
         <input 
@@ -46,6 +49,7 @@ export default function Navbar({ setIsOpen, handleLogout, disconnectLoading, adm
             className="h-full w-full ps-11 pe-4 outline-none text-sm rounded-lg bg-gray-100 placeholder:text-gray-900"
         />
     </div>
+    )}
 
 <div className="flex gap-3 items-center">
 <div className="notification cursor-pointer bg-gray-100 rounded-lg w-12 h-12 hidden lg:flex justify-center items-center relative hover:bg-gray-200 transition-colors duration-200" onClick={toggleNotification}>
