@@ -83,10 +83,21 @@ export default function Sidebar({ isOpen, setIsOpen, handleLogout, disconnectLoa
                         </Link>
                     </li>
 
-                    <li className="py-3 px-4 rounded-xl bg-white text-gray-700 font-sora transition-colors duration-300 hover:bg-gray-50 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-gray-200/40 via-transparent to-transparent pointer-events-none rounded-xl"></div>
+                    <li className={`py-3 px-4 rounded-xl font-sora transition-colors duration-300 relative overflow-hidden ${
+                        currentPage === "feedback" 
+                        ? "bg-[#197729] text-white" 
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}>
+                        {currentPage === "feedback" && (
+                            <div className="absolute left-0 top-0 bottom-0 w-12 bg-[#71b98c]">
+                                <div className="absolute right-0 top-0 bottom-0 w-10 bg-[#197729] rounded-l-xl"></div>
+                            </div>
+                        )}
+                        {currentPage !== "feedback" && (
+                            <div className="absolute inset-0 bg-gradient-to-br from-gray-200/40 via-transparent to-transparent pointer-events-none rounded-xl"></div>
+                        )}
                         <Link href="/admin/feedback" className="text-sm font-medium flex items-center gap-3 relative z-10">
-                            <i className="ri-message-3-line text-[#197729] text-lg"></i>
+                            <i className={`ri-message-3-line text-lg ${currentPage === "feedback" ? "text-white" : "text-[#197729]"}`}></i>
                             Feedback
                         </Link>
                     </li>
