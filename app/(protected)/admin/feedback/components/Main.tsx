@@ -4,7 +4,7 @@ import FeedbackTable from './FeedbackTable'
 
 export default function Main() {
     return (
-        <div className="bg-white rounded-t-2xl">
+        <div className="bg-white rounded-2xl shadow-md">
             <FeedbackHeader />
             <FeedbackTable />
         </div>
