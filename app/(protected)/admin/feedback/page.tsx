@@ -6,6 +6,7 @@ import { useWeb3AuthDisconnect } from "@web3auth/modal/react"
 import { useRole } from '@/hooks/useRole'
 import Sidebar from '@/components/layout/Sidebar'
 import Navbar from '@/components/layout/Navbar'
+import FeedbackHeader from './components/FeedbackHeader'
 
 export default function FeedbackPage() {
     const [isOpen, setIsOpen] = useState(false)
@@ -48,7 +49,9 @@ export default function FeedbackPage() {
             />
 
             <div className='main-content px-4 sm:px-6 pt-5 pb-6 bg-gray-100'>
-                {/* Feedback content goes here */}
+                <div className="bg-white rounded-t-2xl">
+                    <FeedbackHeader />
+                </div>
             </div>
         </div>
        </div>
