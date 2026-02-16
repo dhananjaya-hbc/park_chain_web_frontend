@@ -1,7 +1,9 @@
 import React from 'react'
+import Link from 'next/link'
 import StatusBadge from './StatusBadge'
 
 interface VerificationTableRowProps {
+    id: number
     name: string
     role: string
     walletId: string
@@ -12,6 +14,7 @@ interface VerificationTableRowProps {
 }
 
 export default function VerificationTableRow({
+    id,
     name,
     role,
     walletId,
@@ -45,9 +48,11 @@ export default function VerificationTableRow({
                 <StatusBadge status={status} />
             </td>
             <td className="px-6 py-4 text-center">
-                <button className="px-4 py-2 border border-black rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-md">
-                    View Details
-                </button>
+                <Link href={`/admin/seller-verification/${id}`}>
+                    <button className="px-4 py-2 border border-black rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-md transition-colors">
+                        View Details
+                    </button>
+                </Link>
             </td>
         </tr>
     )
