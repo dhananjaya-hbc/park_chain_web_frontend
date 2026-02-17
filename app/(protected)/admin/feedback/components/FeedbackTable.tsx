@@ -1,5 +1,10 @@
 import React from 'react'
 import FeedbackTableRow from './FeedbackTableRow'
+import { FeedbackFilterType } from './Main'
+
+interface FeedbackTableProps {
+    selectedFilter: FeedbackFilterType
+}
 
 // Mock data - Replace with API call later
 const feedbackData = [
@@ -68,12 +73,23 @@ const feedbackData = [
     },
 ]
 
-export default function FeedbackTable() {
+export default function FeedbackTable({ selectedFilter }: FeedbackTableProps) {
+    // Filter data based on rating category
+    const getFilteredData = () => {
+        if (selectedFilter === 'all') return feedbackData
+        if (selectedFilter === 'good') return feedbackData.filter(item => item.rating >= 4)
+        if (selectedFilter === 'average') return feedbackData.filter(item => item.rating === 3)
+        if (selectedFilter === 'bad') return feedbackData.filter(item => item.rating <= 2)
+        return feedbackData
+    }
+
+    const filteredData = getFilteredData()
+
     return (
         <div className="overflow-x-auto px-1 sm:px-2 lg:px-4 py-2 rounded-b-2xl" style={{backgroundColor: '#E5F5E0'}}>
             <table className="w-full border-separate min-w-[950px]" style={{borderSpacing: '0 14px'}}>
                 <tbody className="bg-green-50">
-                    {feedbackData.map((feedback) => (
+                    {filteredData.map((feedback) => (
                         <FeedbackTableRow 
                             key={feedback.id}
                             {...feedback}
