@@ -2,52 +2,36 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useWeb3Auth } from '@/lib/web3/Web3AuthProvider';
-import { useWeb3AuthConnect } from "@web3auth/modal/react";
-import { UserRole } from '@/types';
-import { getRoleDashboard } from '@/lib/utils/roleUtils';
 import { useSessionStore } from '@/lib/stores/sessionStore';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const [error, setError] = useState<string>('');
-  const { setSelectedRole } = useWeb3Auth();
   const { setRole } = useSessionStore();
-  const { connect, isConnected, loading: connectLoading, error: connectError } = useWeb3AuthConnect();
   const router = useRouter();
 
   useEffect(() => {
-    if (isConnected) {
-      const role: UserRole = 'seller';
-      
-      // Save role to session store
-      setRole(role);
-      
-      // Update context
-      setSelectedRole(role);
-      
-      // Redirect to appropriate dashboard
-      const dashboardUrl = getRoleDashboard(role);
-      router.push(dashboardUrl);
-    }
-  }, [isConnected, router, setSelectedRole, setRole]);
+    // Removed automatic navigation logic
+    // Directly navigate to seller dashboard
+    // const role = 'seller';
 
-  useEffect(() => {
-    if (connectError) {
-      // Use setTimeout to avoid synchronous setState in effect
-      const timer = setTimeout(() => {
-        setError('Failed to connect. Please try again.');
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [connectError]);
+    // Save role to session store
+    // setRole(role);
+
+    // Redirect to seller dashboard
+    // const dashboardUrl = '/seller/dashboard'; // Hardcoded seller dashboard URL
+    // router.push(dashboardUrl);
+  }, [router, setRole]);
 
   const handleLogin = async () => {
     try {
       setError('');
-      const role: UserRole = 'seller';
-      setSelectedRole(role);
-      await connect();
+      const role = 'seller';
+      setRole(role);
+
+      // Direct navigation to seller dashboard
+      const dashboardUrl = '/seller/dashboard'; // Hardcoded seller dashboard URL
+      router.push(dashboardUrl);
     } catch (err) {
       console.error('Login failed:', err);
       setError('Failed to connect. Please try again.');
@@ -83,20 +67,9 @@ export default function LoginPage() {
             {/* Login Button */}
             <button
               onClick={handleLogin}
-              disabled={connectLoading}
               className="w-full py-4 px-6 bg-[#41ab5d] text-white rounded-xl font-semibold hover:bg-[#368a4d] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
-              {connectLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                  </svg>
-                  Opening secure login...
-                </span>
-              ) : (
-                'Connect with Web3Auth'
-              )}
+              Connect with Web3Auth
             </button>
 
             {/* Admin Login Link */}
