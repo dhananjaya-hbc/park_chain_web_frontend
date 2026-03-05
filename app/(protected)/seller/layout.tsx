@@ -7,6 +7,8 @@ import ProtectedRoute from '@/components/custom/ProtectedRoute';
 import SellerSidebar from '@/components/layout/Sidebar/SellerSidebar'; 
 import SellerNavbar from '@/components/layout/Navbar/SellerNavbar'; 
 
+// 1. IMPORT WEB3AUTH DISCONNECT
+import { useWeb3AuthDisconnect } from "@web3auth/modal/react"; 
 
 function SellerLayoutContent({
   children,
@@ -17,17 +19,32 @@ function SellerLayoutContent({
   const router = useRouter();
   const pathname = usePathname();
   
-  // 2. Sidebar States
-  const [isOpen, setIsOpen] = useState(false);
+  // 2. INITIALIZE DISCONNECT HOOK
+  const { disconnect } = useWeb3AuthDisconnect();
+  
+  // Sidebar States
+  const[isOpen, setIsOpen] = useState(false);
   const [disconnectLoading, setDisconnectLoading] = useState(false);
 
+  // 3. UPDATE LOGOUT TO CLEAR WEB3 SESSION
   const handleLogout = async () => {
     setDisconnectLoading(true);
-    clearRole();
-    router.push('/login');
+    
+    try {
+      // Disconnect the active Web3Auth session first
+      if (disconnect) {
+        await disconnect();
+      }
+    } catch (error) {
+      console.error("Failed to disconnect Web3Auth:", error);
+    } finally {
+      // Always clear local roles and redirect, even if Web3Auth throws a minor error
+      clearRole();
+      router.push('/login');
+    }
   };
 
-  // 3. Determine which menu item is active based on the URL
+  // Determine which menu item is active based on the URL
   let currentPageStr = "dashboard";
   let pageTitle = "Dashboard";
 
@@ -49,7 +66,7 @@ function SellerLayoutContent({
   return (
     <div className="flex min-h-screen bg-[#f8f9fa]">
       
-      {/* 4. INJECT THE NEW SELLER SIDEBAR */}
+      {/* INJECT THE NEW SELLER SIDEBAR */}
       <SellerSidebar 
         isOpen={isOpen}
         setIsOpen={setIsOpen}
