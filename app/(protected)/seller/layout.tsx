@@ -34,7 +34,8 @@ function SellerLayoutContent({
   if (pathname.includes('/approvals')) currentPageStr = "approvals";
   if (pathname.includes('/earnings')) currentPageStr = "earnings";
   if (pathname.includes('/reviews')) currentPageStr = "reviews";
-
+  if (pathname.includes('/addnew')) currentPageStr = "add-new";
+  
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa]">
