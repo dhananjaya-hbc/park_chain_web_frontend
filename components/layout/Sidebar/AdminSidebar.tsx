@@ -1,0 +1,27 @@
+import BaseSidebar, { NavItem } from "./BaseSidebar";
+
+interface AdminSidebarProps {
+    isOpen: boolean;
+    setIsOpen: (isOpen: boolean) => void;
+    handleLogout: () => void;
+    disconnectLoading: boolean;
+    currentPage?: string;
+}
+
+const adminNavItems: NavItem[] =[
+    { id: "dashboard", label: "Dashboard", href: "/admin/dashboard", iconClass: "ri-dashboard-line" },
+    { id: "users", label: "User Management", href: "/admin/users", iconClass: "ri-group-line" },
+    { id: "verification", label: "Verifications", href: "/admin/seller-verification", iconClass: "ri-shield-check-line" },
+    { id: "feedback", label: "Feedback", href: "/admin/feedback", iconClass: "ri-message-3-line" },
+    { id: "settings", label: "Account & Settings", href: "/admin/settings", iconClass: "ri-settings-5-line" },
+];
+
+export default function AdminSidebar(props: AdminSidebarProps) {
+    return (
+        <BaseSidebar 
+            {...props} 
+            navItems={adminNavItems} 
+            portalName="Admin Portal" 
+        />
+    );
+}

@@ -1,5 +1,10 @@
 import React from 'react'
 import VerificationTableRow from './VerificationTableRow'
+import { VerificationFilterType } from './Main'
+
+interface VerificationTableProps {
+    selectedFilter: VerificationFilterType
+}
 
 // Mock data - Replace with API call later
 const verificationData = [
@@ -75,7 +80,12 @@ const verificationData = [
     },
 ]
 
-export default function VerificationTable() {
+export default function VerificationTable({ selectedFilter }: VerificationTableProps) {
+    // Filter data based on selected filter
+    const filteredData = selectedFilter === 'all' 
+        ? verificationData 
+        : verificationData.filter(item => item.status === selectedFilter)
+
     return (
         <div className="overflow-x-auto px-2 sm:px-4 lg:px-[2.5rem] py-2 rounded-b-2xl" style={{backgroundColor: '#E5F5E0'}}>
             <table className="w-full border-separate min-w-[800px]" style={{borderSpacing: '0 14px'}}>
@@ -89,7 +99,7 @@ export default function VerificationTable() {
                     </tr>
                 </thead>
                 <tbody className="bg-green-50">
-                    {verificationData.map((verification) => (
+                    {filteredData.map((verification) => (
                         <VerificationTableRow 
                             key={verification.id}
                             {...verification}
