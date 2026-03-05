@@ -43,27 +43,6 @@ export default function SellerDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-[#D8D8D8]">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-[#1a4d2e] mb-2">
-              Welcome Back, Seller
-            </h2>
-            <p className="text-gray-600">
-              Your wallet details and authentication information
-            </p>
-          </div>
-          <button
-            onClick={handleLogout}
-            disabled={disconnectLoading}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {disconnectLoading ? 'Logging out...' : 'Logout'}
-          </button>
-        </div>
-      </div>
-
       {/* Wallet Details Card */}
       <div className="bg-gradient-to-r from-[#41ab5d] to-[#52b86d] rounded-xl p-8 shadow-lg text-white">
         <h3 className="text-2xl font-bold mb-6">Wallet Information</h3>

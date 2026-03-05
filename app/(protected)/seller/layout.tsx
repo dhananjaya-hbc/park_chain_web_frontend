@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useRole } from '@/hooks/useRole';
 import ProtectedRoute from '@/components/custom/ProtectedRoute';
-
-// 1. IMPORT YOUR NEW SELLER SIDEBAR HERE:
 import SellerSidebar from '@/components/layout/Sidebar/SellerSidebar'; 
+import SellerNavbar from '@/components/layout/Navbar/SellerNavbar'; 
+
 
 function SellerLayoutContent({
   children,
@@ -56,11 +56,16 @@ function SellerLayoutContent({
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-7xl p-8">
+      <div className="flex-1 bg-[#f8f9fa] h-screen min-h-screen overflow-y-scroll">
+        <SellerNavbar 
+            setIsOpen={setIsOpen} 
+            handleLogout={handleLogout} 
+            disconnectLoading={disconnectLoading} 
+        />
+        <main className="p-8">
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
       
     </div>
   );

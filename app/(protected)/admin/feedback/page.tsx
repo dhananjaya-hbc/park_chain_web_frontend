@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useWeb3AuthDisconnect } from "@web3auth/modal/react"
 import { useRole } from '@/hooks/useRole'
 import Sidebar from '@/components/layout/Sidebar/AdminSidebar'
-import Navbar from '@/components/layout/Navbar/Navbar'
+import Navbar from '@/components/layout/Navbar/AdminNavbar'
 import Main from './components/Main'
 
 export default function FeedbackPage() {
