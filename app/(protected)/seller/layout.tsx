@@ -29,12 +29,14 @@ function SellerLayoutContent({
 
   // 3. Determine which menu item is active based on the URL
   let currentPageStr = "dashboard";
-  if (pathname.includes('/spots')) currentPageStr = "spots";
-  if (pathname.includes('/bookings')) currentPageStr = "bookings";
-  if (pathname.includes('/approvals')) currentPageStr = "approvals";
-  if (pathname.includes('/earnings')) currentPageStr = "earnings";
-  if (pathname.includes('/reviews')) currentPageStr = "reviews";
-  if (pathname.includes('/addnew')) currentPageStr = "add-new";
+  let pageTitle = "Dashboard";
+
+  if (pathname.includes('/spots')) { currentPageStr = "spots"; pageTitle = "Parking Spots"; }
+  else if (pathname.includes('/bookings')) { currentPageStr = "bookings"; pageTitle = "Booking Timeline"; }
+  else if (pathname.includes('/approvals')) { currentPageStr = "approvals"; pageTitle = "Approvals"; }
+  else if (pathname.includes('/earnings')) { currentPageStr = "earnings"; pageTitle = "Earnings"; }
+  else if (pathname.includes('/reviews')) { currentPageStr = "reviews"; pageTitle = "Reviews"; }
+  else if (pathname.includes('/addnew')) { currentPageStr = "add-new"; pageTitle = "Add New Spot"; }
   
   if (isLoading) {
     return (
@@ -61,7 +63,8 @@ function SellerLayoutContent({
         <SellerNavbar 
             setIsOpen={setIsOpen} 
             handleLogout={handleLogout} 
-            disconnectLoading={disconnectLoading} 
+            disconnectLoading={disconnectLoading}
+            title={pageTitle}
         />
         <main className="p-8">
           {children}
