@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useWeb3AuthDisconnect } from "@web3auth/modal/react"
 import { useRole } from '@/hooks/useRole'
-import Sidebar from '@/components/layout/Sidebar'
-import Navbar from '@/components/layout/Navbar'
+import Sidebar from '@/components/layout/Sidebar/AdminSidebar'
+import Navbar from '@/components/layout/Navbar/Navbar'
 import Main from './Components/Main'
 
 
