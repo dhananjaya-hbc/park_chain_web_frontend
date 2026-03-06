@@ -1,9 +1,14 @@
-import React from 'react';
+import ApprovalsMain from "./components/Main";
 
-export default function SellerApprovalsPage() {
-    return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">Approvals</h1>
-        </div>
-    );
+// Optional but highly recommended: Sets the browser tab title
+export const metadata = {
+  title: "Approvals | Park Chain",
+  description: "Manage and view your verification approvals.",
+};
+
+export default function ApprovalsPage() {
+  return (
+    // We just return the main container here!
+    <ApprovalsMain />
+  );
 }

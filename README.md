@@ -1,6 +1,8 @@
 # Park Chain Web Frontend
 
-A Next.js + TypeScript frontend for the Park Chain project. This repository contains the web UI built with Next.js 16, React 19, and Tailwind CSS (Tailwind v4). It uses modern React features and the new Next.js App Router structure (files under `app/`).
+A Next.js + TypeScript frontend for the Park Chain project. This repository contains the web UI built with Next.js 16, React 19, and Tailwind CSS (Tailwind v4). It uses modern React features and the new Next.js App Router structure (files under `app/`).   
+
+
 
 ## What's in this project
 
@@ -12,7 +14,7 @@ A Next.js + TypeScript frontend for the Park Chain project. This repository cont
 
 ## Prerequisites
 
-- Node.js 18+ (recommended)
+- Node.js 18+ 
 - npm 9+ (or use pnpm/bun if you prefer)
 
 Verify you have Node and npm installed:
