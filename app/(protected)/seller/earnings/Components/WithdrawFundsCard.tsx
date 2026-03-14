@@ -64,7 +64,7 @@ export default function WithdrawFundsCard() {
       </div>
 
       {/* Confirm Button */}
-      <button className="w-full bg-[#2e7d32] hover:bg-[#1b5e20] text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]">
+      <button className="w-full bg-[#2e7d32] hover:bg-[#1b5e20] text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg">
         Confirm Withdrawal
       </button>
     </div>

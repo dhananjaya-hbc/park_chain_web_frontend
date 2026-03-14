@@ -2,8 +2,8 @@
 
 import React, { useState, useMemo } from "react";
 import {
-  ArrowUpRight,
-  ArrowDownLeft,
+  ArrowUp,
+  ArrowDown,
   Search,
   SlidersHorizontal,
 } from "lucide-react";
@@ -76,13 +76,15 @@ const ITEMS_PER_PAGE = 5;
 // --- Status Badge Component ---
 function StatusBadge({ status }: { status: TransactionStatus }) {
   const styles: Record<TransactionStatus, string> = {
-    Completed: "text-[#2e7d32]",
-    Pending: "text-[#e65100]",
-    Processed: "text-[#555]",
+    Completed: "bg-[#e8f5e9] text-[#2e7d32]",
+    Pending: "bg-[#fff8e1] text-[#f57f17]",
+    Processed: "bg-[#f3f4f6] text-[#4b5563]",
   };
 
   return (
-    <span className={`text-sm font-medium ${styles[status]}`}>{status}</span>
+    <span className={`text-xs font-bold px-3 py-1 rounded-full ${styles[status]}`}>
+      {status}
+    </span>
   );
 }
 
@@ -115,12 +117,14 @@ export default function TransactionHistoryCard() {
   );
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden h-full flex flex-col">
       {/* Header */}
       <div className="p-6 pb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h2 className="text-lg font-bold text-gray-900">
-            Transaction History
+          <h2 className="text-xl font-bold text-gray-900 leading-tight">
+            Transaction
+            <br />
+            History
           </h2>
           <div className="flex items-center gap-2">
             {/* Search */}
@@ -147,17 +151,17 @@ export default function TransactionHistoryCard() {
       </div>
 
       {/* Table Header */}
-      <div className="px-6">
-        <div className="grid grid-cols-12 gap-2 py-3 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-          <div className="col-span-4">Type / ID</div>
+      <div className="bg-[#F9FAFB] border-y border-[#F3F4F6]">
+        <div className="grid grid-cols-12 gap-2 py-3 px-6 text-sm font-bold text-[#6B7280]">
+          <div className="col-span-5">Type / ID</div>
           <div className="col-span-2">Date</div>
-          <div className="col-span-3">Status</div>
+          <div className="col-span-2">Status</div>
           <div className="col-span-3 text-right">Amount</div>
         </div>
       </div>
 
       {/* Transaction Rows */}
-      <div className="px-6">
+      <div className="w-full">
         {paginatedTransactions.length === 0 ? (
           <div className="py-12 text-center text-gray-400 text-sm">
             No transactions found.
@@ -166,46 +170,45 @@ export default function TransactionHistoryCard() {
           paginatedTransactions.map((tx) => (
             <div
               key={tx.id}
-              className="grid grid-cols-12 gap-2 items-center py-4 border-b border-gray-50 last:border-b-0 hover:bg-gray-50/50 transition-colors"
+              className="grid grid-cols-12 gap-2 items-center py-4 px-6 border-b border-[#F3F4F6] hover:bg-gray-50/50 transition-colors"
             >
               {/* Type + TX ID */}
-              <div className="col-span-4 flex items-center gap-3">
+              <div className="col-span-5 flex items-center gap-3">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    tx.isCredit ? "bg-[#e8f5e9]" : "bg-gray-100"
-                  }`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${tx.isCredit ? "bg-[#e8f5e9]" : "bg-gray-100"
+                    }`}
                 >
                   {tx.isCredit ? (
-                    <ArrowDownLeft className="w-4 h-4 text-[#2e7d32]" />
+                    <ArrowDown className="w-4 h-4 text-[#2e7d32]" />
                   ) : (
-                    <ArrowUpRight className="w-4 h-4 text-gray-500" />
+                    <ArrowUp className="w-4 h-4 text-gray-500" />
                   )}
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900">
                     {tx.type}
                   </p>
-                  <p className="text-xs text-gray-400 font-mono">
+                  <p className="text-xs text-[#6B7280] font-mono">
                     {tx.txId}
                   </p>
                 </div>
               </div>
 
               {/* Date */}
-              <div className="col-span-2 text-sm text-gray-600">
-                {tx.date}
+              <div className="col-span-2 text-sm font-medium text-[#6B7280] leading-tight">
+                <div>{tx.date.split(", ")[0]},</div>
+                <div>{tx.date.split(", ")[1]}</div>
               </div>
 
               {/* Status */}
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <StatusBadge status={tx.status} />
               </div>
 
               {/* Amount */}
               <div
-                className={`col-span-3 text-right text-sm font-semibold ${
-                  tx.isCredit ? "text-[#2e7d32]" : "text-gray-700"
-                }`}
+                className={`col-span-3 text-right text-sm font-medium ${tx.status === "Pending" ? "text-black" : tx.isCredit ? "text-[#2e7d32]" : "text-gray-900"
+                  }`}
               >
                 {tx.amount}
               </div>
@@ -215,35 +218,18 @@ export default function TransactionHistoryCard() {
       </div>
 
       {/* Pagination */}
-      <div className="px-6 py-4 flex items-center justify-end gap-2 border-t border-gray-100">
+      <div className="mt-auto px-6 py-4 flex items-center justify-end gap-3 border-t border-[#F3F4F6]">
         <button
           onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
           disabled={currentPage === 1}
-          className="text-sm text-gray-500 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-50"
+          className="text-[15px] text-[#4B5563] bg-white border border-[#D1D5DB] px-4 py-2 rounded-lg hover:bg-gray-50/50 disabled:cursor-not-allowed transition-colors"
         >
           Previous
         </button>
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-          (page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`text-sm px-3 py-1.5 rounded-lg font-medium transition-all ${
-                currentPage === page
-                  ? "bg-[#2e7d32] text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
-              }`}
-            >
-              {page}
-            </button>
-          )
-        )}
         <button
-          onClick={() =>
-            setCurrentPage((p) => Math.min(totalPages, p + 1))
-          }
+          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
           disabled={currentPage === totalPages}
-          className="text-sm text-gray-500 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-50"
+          className="text-[15px] font-medium text-white bg-[#2e7d32] px-4 py-2 rounded-lg hover:bg-[#1b5e20] disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
         >
           Next
         </button>
