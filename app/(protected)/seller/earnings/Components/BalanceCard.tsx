@@ -1,16 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Copy, Check } from "lucide-react";
+import { useWeb3Auth as useWeb3AuthSDK } from "@web3auth/modal/react";
 
 export default function BalanceCard() {
   const [addressCopied, setAddressCopied] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string>("");
+  const { provider } = useWeb3AuthSDK();
 
   // Mock wallet data
   const walletConnected = true;
   const availableBalance = "850.00";
   const usdEquivalent = "$527.00 USD";
-  const walletAddress = "rHb9sdfwr3r3rR8Bfxvvbg...x4z";
+
+  useEffect(() => {
+    const getWalletAddress = async () => {
+      if (provider) {
+        try {
+          const accounts = (await provider.request({
+            method: "eth_accounts",
+          })) as string[];
+          if (accounts && accounts.length > 0) {
+            setWalletAddress(accounts[0]);
+          }
+        } catch (error) {
+          console.error("Failed to get wallet address:", error);
+        }
+      }
+    };
+
+    getWalletAddress();
+  }, [provider]);
 
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(walletAddress);
@@ -34,10 +55,10 @@ export default function BalanceCard() {
 
       {/* Balance */}
       <div className="mb-1">
-        <p className="text-xs text-white/70 font-medium tracking-wide uppercase mb-2">
+        <p className="text-xs text-white/70 font-medium tracking-wide mb-2">
           Available Balance
         </p>
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-start gap-2">
           <span className="text-4xl font-bold tracking-tight">
             {availableBalance}
           </span>
@@ -51,7 +72,7 @@ export default function BalanceCard() {
         <p className="text-xs text-white/50 mb-1.5">Address</p>
         <div className="flex items-center gap-2">
           <code className="text-sm text-white/80 font-mono truncate">
-            {walletAddress}
+            {walletAddress || "Loading..."}
           </code>
           <button
             onClick={handleCopyAddress}
