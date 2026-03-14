@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Wallet } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMoneyBills } from "@fortawesome/free-solid-svg-icons";
 
 export default function WithdrawFundsCard() {
   const [withdrawAddress, setWithdrawAddress] = useState("");
@@ -16,24 +17,24 @@ export default function WithdrawFundsCard() {
   return (
     <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
       <div className="flex items-center gap-3 mb-5">
-        <div className="w-9 h-9 bg-[#e8f5e9] rounded-lg flex items-center justify-center">
-          <Wallet className="w-4.5 h-4.5 text-[#2e7d32]" />
-        </div>
+        <FontAwesomeIcon icon={faMoneyBills} className="w-8 h-8 text-[#2e7d32]" />
         <div>
-          <h2 className="text-base font-bold text-gray-900">
-            Withdraw Funds
+          <h2 className="text-lg font-bold text-gray-900">
+            Withdraw
+            <br />
+            Funds
           </h2>
         </div>
       </div>
 
       {/* Destination Address */}
       <div className="mb-4">
-        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+        <label className="block text-sm font-semibold text-[#6B7280] mb-1.5">
           Destination Address
         </label>
         <input
           type="text"
-          placeholder="abcd2+4xz5dc62c...x628"
+          placeholder="abcd2×4xz5dc6zc....x6z8"
           value={withdrawAddress}
           onChange={(e) => setWithdrawAddress(e.target.value)}
           className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] transition-all"
@@ -42,15 +43,16 @@ export default function WithdrawFundsCard() {
 
       {/* Amount */}
       <div className="mb-5">
-        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+        <label className="block text-sm font-semibold text-[#6B7280] mb-1.5">
           Amount (XRP)
         </label>
         <div className="relative">
           <input
             type="text"
             value={withdrawAmount}
+            placeholder="0.00"
             onChange={(e) => setWithdrawAmount(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 pr-16 focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] transition-all"
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-xl font-semibold text-[#6B7280] pr-20 focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] transition-all"
           />
           <button
             onClick={handleMaxClick}
