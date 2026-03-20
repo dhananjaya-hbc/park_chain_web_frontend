@@ -1,7 +1,6 @@
 import React from 'react';
 import AdminReviewAlert from './AdminReviewAlert';
 import GeneralInfoCard from './GeneralInfoCard';
-import LocationDetailsCard from './LocationDetailsCard';
 import AmenitiesCard from './AmenitiesCard';
 import PricingCapacityCard from './PricingCapacityCard';
 import SpotImagesCard from './SpotImagesCard';
@@ -24,7 +23,6 @@ export default function Main() {
                 {/* Left Column (Main Content) */}
                 <div className="lg:col-span-2 space-y-8">
                     <GeneralInfoCard />
-                    <LocationDetailsCard />
                     <AmenitiesCard />
                     <PricingCapacityCard />
                 </div>
