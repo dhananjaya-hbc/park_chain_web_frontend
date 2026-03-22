@@ -1,116 +1,107 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
-  ArrowUp,
   ArrowDown,
   Search,
   SlidersHorizontal,
+  ExternalLink,
 } from "lucide-react";
+import apiService from "@/lib/api/apiService";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
-// --- Type Definitions ---
-type TransactionStatus = "Completed" | "Pending" | "Processed";
-type TransactionType = "Booking Payment" | "Withdrawal";
-
+// --- Types ---
 interface Transaction {
   id: string;
-  type: TransactionType;
-  txId: string;
-  date: string;
-  status: TransactionStatus;
-  amount: string;
-  isCredit: boolean;
+  booking_id: string;
+  tx_hash: string;
+  from_address: string;
+  to_address: string;
+  amount_xrp: string;
+  tx_type: string;
+  status: string;
+  created_at: string;
+  spot_title?: string;
+  driver_name?: string;
 }
 
-// --- Mock Data ---
-const MOCK_TRANSACTIONS: Transaction[] = [
-  {
-    id: "1",
-    type: "Booking Payment",
-    txId: "24B2...9A12",
-    date: "Oct 24, 2023",
-    status: "Completed",
-    amount: "+ 24.00 XRP",
-    isCredit: true,
-  },
-  {
-    id: "2",
-    type: "Withdrawal",
-    txId: "8F31...C201",
-    date: "Oct 22, 2023",
-    status: "Processed",
-    amount: "- 500.00 XRP",
-    isCredit: false,
-  },
-  {
-    id: "3",
-    type: "Booking Payment",
-    txId: "---",
-    date: "Oct 24, 2023",
-    status: "Pending",
-    amount: "+ 35.00 XRP",
-    isCredit: true,
-  },
-  {
-    id: "4",
-    type: "Booking Payment",
-    txId: "1AB2...3F51",
-    date: "Oct 20, 2023",
-    status: "Completed",
-    amount: "+ 12.50 XRP",
-    isCredit: true,
-  },
-  {
-    id: "5",
-    type: "Booking Payment",
-    txId: "4D22...91AA",
-    date: "Oct 18, 2023",
-    status: "Completed",
-    amount: "+ 40.00 XRP",
-    isCredit: true,
-  },
-];
+type TransactionStatus = "validated" | "pending" | "submitted" | "failed";
 
 const ITEMS_PER_PAGE = 5;
 
-// --- Status Badge Component ---
-function StatusBadge({ status }: { status: TransactionStatus }) {
-  const styles: Record<TransactionStatus, string> = {
-    Completed: "bg-[#e8f5e9] text-[#2e7d32]",
-    Pending: "bg-[#fff8e1] text-[#f57f17]",
-    Processed: "bg-[#f3f4f6] text-[#4b5563]",
+// --- Status Badge ---
+function StatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    validated: "bg-[#e8f5e9] text-[#2e7d32]",
+    pending: "bg-[#fff8e1] text-[#f57f17]",
+    submitted: "bg-[#e3f2fd] text-[#1565c0]",
+    failed: "bg-[#ffebee] text-[#c62828]",
   };
 
+  const displayText = status.charAt(0).toUpperCase() + status.slice(1);
+
   return (
-    <span className={`text-xs font-bold px-3 py-1 rounded-full ${styles[status]}`}>
-      {status}
+    <span className={`text-xs font-bold px-3 py-1 rounded-full ${styles[status] || "bg-gray-100 text-gray-600"}`}>
+      {displayText}
     </span>
   );
 }
 
+// --- Format Date ---
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
+
+// --- Shorten Hash ---
+function shortenHash(hash: string): string {
+  if (!hash || hash.length < 12) return hash || "---";
+  return `${hash.substring(0, 6)}...${hash.substring(hash.length - 4)}`;
+}
+
 // --- Main Component ---
 export default function TransactionHistoryCard() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Filtered transactions
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const response = await apiService.get(API_ENDPOINTS.TRANSACTIONS);
+        // Only show admin_to_seller transactions (payments received by seller)
+        const sellerTxs = (response.transactions || []).filter(
+          (tx: Transaction) => tx.tx_type === "admin_to_seller"
+        );
+        setTransactions(sellerTxs);
+        console.log(`✅ Loaded ${sellerTxs.length} seller transactions`);
+      } catch (err) {
+        console.error("Failed to fetch transactions:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
+
+  // Filter
   const filteredTransactions = useMemo(() => {
-    if (!searchQuery.trim()) return MOCK_TRANSACTIONS;
+    if (!searchQuery.trim()) return transactions;
     const q = searchQuery.toLowerCase();
-    return MOCK_TRANSACTIONS.filter(
+    return transactions.filter(
       (tx) =>
-        tx.type.toLowerCase().includes(q) ||
-        tx.txId.toLowerCase().includes(q) ||
-        tx.status.toLowerCase().includes(q) ||
-        tx.amount.toLowerCase().includes(q)
+        tx.tx_hash?.toLowerCase().includes(q) ||
+        tx.spot_title?.toLowerCase().includes(q) ||
+        tx.driver_name?.toLowerCase().includes(q) ||
+        tx.amount_xrp?.includes(q)
     );
-  }, [searchQuery]);
+  }, [searchQuery, transactions]);
 
   // Pagination
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE)
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE));
   const paginatedTransactions = filteredTransactions.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
@@ -121,13 +112,11 @@ export default function TransactionHistoryCard() {
       {/* Header */}
       <div className="p-6 pb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h2 className="text-xl font-bold text-gray-900 leading-tight">
-            Transaction
-            <br />
-            History
-          </h2>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Transaction History</h2>
+            <p className="text-xs text-gray-500 mt-1">Payments received from bookings (80% share)</p>
+          </div>
           <div className="flex items-center gap-2">
-            {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -141,11 +130,6 @@ export default function TransactionHistoryCard() {
                 className="bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-700 placeholder-gray-400 w-44 focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] transition-all"
               />
             </div>
-            {/* Filter Button */}
-            <button className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 transition-colors">
-              <SlidersHorizontal className="w-4 h-4" />
-              Filter
-            </button>
           </div>
         </div>
       </div>
@@ -153,18 +137,24 @@ export default function TransactionHistoryCard() {
       {/* Table Header */}
       <div className="bg-[#F9FAFB] border-y border-[#F3F4F6]">
         <div className="grid grid-cols-12 gap-2 py-3 px-6 text-sm font-bold text-[#6B7280]">
-          <div className="col-span-5">Type / ID</div>
+          <div className="col-span-4">Transaction</div>
           <div className="col-span-2">Date</div>
           <div className="col-span-2">Status</div>
-          <div className="col-span-3 text-right">Amount</div>
+          <div className="col-span-2 text-right">Amount</div>
+          <div className="col-span-2 text-right">Verify</div>
         </div>
       </div>
 
       {/* Transaction Rows */}
-      <div className="w-full">
-        {paginatedTransactions.length === 0 ? (
+      <div className="w-full flex-1">
+        {isLoading ? (
+          <div className="py-12 text-center">
+            <div className="animate-spin h-6 w-6 border-2 border-[#2e7d32] border-t-transparent rounded-full mx-auto" />
+            <p className="text-gray-400 text-sm mt-2">Loading transactions...</p>
+          </div>
+        ) : paginatedTransactions.length === 0 ? (
           <div className="py-12 text-center text-gray-400 text-sm">
-            No transactions found.
+            {searchQuery ? "No transactions match your search" : "No transactions yet"}
           </div>
         ) : (
           paginatedTransactions.map((tx) => (
@@ -172,32 +162,24 @@ export default function TransactionHistoryCard() {
               key={tx.id}
               className="grid grid-cols-12 gap-2 items-center py-4 px-6 border-b border-[#F3F4F6] hover:bg-gray-50/50 transition-colors"
             >
-              {/* Type + TX ID */}
-              <div className="col-span-5 flex items-center gap-3">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${tx.isCredit ? "bg-[#e8f5e9]" : "bg-gray-100"
-                    }`}
-                >
-                  {tx.isCredit ? (
-                    <ArrowDown className="w-4 h-4 text-[#2e7d32]" />
-                  ) : (
-                    <ArrowUp className="w-4 h-4 text-gray-500" />
-                  )}
+              {/* TX Info */}
+              <div className="col-span-4 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#e8f5e9]">
+                  <ArrowDown className="w-4 h-4 text-[#2e7d32]" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900">
-                    {tx.type}
+                    {tx.spot_title || "Booking Payment"}
                   </p>
                   <p className="text-xs text-[#6B7280] font-mono">
-                    {tx.txId}
+                    {shortenHash(tx.tx_hash)}
                   </p>
                 </div>
               </div>
 
               {/* Date */}
-              <div className="col-span-2 text-sm font-medium text-[#6B7280] leading-tight">
-                <div>{tx.date.split(", ")[0]},</div>
-                <div>{tx.date.split(", ")[1]}</div>
+              <div className="col-span-2 text-sm font-medium text-[#6B7280]">
+                {formatDate(tx.created_at)}
               </div>
 
               {/* Status */}
@@ -206,11 +188,23 @@ export default function TransactionHistoryCard() {
               </div>
 
               {/* Amount */}
-              <div
-                className={`col-span-3 text-right text-sm font-medium ${tx.status === "Pending" ? "text-black" : tx.isCredit ? "text-[#2e7d32]" : "text-gray-900"
-                  }`}
-              >
-                {tx.amount}
+              <div className="col-span-2 text-right text-sm font-semibold text-[#2e7d32]">
+                + {parseFloat(tx.amount_xrp).toFixed(2)} XRP
+              </div>
+
+              {/* Verify Link */}
+              <div className="col-span-2 text-right">
+                {tx.tx_hash && (
+                  <a
+                    href={`https://testnet.xrpl.org/transactions/${tx.tx_hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition-colors"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    XRPL
+                  </a>
+                )}
               </div>
             </div>
           ))
@@ -218,22 +212,29 @@ export default function TransactionHistoryCard() {
       </div>
 
       {/* Pagination */}
-      <div className="mt-auto px-6 py-4 flex items-center justify-end gap-3 border-t border-[#F3F4F6]">
-        <button
-          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-          disabled={currentPage === 1}
-          className="text-[15px] text-[#4B5563] bg-white border border-[#D1D5DB] px-4 py-2 rounded-lg hover:bg-gray-50/50 disabled:cursor-not-allowed transition-colors"
-        >
-          Previous
-        </button>
-        <button
-          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-          disabled={currentPage === totalPages}
-          className="text-[15px] font-medium text-white bg-[#2e7d32] px-4 py-2 rounded-lg hover:bg-[#1b5e20] disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
-        >
-          Next
-        </button>
-      </div>
+      {filteredTransactions.length > ITEMS_PER_PAGE && (
+        <div className="mt-auto px-6 py-4 flex items-center justify-between border-t border-[#F3F4F6]">
+          <p className="text-xs text-gray-500">
+            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredTransactions.length)} of {filteredTransactions.length}
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="text-sm text-gray-600 bg-white border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="text-sm font-medium text-white bg-[#2e7d32] px-4 py-2 rounded-lg hover:bg-[#1b5e20] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

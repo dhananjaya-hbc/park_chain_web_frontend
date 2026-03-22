@@ -1,6 +1,5 @@
 import React from "react";
 import BalanceCard from "./BalanceCard";
-import WithdrawFundsCard from "./WithdrawFundsCard";
 import TotalEarningsCard from "./TotalEarningsCard";
 import TransactionHistoryCard from "./TransactionHistoryCard";
 
@@ -22,7 +21,6 @@ export default function Main() {
         {/* Left Column: Balance + Withdraw + Total */}
         <div className="lg:col-span-2 space-y-5">
           <BalanceCard />
-          <WithdrawFundsCard />
           <TotalEarningsCard />
         </div>
 
