@@ -1,5 +1,6 @@
 import React from 'react';
 import {  UploadCloud } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function SpotImagesCard() {
     return (
@@ -18,28 +19,28 @@ export default function SpotImagesCard() {
                     </div>
                     <span className="text-base font-medium text-[#111827] mb-1">Click to upload or drag</span>
                     <span className="text-sm text-[#6B7280]">SVG, PNG, JPG (max 5MB)</span>
-                    <button
+                    <Button
                         type="button"
-                        className="mt-3 text-sm font-semibold text-[#2e7d32] bg-[#e8f5e9] hover:bg-[#c8e6c9] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+                        className="mt-3 !h-auto text-sm font-semibold text-[#2e7d32] bg-[#e8f5e9] hover:bg-[#c8e6c9] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
                     >
                         Browse File 
-                    </button>
+                    </Button>
                 </div>
             </div>
 
             <div className="mt-4 flex justify-end gap-3">
-                <button
+                <Button
                     type="button"
-                    className="h-9 px-5 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="h-9 !py-0 px-5 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                     Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                     type="button"
-                    className="h-9 px-5 rounded-md bg-[#2e7d32] hover:bg-[#1b5e20] text-white text-sm font-medium transition-colors"
+                    className="h-9 !py-0 px-5 rounded-md bg-[#2e7d32] hover:bg-[#1b5e20] text-white text-sm font-medium transition-colors"
                 >
                     Upload 
-                </button>
+                </Button>
             </div>
         </div>
     );
