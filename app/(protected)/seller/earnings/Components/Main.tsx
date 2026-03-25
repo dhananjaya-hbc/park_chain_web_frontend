@@ -9,23 +9,27 @@ export default function Main() {
       {/* Page Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
-          Earnings & Withdrawals
+          Earnings & Payments
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Manage your funds and view transaction history.
+          View your wallet balance, earnings, and transaction history.
         </p>
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Left Column: Balance + Withdraw + Total */}
-        <div className="lg:col-span-2 space-y-5">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        {/* Left Column: Balance + Total Earnings */}
+        <div className="lg:col-span-3 space-y-5">
           <BalanceCard />
+
+        </div>
+        <div className="lg:col-span-2 space-y-5">
+
           <TotalEarningsCard />
         </div>
 
         {/* Right Column: Transaction History */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-5">
           <TransactionHistoryCard />
         </div>
       </div>

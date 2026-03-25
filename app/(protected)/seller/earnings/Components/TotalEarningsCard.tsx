@@ -40,22 +40,44 @@ export default function TotalEarningsCard() {
     fetchEarnings();
   }, []);
 
-  return (
-    <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold text-gray-500 mb-1">Total Earnings</p>
+    return (
+    <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm h-full flex flex-col justify-between relative overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5 relative z-10">
+        <span className="inline-flex items-center gap-1.5 bg-gray-50 text-gray-600 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200">
+          LIFETIME EARNINGS
+        </span>
+        <div className="flex items-center justify-center rounded-full flex-shrink-0 w-8 h-8 bg-[#F0FDF4]">
+          <TrendingUp className="w-4 h-4 text-[#2e7d32]" />
+        </div>
+      </div>
+
+      <div className="relative z-10 flex-grow flex flex-col justify-center">
+        {/* Earnings Amount */}
+        <div className="mb-1">
+          <p className="text-xs text-gray-500 font-medium tracking-wide mb-2">Total Earnings</p>
           {isLoading ? (
-            <div className="h-8 w-24 bg-gray-100 rounded animate-pulse" />
+            <div className="h-10 w-32 bg-gray-100 rounded animate-pulse" />
           ) : (
-            <>
-              <p className="text-2xl font-bold text-gray-900">{totalEarnings} XRP</p>
-              <p className="text-xs text-gray-400 mt-1">From {totalBookings} paid booking{totalBookings !== 1 ? "s" : ""}</p>
-            </>
+            <div className="flex items-start gap-2">
+              <span className="text-4xl font-bold tracking-tight text-gray-900">{totalEarnings}</span>
+              <span className="text-lg font-semibold text-gray-600">XRP</span>
+            </div>
           )}
         </div>
-        <div className="flex items-center justify-center rounded-full flex-shrink-0 w-10 h-10 bg-[#F0FDF4]">
-          <TrendingUp className="w-5 h-5 text-[#2e7d32]" />
+      </div>
+
+      {/* Bookings Count */}
+      <div className="mt-5 pt-4 border-t border-gray-100 relative z-10 mt-auto">
+        <p className="text-xs text-gray-500 mb-1.5">Source</p>
+        <div className="flex items-center gap-2">
+          {isLoading ? (
+             <div className="h-5 w-40 bg-gray-100 rounded animate-pulse" />
+          ) : (
+            <p className="text-sm text-gray-700 font-medium">
+              From {totalBookings} paid booking{totalBookings !== 1 ? "s" : ""}
+            </p>
+          )}
         </div>
       </div>
     </div>

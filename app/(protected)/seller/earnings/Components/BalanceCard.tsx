@@ -63,11 +63,7 @@ export default function BalanceCard() {
     setTimeout(() => setAddressCopied(false), 2000);
   };
 
-  const shortenAddress = (addr: string) => {
-    if (addr.length <= 16) return addr;
-    return `${addr.substring(0, 8)}...${addr.substring(addr.length - 6)}`;
-  };
-
+  
   // Loading State
   if (isLoading) {
     return (
@@ -102,13 +98,13 @@ export default function BalanceCard() {
 
   // Wallet Card
   return (
-    <div className="bg-gradient-to-br from-[#2e7d32] to-[#43a047] rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+    <div className="bg-gradient-to-br from-[#2e7d32] to-[#43a047] rounded-2xl p-6 text-white shadow-lg relative overflow-hidden h-full flex flex-col justify-between">
       {/* Background decorative circles */}
-      <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
-      <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/5 rounded-full" />
+      <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full pointer-events-none" />
+      <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/5 rounded-full pointer-events-none" />
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-5 relative z-10">
         <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20">
           <span className="w-2 h-2 bg-[#76ff03] rounded-full animate-pulse" />
           WALLET CONNECTED
@@ -118,21 +114,23 @@ export default function BalanceCard() {
         </button>
       </div>
 
-      {/* Balance */}
-      <div className="mb-1">
-        <p className="text-xs text-white/70 font-medium tracking-wide mb-2">Available Balance</p>
-        <div className="flex items-start gap-2">
-          <span className="text-4xl font-bold tracking-tight">{balance}</span>
-          <span className="text-lg font-semibold text-white/80">XRP</span>
+      <div className="relative z-10 flex-grow flex flex-col justify-center">
+        {/* Balance */}
+        <div className="mb-1">
+          <p className="text-xs text-white/70 font-medium tracking-wide mb-2">Available Balance</p>
+          <div className="flex items-start gap-2">
+            <span className="text-4xl font-bold tracking-tight">{balance}</span>
+            <span className="text-lg font-semibold text-white/80">XRP</span>
+          </div>
         </div>
       </div>
 
       {/* Wallet Address */}
-      <div className="mt-5 pt-4 border-t border-white/15">
+      <div className="mt-5 pt-4 border-t border-white/15 relative z-10 mt-auto">
         <p className="text-xs text-white/50 mb-1.5">Address</p>
         <div className="flex items-center gap-2">
           <code className="text-sm text-white/80 font-mono truncate">
-            {shortenAddress(walletAddress)}
+            {(walletAddress)}
           </code>
           <button
             onClick={handleCopyAddress}
@@ -144,7 +142,8 @@ export default function BalanceCard() {
         </div>
       </div>
 
-      {error && <p className="text-red-300 text-xs mt-2">{error}</p>}
+      {error && <p className="text-red-300 text-xs mt-2 relative z-10">{error}</p>}
     </div>
   );
+ 
 }
