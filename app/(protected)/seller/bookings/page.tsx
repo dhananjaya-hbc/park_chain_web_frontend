@@ -7,16 +7,15 @@ import {
   User,
   Car,
   Search,
-  SlidersHorizontal,
   RefreshCw,
   Calendar,
-  DollarSign,
-} from "lucide-react";
+} 
+from "lucide-react";
 import apiService from "@/lib/api/apiService";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 // --- Types ---
-type BookingStatus = "pending" | "confirmed" | "active" | "completed" | "cancelled";
+type BookingStatus = "pending" | "confirmed" | "active" | "completed";
 type PaymentStatus = "unpaid" | "processing" | "paid" | "split_completed" | "failed";
 
 interface Booking {
@@ -47,7 +46,6 @@ function StatusBadge({ status }: { status: string }) {
     confirmed: "bg-blue-50 text-blue-700 border-blue-200",
     active: "bg-green-50 text-green-700 border-green-200",
     completed: "bg-gray-50 text-gray-700 border-gray-200",
-    cancelled: "bg-red-50 text-red-700 border-red-200",
     unpaid: "bg-yellow-50 text-yellow-700 border-yellow-200",
     processing: "bg-blue-50 text-blue-700 border-blue-200",
     paid: "bg-green-50 text-green-700 border-green-200",
@@ -99,7 +97,6 @@ const FILTER_TABS: { label: string; value: string }[] = [
   { label: "Active", value: "active" },
   { label: "Confirmed", value: "confirmed" },
   { label: "Completed", value: "completed" },
-  { label: "Cancelled", value: "cancelled" },
 ];
 
 // --- Main Component ---
