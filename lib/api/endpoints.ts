@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
   BALANCE: '/payments/balance',
   PROCESS_PAYMENT: '/payments/process',
   TRANSACTIONS: '/payments/transactions',
+  SELLER_TRANSACTIONS: '/payments/seller/transactions', 
   ADMIN_BALANCE: '/payments/admin/balance',
   VERIFY_TX: '/payments/verify',
 };
