@@ -110,6 +110,13 @@ export default function LoginPage() {
         console.log('🔐 Token stored for API calls');
       }
 
+      if (response.user?.email || email) {
+        localStorage.setItem('seller_email', response.user?.email || email);
+      }
+      if (response.user?.wallet_address) {
+        localStorage.setItem('seller_wallet', response.user.wallet_address);
+      }
+
       // Step 3: Set role and redirect
       const role: UserRole = 'seller';
       setRole(role);

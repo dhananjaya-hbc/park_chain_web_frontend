@@ -4,22 +4,143 @@ import React, { useState } from 'react';
 import Step1Identity from './Step1Identity';
 import Step2LandDetails from './Step2LandDetails';
 import Step3Documents from './Step3Documents';
+import {
+    initialKycDocumentFiles,
+    initialKycFormValues,
+    KycDocumentFiles,
+    KycFormValues,
+} from './kycTypes';
 
 export default function KycModal({ onComplete }: { onComplete: () => void }) {
     const [currentStep, setCurrentStep] = useState(1);
-    const[loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [formValues, setFormValues] = useState<KycFormValues>(initialKycFormValues);
+    const [documentFiles, setDocumentFiles] = useState<KycDocumentFiles>(initialKycDocumentFiles);
 
-    const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 3));
+    const handleFieldChange = (name: keyof KycFormValues, value: string | boolean | string[]) => {
+        setFormValues((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleFileChange = (name: keyof KycDocumentFiles, file: File | null) => {
+        setDocumentFiles((prev) => ({ ...prev, [name]: file }));
+    };
+
+    const validateCurrentStep = () => {
+        if (currentStep === 1) {
+            if (!formValues.fullName || !formValues.nicNumber || !formValues.dateOfBirth || !formValues.gender) {
+                return 'Please complete all required identity fields.';
+            }
+            if (!documentFiles.nicFront || !documentFiles.nicBack) {
+                return 'Please upload NIC front and NIC back images.';
+            }
+        }
+
+        if (currentStep === 2) {
+            if (
+                !formValues.propertyName ||
+                !formValues.fullAddress ||
+                !formValues.mapsLink ||
+                !formValues.parkingType ||
+                !formValues.numberOfSlots
+            ) {
+                return 'Please complete all required land details fields.';
+            }
+            if (formValues.supportedVehicleTypes.length === 0) {
+                return 'Please select at least one supported vehicle type.';
+            }
+        }
+
+        if (currentStep === 3) {
+            if (!formValues.ownershipDocumentType) {
+                return 'Please select an ownership document type.';
+            }
+            if (!documentFiles.legalDocument || !documentFiles.utilityBill) {
+                return 'Please upload legal document and utility bill files.';
+            }
+            if (!formValues.agreementAccepted) {
+                return 'You must accept the agreement before submitting.';
+            }
+        }
+
+        return '';
+    };
+
+    const nextStep = () => {
+        const validationError = validateCurrentStep();
+        if (validationError) {
+            setError(validationError);
+            return;
+        }
+
+        setError('');
+        setCurrentStep((prev) => Math.min(prev + 1, 3));
+    };
+
     const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const validationError = validateCurrentStep();
+        if (validationError) {
+            setError(validationError);
+            return;
+        }
+
+        setError('');
         setLoading(true);
-        // Simulate API call to submit all KYC data
-        setTimeout(() => {
-            setLoading(false);
+
+        try {
+            const payload = new FormData();
+
+            payload.append('fullName', formValues.fullName);
+            payload.append('nicNumber', formValues.nicNumber);
+            payload.append('dateOfBirth', formValues.dateOfBirth);
+            payload.append('gender', formValues.gender);
+            payload.append('propertyName', formValues.propertyName);
+            payload.append('fullAddress', formValues.fullAddress);
+            payload.append('mapsLink', formValues.mapsLink);
+            payload.append('parkingType', formValues.parkingType);
+            payload.append('numberOfSlots', formValues.numberOfSlots);
+            payload.append('supportedVehicleTypes', JSON.stringify(formValues.supportedVehicleTypes));
+            payload.append('ownershipDocumentType', formValues.ownershipDocumentType);
+            payload.append('agreementAccepted', String(formValues.agreementAccepted));
+
+            if (documentFiles.nicFront) payload.append('nicFront', documentFiles.nicFront);
+            if (documentFiles.nicBack) payload.append('nicBack', documentFiles.nicBack);
+            if (documentFiles.selfie) payload.append('selfie', documentFiles.selfie);
+            if (documentFiles.legalDocument) payload.append('legalDocument', documentFiles.legalDocument);
+            if (documentFiles.utilityBill) payload.append('utilityBill', documentFiles.utilityBill);
+
+            const sellerEmail = localStorage.getItem('seller_email');
+            const sellerWallet = localStorage.getItem('seller_wallet');
+            const token = localStorage.getItem('token'); // Get auth token if required by external backend
+            
+            if (sellerEmail) payload.append('sellerEmail', sellerEmail);
+            if (sellerWallet) payload.append('sellerWallet', sellerWallet);
+
+            // POST to the external backend API
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/seller/kyc`, {
+                method: 'POST',
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: payload,
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result?.error || 'Failed to submit KYC data.');
+            }
+
             onComplete();
-        }, 2000);
+        } catch (submitError) {
+            const message = submitError instanceof Error ? submitError.message : 'Failed to submit KYC data.';
+            setError(message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -57,9 +178,29 @@ export default function KycModal({ onComplete }: { onComplete: () => void }) {
 
                 {/* Form Body */}
                 <form onSubmit={handleSubmit} className="flex-1 px-8 py-6 space-y-6">
-                    {currentStep === 1 && <Step1Identity />}
-                    {currentStep === 2 && <Step2LandDetails />}
-                    {currentStep === 3 && <Step3Documents />}
+                    {currentStep === 1 && (
+                        <Step1Identity
+                            values={formValues}
+                            files={documentFiles}
+                            onFieldChange={handleFieldChange}
+                            onFileChange={handleFileChange}
+                        />
+                    )}
+                    {currentStep === 2 && <Step2LandDetails values={formValues} onFieldChange={handleFieldChange} />}
+                    {currentStep === 3 && (
+                        <Step3Documents
+                            values={formValues}
+                            files={documentFiles}
+                            onFieldChange={handleFieldChange}
+                            onFileChange={handleFileChange}
+                        />
+                    )}
+
+                    {error && (
+                        <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+                            <p className="text-sm text-red-700">{error}</p>
+                        </div>
+                    )}
 
                     {/* Footer / Controls */}
                     <div className="pt-6 border-t border-gray-100 flex items-center justify-between mt-8">

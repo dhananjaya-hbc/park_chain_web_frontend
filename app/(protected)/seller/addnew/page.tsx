@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import KycModal from './components/KycModal';
 import PendingReview from './components/PendingReview'; // We need to create this component next
 import GeneralInfo from './components/GeneralInfo';
@@ -8,10 +8,26 @@ import PricingCapacity from './components/PricingCapacity';
 import FeaturesAmenities from './components/FeaturesAmenities';
 import SpotImages from './components/SpotImages';
 import FinalizeAction from './components/FinalizeAction';
+import { KycStatus } from './components/kycTypes';
 
 export default function SellerNewPage() {
     // Replaced boolean state with a 3-step status
-    const[kycStatus, setKycStatus] = useState<'unverified' | 'pending_review' | 'approved'>('unverified');
+    const [kycStatus, setKycStatus] = useState<KycStatus>(() => {
+        if (typeof window === 'undefined') {
+            return 'unverified';
+        }
+
+        const savedStatus = localStorage.getItem('seller_kyc_status') as KycStatus | null;
+        if (savedStatus && ['unverified', 'pending_review', 'approved'].includes(savedStatus)) {
+            return savedStatus;
+        }
+
+        return 'unverified';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('seller_kyc_status', kycStatus);
+    }, [kycStatus]);
 
     return (
         <div className="min-h-screen bg-gray-50 p-6 md:p-8 relative">
