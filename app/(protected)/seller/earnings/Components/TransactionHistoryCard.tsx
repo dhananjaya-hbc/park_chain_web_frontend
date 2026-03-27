@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   ArrowDown,
   Search,
-  SlidersHorizontal,
   ExternalLink,
 } from "lucide-react";
 import apiService from "@/lib/api/apiService";
@@ -25,7 +24,6 @@ interface Transaction {
   driver_name?: string;
 }
 
-type TransactionStatus = "validated" | "pending" | "submitted" | "failed";
 
 const ITEMS_PER_PAGE = 5;
 
