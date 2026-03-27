@@ -1,4 +1,13 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+
+import Main from './components/Main';
+import KycModal from './components/KycModal';
+import PendingReview from './components/PendingReview';
+
+// Assuming you have this defined or it's needed
+type KycStatus = 'unverified' | 'pending_review' | 'approved';
 
 export default function SellerNewPage() {
     // Replaced boolean state with a 3-step status
@@ -21,9 +30,15 @@ export default function SellerNewPage() {
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">Add New Spot</h1>
-            
-            
+            <Main />
+
+            {kycStatus === 'unverified' && (
+                <KycModal onComplete={() => setKycStatus('pending_review')} />
+            )}
+
+            {kycStatus === 'pending_review' && (
+                <PendingReview />
+            )}
         </div>
     );
 }

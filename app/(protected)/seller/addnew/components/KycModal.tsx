@@ -10,6 +10,7 @@ import {
     KycDocumentFiles,
     KycFormValues,
 } from './kycTypes';
+import { uploadToCloudinary } from '@/lib/utils/cloudinary';
 
 export default function KycModal({ onComplete }: { onComplete: () => void }) {
     const [currentStep, setCurrentStep] = useState(1);
@@ -92,51 +93,63 @@ export default function KycModal({ onComplete }: { onComplete: () => void }) {
         setLoading(true);
 
         try {
-            const payload = new FormData();
+            // 1. Upload all documents to Cloudinary first
+            const uploadPromises: Promise<string>[] = [];
+            const fileNames: string[] = [];
 
-            payload.append('fullName', formValues.fullName);
-            payload.append('nicNumber', formValues.nicNumber);
-            payload.append('dateOfBirth', formValues.dateOfBirth);
-            payload.append('gender', formValues.gender);
-            payload.append('propertyName', formValues.propertyName);
-            payload.append('fullAddress', formValues.fullAddress);
-            payload.append('mapsLink', formValues.mapsLink);
-            payload.append('parkingType', formValues.parkingType);
-            payload.append('numberOfSlots', formValues.numberOfSlots);
-            payload.append('supportedVehicleTypes', JSON.stringify(formValues.supportedVehicleTypes));
-            payload.append('ownershipDocumentType', formValues.ownershipDocumentType);
-            payload.append('agreementAccepted', String(formValues.agreementAccepted));
+            const queueUpload = (file: File | null, name: string) => {
+                if (file) {
+                    uploadPromises.push(uploadToCloudinary(file));
+                    fileNames.push(name);
+                }
+            };
 
-            if (documentFiles.nicFront) payload.append('nicFront', documentFiles.nicFront);
-            if (documentFiles.nicBack) payload.append('nicBack', documentFiles.nicBack);
-            if (documentFiles.selfie) payload.append('selfie', documentFiles.selfie);
-            if (documentFiles.legalDocument) payload.append('legalDocument', documentFiles.legalDocument);
-            if (documentFiles.utilityBill) payload.append('utilityBill', documentFiles.utilityBill);
+            queueUpload(documentFiles.nicFront, 'nicFrontUrl');
+            queueUpload(documentFiles.nicBack, 'nicBackUrl');
+            queueUpload(documentFiles.selfie, 'selfieUrl');
+            queueUpload(documentFiles.legalDocument, 'legalDocumentUrl');
+            queueUpload(documentFiles.utilityBill, 'utilityBillUrl');
 
+            const uploadedUrls = await Promise.all(uploadPromises);
+            
+            // Map the returned URLs back to their corresponding names
+            const documentUrls = fileNames.reduce((acc, name, index) => {
+                acc[name] = uploadedUrls[index];
+                return acc;
+            }, {} as Record<string, string>);
+
+            // 2. Prepare JSON payload for your backend
             const sellerEmail = localStorage.getItem('seller_email');
             const sellerWallet = localStorage.getItem('seller_wallet');
-            const token = localStorage.getItem('token'); // Get auth token if required by external backend
-            
-            if (sellerEmail) payload.append('sellerEmail', sellerEmail);
-            if (sellerWallet) payload.append('sellerWallet', sellerWallet);
+            const token = localStorage.getItem('token');
 
-            // POST to the external backend API
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/seller/kyc`, {
+            const payloadData = {
+                ...formValues,
+                ...documentUrls, // Now contains Cloudinary URLs
+                sellerEmail: sellerEmail || '',
+                sellerWallet: sellerWallet || '',
+            };
+
+            // 3. Send JSON to your separate backend API
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/seller/kyc`, {
                 method: 'POST',
                 headers: {
+                    'Content-Type': 'application/json',
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
-                body: payload,
+                body: JSON.stringify(payloadData),
             });
 
-            const result = await response.json();
+            const result = await response.json().catch(() => null); // Catch if response is not JSON
             if (!response.ok) {
-                throw new Error(result?.error || 'Failed to submit KYC data.');
+                throw new Error(result?.error || 'Failed to submit KYC data to your backend.');
             }
 
             onComplete();
         } catch (submitError) {
-            const message = submitError instanceof Error ? submitError.message : 'Failed to submit KYC data.';
+            const message = submitError instanceof TypeError && submitError.message === 'Failed to fetch' 
+                ? 'Could not connect to the backend (http://localhost:3001). Is your backend server running?'
+                : submitError instanceof Error ? submitError.message : 'Failed to submit KYC data.';
             setError(message);
         } finally {
             setLoading(false);
