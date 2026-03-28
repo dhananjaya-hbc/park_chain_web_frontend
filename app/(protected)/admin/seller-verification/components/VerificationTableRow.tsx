@@ -3,7 +3,7 @@ import Link from 'next/link'
 import StatusBadge from './StatusBadge'
 
 interface VerificationTableRowProps {
-    id: number
+    id: string | number
     name: string
     role: string
     walletId: string

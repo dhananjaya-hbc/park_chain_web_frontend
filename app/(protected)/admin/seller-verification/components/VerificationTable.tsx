@@ -9,7 +9,8 @@ interface VerificationTableProps {
 }
 
 interface VerificationData {
-    id: string | number;
+    id?: string | number;
+    _id?: string;
     name: string;
     role: string;
     walletId: string;
@@ -94,8 +95,8 @@ export default function VerificationTable({ selectedFilter }: VerificationTableP
                     ) : (
                         filteredData.map((verification) => (
                             <VerificationTableRow 
-                                key={verification.id}
-                                id={Number(verification.id) || 0} 
+                                key={verification.id || verification._id || Math.random()}
+                                id={verification.id || verification._id || 'unknown'} 
                                 name={verification.name || 'Unknown'}
                                 role={verification.role || 'Seller'}
                                 walletId={verification.walletId || '---'}
