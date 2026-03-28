@@ -1,90 +1,64 @@
-import React from 'react'
-import VerificationTableRow from './VerificationTableRow'
-import { VerificationFilterType } from './Main'
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import VerificationTableRow from './VerificationTableRow';
+import { VerificationFilterType } from './Main';
 
 interface VerificationTableProps {
-    selectedFilter: VerificationFilterType
+    selectedFilter: VerificationFilterType;
 }
 
-// Mock data - Replace with API call later
-const verificationData = [
-    {
-        id: 1,
-        name: 'Kevin Rodrigo',
-        role: 'Seller',
-        walletId: 'rHb9CJAw4jp*****',
-        blockchain: 'XRPL',
-        roleId: '#SF-5648',
-        date: '01 Dec 2025-23:21:56',
-        status: 'pending' as const
-    },
-    {
-        id: 2,
-        name: 'Kevin Rodrigo',
-        role: 'Seller',
-        walletId: 'rHb9CJAw4jp*****',
-        blockchain: 'XRPL',
-        roleId: '#SF-5648',
-        date: '01 Dec 2025-23:21:56',
-        status: 'pending' as const
-    },
-    {
-        id: 3,
-        name: 'Kevin Rodrigo',
-        role: 'Seller',
-        walletId: 'rHb9CJAw4jp*****',
-        blockchain: 'XRPL',
-        roleId: '#SF-5648',
-        date: '01 Dec 2025-23:21:56',
-        status: 'pending' as const
-    },
-    {
-        id: 4,
-        name: 'Kevin Rodrigo',
-        role: 'Seller',
-        walletId: 'rHb9CJAw4jp*****',
-        blockchain: 'XRPL',
-        roleId: '#SF-5648',
-        date: '01 Dec 2025-23:21:56',
-        status: 'verified' as const
-    },
-    {
-        id: 5,
-        name: 'Kevin Rodrigo',
-        role: 'Seller',
-        walletId: 'rHb9CJAw4jp*****',
-        blockchain: 'XRPL',
-        roleId: '#SF-5648',
-        date: '01 Dec 2025-23:21:56',
-        status: 'verified' as const
-    },
-    {
-        id: 6,
-        name: 'Kevin Rodrigo',
-        role: 'Seller',
-        walletId: 'rHb9CJAw4jp*****',
-        blockchain: 'XRPL',
-        roleId: '#SE-5648',
-        date: '01 Dec 2025-23:21:56',
-        status: 'rejected' as const
-    },
-    {
-        id: 7,
-        name: 'Kevin Rodrigo',
-        role: 'Seller',
-        walletId: 'rHb9CJAw4jp*****',
-        blockchain: 'XRPL',
-        roleId: '#SE-5648',
-        date: '01 Dec 2025-23:21:56',
-        status: 'rejected' as const
-    },
-]
+interface VerificationData {
+    id: string | number;
+    name: string;
+    role: string;
+    walletId: string;
+    blockchain: string;
+    roleId: string;
+    date: string;
+    status: 'pending' | 'verified' | 'rejected';
+}
 
 export default function VerificationTable({ selectedFilter }: VerificationTableProps) {
+    const [verificationData, setVerificationData] = useState<VerificationData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchVerifications = async () => {
+            setLoading(true);
+            try {
+                const token = localStorage.getItem('token');
+                // Call your backend API endpoint here
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/admin/verifications`, {
+                    headers: {
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch verification data');
+                }
+
+                const data = await response.json();
+                
+                // Assuming the backend returns an array of verification objects mapped to our interface
+                setVerificationData(data);
+            } catch (err) {
+                console.error("Error fetching verifications:", err);
+                setError('Could not load verifications from the server.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchVerifications();
+    }, []);
+
     // Filter data based on selected filter
     const filteredData = selectedFilter === 'all' 
         ? verificationData 
-        : verificationData.filter(item => item.status === selectedFilter)
+        : verificationData.filter(item => item.status === selectedFilter);
 
     return (
         <div className="overflow-x-auto px-2 sm:px-4 lg:px-[2.5rem] py-2 rounded-b-2xl" style={{backgroundColor: '#E5F5E0'}}>
@@ -99,12 +73,39 @@ export default function VerificationTable({ selectedFilter }: VerificationTableP
                     </tr>
                 </thead>
                 <tbody className="bg-green-50">
-                    {filteredData.map((verification) => (
-                        <VerificationTableRow 
-                            key={verification.id}
-                            {...verification}
-                        />
-                    ))}
+                    {loading ? (
+                        <tr>
+                            <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 bg-white">
+                                Loading verifications...
+                            </td>
+                        </tr>
+                    ) : error ? (
+                        <tr>
+                            <td colSpan={5} className="px-6 py-8 text-center text-red-500 bg-white">
+                                {error}
+                            </td>
+                        </tr>
+                    ) : filteredData.length === 0 ? (
+                        <tr>
+                            <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 bg-white">
+                                No verifications found.
+                            </td>
+                        </tr>
+                    ) : (
+                        filteredData.map((verification) => (
+                            <VerificationTableRow 
+                                key={verification.id}
+                                id={Number(verification.id) || 0} 
+                                name={verification.name || 'Unknown'}
+                                role={verification.role || 'Seller'}
+                                walletId={verification.walletId || '---'}
+                                blockchain={verification.blockchain || 'XRPL'}
+                                roleId={verification.roleId || '---'}
+                                date={verification.date || '---'}
+                                status={verification.status || 'pending'}
+                            />
+                        ))
+                    )}
                 </tbody>
             </table>
         </div>
