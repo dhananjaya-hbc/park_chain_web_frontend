@@ -50,7 +50,7 @@ function SellerLayoutContent({
 
   if (pathname.includes('/spots')) { currentPageStr = "spots"; pageTitle = "Parking Spots"; }
   else if (pathname.includes('/bookings')) { currentPageStr = "bookings"; pageTitle = "Booking Timeline"; }
-  else if (pathname.includes('/approvals')) { currentPageStr = "approvals"; pageTitle = "Approvals"; }
+  else if (pathname.includes('/verifications')) { currentPageStr = "verifications"; pageTitle = "Verifications"; }
   else if (pathname.includes('/earnings')) { currentPageStr = "earnings"; pageTitle = "Earnings"; }
   else if (pathname.includes('/reviews')) { currentPageStr = "reviews"; pageTitle = "Reviews"; }
   else if (pathname.includes('/addnew')) { currentPageStr = "add-new"; pageTitle = "Add New Spot"; }

@@ -93,7 +93,10 @@ export default function Main({ id }: { id: string }) {
                     proofOfAddress: details.utilityBillUrl
                 }}
             />
-            <AdminNotes /> {/* Assume actions like Verify/Reject go here later */}
+            <AdminNotes 
+                id={id} 
+                status={details.status} 
+            />
         </div>
     )
 }

@@ -13,7 +13,7 @@ const sellerNavItems: NavItem[] =[
     { id: "spots", label: "Spots", href: "/seller/spots", iconClass: "ri-map-pin-line" },
     { id: "add-new", label: "Add new", href: "/seller/addnew", iconClass: "ri-add-circle-line" },
     { id: "bookings", label: "Booking Timeline", href: "/seller/bookings", iconClass: "ri-calendar-todo-line" },
-    { id: "approvals", label: "Approvals", href: "/seller/approvals", iconClass: "ri-shield-check-line" },
+    { id: "verifications", label: "Verifications", href: "/seller/verifications", iconClass: "ri-shield-check-line" },
     { id: "earnings", label: "Earnings", href: "/seller/earnings", iconClass: "ri-wallet-3-line" },
     { id: "reviews", label: "Reviews", href: "/seller/reviews", iconClass: "ri-star-line" },
 ];

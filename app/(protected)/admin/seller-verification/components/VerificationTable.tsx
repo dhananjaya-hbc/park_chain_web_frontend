@@ -44,7 +44,7 @@ export default function VerificationTable({ selectedFilter }: VerificationTableP
                 const data = await response.json();
                 
                 // Assuming the backend returns an array of verification objects mapped to our interface
-                setVerificationData(data);
+                if (Array.isArray(data)) { setVerificationData(data); } else { console.error("Not array:", data); setVerificationData(data?.data || data?.verifications || []); }
             } catch (err) {
                 console.error("Error fetching verifications:", err);
                 setError('Could not load verifications from the server.');
