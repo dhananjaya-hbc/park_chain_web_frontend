@@ -66,23 +66,27 @@ export default function TransactionHistoryCard() {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const response = await apiService.get(API_ENDPOINTS.TRANSACTIONS);
-        // Only show admin_to_seller transactions (payments received by seller)
-        const sellerTxs = (response.transactions || []).filter(
-          (tx: Transaction) => tx.tx_type === "admin_to_seller"
-        );
-        setTransactions(sellerTxs);
-        console.log(`✅ Loaded ${sellerTxs.length} seller transactions`);
-      } catch (err) {
-        console.error("Failed to fetch transactions:", err);
-      } finally {
-        setIsLoading(false);
+  const fetchTransactions = async () => {
+    try {
+      const response = await apiService.get(API_ENDPOINTS.SELLER_TRANSACTIONS);
+      
+      // Backend already filters to only this seller's spots
+      setTransactions(response.transactions || []);
+      
+      console.log(`✅ Loaded ${response.transactions?.length || 0} transactions for this seller`);
+      
+      // Optional: display earnings summary
+      if (response.earnings) {
+        console.log('💰 Total earnings:', response.earnings.total_earned_xrp, 'XRP');
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch transactions:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchTransactions();
+  fetchTransactions();
   }, []);
 
   // Filter

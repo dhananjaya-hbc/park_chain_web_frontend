@@ -29,14 +29,34 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     }
   };
 
-  let currentPageStr = "dashboard";
-  let pageTitle = "Dashboard";
+  // Replace this section in your layout.tsx:
 
-  if (pathname.includes('/seller-verification')) { currentPageStr = "verification"; pageTitle = "Seller Verification Requests"; }
-  else if (pathname.includes('/users')) { currentPageStr = "users"; pageTitle = "Users"; }
-  else if (pathname.includes('/feedback')) { currentPageStr = "feedback"; pageTitle = "Feedback"; }
-  else if (pathname.includes('/settings')) { currentPageStr = "settings"; pageTitle = "Settings"; }
+// OLD:
+// let currentPageStr = "dashboard";
+// let pageTitle = "Dashboard";
+// if (pathname.includes('/seller-verification')) ...
 
+// NEW - More robust matching (check specific paths first):
+let currentPageStr = "dashboard";
+let pageTitle = "Dashboard";
+
+const pageMap: Record<string, { id: string; title: string }> = {
+  '/admin/seller-verification': { id: 'verification', title: 'Seller Verification Requests' },
+  '/admin/bookings': { id: 'bookings', title: 'All Bookings' },
+  '/admin/transactions': { id: 'transactions', title: 'Transactions' },
+  '/admin/users': { id: 'users', title: 'Users' },
+  '/admin/feedback': { id: 'feedback', title: 'Feedback' },
+  '/admin/settings': { id: 'settings', title: 'Settings' },
+  '/admin/dashboard': { id: 'dashboard', title: 'Dashboard' },
+};
+
+for (const [path, config] of Object.entries(pageMap)) {
+  if (pathname.includes(path)) {
+    currentPageStr = config.id;
+    pageTitle = config.title;
+    break;
+  }
+}
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa]">
