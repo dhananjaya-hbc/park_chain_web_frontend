@@ -1,9 +1,10 @@
 import React from 'react';
+import VerificationTable from './components/VerificationTable';
 
-export default function SellerApprovalsPage() {
+export default function SellerVerificationsPage() {
     return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">verifications</h1>
+        <div className="max-w-6xl mx-auto space-y-6">            
+            <VerificationTable />
         </div>
     );
 }
