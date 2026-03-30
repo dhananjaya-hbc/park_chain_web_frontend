@@ -32,6 +32,7 @@
     "tailwind-merge": "^3.3.1",
     "viem": "^2.42.1",
     "xrpl": "^2.14.3",
+    "xumm": "^1.8.0",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

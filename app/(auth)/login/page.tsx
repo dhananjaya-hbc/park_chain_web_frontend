@@ -11,10 +11,12 @@ import { useSessionStore } from '@/lib/stores/sessionStore';
 import apiService from '@/lib/api/apiService';
 import { API_ENDPOINTS } from '@/lib/api/endpoints';
 import Link from 'next/link';
+import { xumm } from '@/lib/web3/xaman';
 
 export default function LoginPage() {
   const [error, setError] = useState<string>('');
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isXamanLoading, setIsXamanLoading] = useState(false);
   const hasRegistered = useRef(false);
   const { setSelectedRole } = useWeb3Auth();
   const { setRole } = useSessionStore();
@@ -45,6 +47,69 @@ export default function LoginPage() {
       return () => clearTimeout(timer);
     }
   }, [connectError]);
+
+  // Xaman listener
+  useEffect(() => {
+    if (!xumm) return;
+
+    const handleSuccess = async () => {
+      try {
+        const account = await xumm?.user?.account;
+        if (account && !hasRegistered.current) {
+          hasRegistered.current = true;
+          registerXamanWithBackend(account);
+        }
+      } catch (e) {
+        console.error("Xaman success error", e);
+      }
+    };
+
+    xumm.on("success", handleSuccess);
+    xumm.on("retrieved", handleSuccess);
+
+  }, []);
+
+  const registerXamanWithBackend = async (account: string) => {
+    setIsRegistering(true);
+    setIsXamanLoading(true);
+    setError('');
+
+    try {
+      console.log('📝 Registering seller with Xaman:', { account });
+
+      const response = await apiService.post(API_ENDPOINTS.WEB3AUTH_LOGIN, {
+        email: `${account.substring(0, 8)}@xaman.seller`,
+        name: 'Seller (Xaman)',
+        wallet_address: account,
+        web3auth_sub: `xaman|${account}`,
+        profile_image: '',
+        role: 'seller',
+      });
+
+      console.log('✅ Backend registration successful for Xaman');
+
+      const token = response.token;
+      if (token) {
+        apiService.setToken(token);
+      }
+
+      const role: UserRole = 'seller';
+      setRole(role);
+      setSelectedRole(role);
+
+      const dashboardUrl = getRoleDashboard(role);
+      router.push(dashboardUrl);
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Registration failed';
+      console.error('❌ Backend registration failed:', errorMessage);
+      setError(errorMessage);
+      hasRegistered.current = false;
+    } finally {
+      setIsRegistering(false);
+      setIsXamanLoading(false);
+    }
+  };
 
   // ★ Register/login with backend ★
   const registerWithBackend = async () => {
@@ -142,7 +207,31 @@ export default function LoginPage() {
     }
   };
 
-  const isLoading = connectLoading || isRegistering;
+  const handleXamanLogin = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!xumm) {
+      setError('Xaman is not initialized yet.');
+      return;
+    }
+    try {
+      setError('');
+      setIsXamanLoading(true);
+      hasRegistered.current = false;
+      
+      console.log('Clearing old session if any...');
+      await xumm.logout(); 
+
+      console.log('Initiating Xaman OAuth2 flow...');
+      // Using the OAuth2 PKCE flow
+      await xumm.authorize();
+    } catch (err) {
+      console.error('Xaman login failed:', err);
+      setError('Failed to connect with Xaman. Please try again.');
+      setIsXamanLoading(false);
+    }
+  };
+
+  const isLoading = connectLoading || isRegistering || isXamanLoading;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#41ab5d] via-[#52b86d] to-[#41ab5d]">
@@ -177,24 +266,47 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Login Button */}
-            <button
-              onClick={handleLogin}
-              disabled={isLoading}
-              className="w-full py-4 px-6 bg-[#41ab5d] text-white rounded-xl font-semibold hover:bg-[#368a4d] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                  </svg>
-                  {isRegistering ? 'Setting up account...' : 'Opening secure login...'}
-                </span>
-              ) : (
-                'Connect with Web3Auth'
-              )}
-            </button>
+            <div className="space-y-3">
+              {/* Login Button */}
+              <button
+                type="button"
+                onClick={handleLogin}
+                disabled={isLoading}
+                className="w-full py-4 px-6 bg-[#41ab5d] text-white rounded-xl font-semibold hover:bg-[#368a4d] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              >
+                {isLoading && !isXamanLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                    </svg>
+                    {isRegistering ? 'Setting up account...' : 'Opening secure login...'}
+                  </span>
+                ) : (
+                  'Connect with Web3Auth'
+                )}
+              </button>
+
+              {/* Xaman Login Button */}
+              <button
+                type="button"
+                onClick={handleXamanLogin}
+                disabled={isLoading}
+                className="w-full py-4 px-6 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              >
+                {isXamanLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                    </svg>
+                    {isRegistering ? 'Setting up account...' : 'Opening Xaman...'}
+                  </span>
+                ) : (
+                  'Connect Xaman'
+                )}
+              </button>
+            </div>
 
             {/* Admin Login Link */}
             <div className="text-center pt-2">
