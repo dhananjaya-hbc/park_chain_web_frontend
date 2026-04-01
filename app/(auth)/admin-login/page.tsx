@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useWeb3Auth } from '@/lib/web3/Web3AuthProvider';
 import { UserRole } from '@/types';
 import { getRoleDashboard } from '@/lib/utils/roleUtils';
 import { useSessionStore } from '@/lib/stores/sessionStore';
@@ -15,7 +14,6 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { setSelectedRole } = useWeb3Auth();
   const { setRole } = useSessionStore();
   const router = useRouter();
 
@@ -28,7 +26,6 @@ export default function AdminLoginPage() {
 
       console.log('🔐 Admin login attempt:', email);
 
-      // ★ Call backend API instead of hardcoded credentials ★
       const response = await apiService.post(API_ENDPOINTS.ADMIN_LOGIN, {
         email,
         password,
@@ -51,7 +48,9 @@ export default function AdminLoginPage() {
       // Set role and redirect
       const role: UserRole = 'admin';
       setRole(role);
-      setSelectedRole(role);
+
+      // Also set cookie for middleware
+      document.cookie = `park_chain_role=${role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
 
       const dashboardUrl = getRoleDashboard(role);
       console.log('🚀 Redirecting to:', dashboardUrl);
@@ -85,7 +84,6 @@ export default function AdminLoginPage() {
         {/* Login Form */}
         <form onSubmit={handleLogin} className="bg-white/90 backdrop-blur-lg rounded-2xl p-8 border border-[#2d5f42]/20 shadow-xl">
           <div className="space-y-6">
-            {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-[#1a4d2e] mb-2">
                 Email Address
@@ -101,7 +99,6 @@ export default function AdminLoginPage() {
               />
             </div>
 
-            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-[#1a4d2e] mb-2">
                 Password
@@ -117,14 +114,12 @@ export default function AdminLoginPage() {
               />
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                 <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
 
-            {/* Login Button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -143,14 +138,10 @@ export default function AdminLoginPage() {
               )}
             </button>
 
-            {/* Back to Seller Login */}
             <div className="text-center pt-4 border-t border-[#2d5f42]/20">
               <p className="text-[#2d5f42] text-sm">
                 Are you a seller?{' '}
-                <Link
-                  href="/login"
-                  className="text-[#1a4d2e] font-medium hover:underline"
-                >
+                <Link href="/login" className="text-[#1a4d2e] font-medium hover:underline">
                   Sign in here
                 </Link>
               </p>
@@ -158,7 +149,6 @@ export default function AdminLoginPage() {
           </div>
         </form>
 
-        {/* Additional Info */}
         <div className="text-center">
           <p className="text-[#2d5f42] text-xs">
             Admin access only • Authorized personnel

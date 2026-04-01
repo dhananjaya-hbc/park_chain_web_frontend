@@ -2,7 +2,7 @@
 
 export const API_ENDPOINTS = {
   // Auth
-  WEB3AUTH_LOGIN: '/auth/web3auth',
+  XAMAN_LOGIN: '/auth/xaman',        // ← replaces WEB3AUTH_LOGIN
   ADMIN_LOGIN: '/auth/admin/login',
   AUTH_ME: '/auth/me',
 
@@ -14,11 +14,9 @@ export const API_ENDPOINTS = {
   BOOKINGS: '/bookings',
 
   // Payments
-  GENERATE_WALLET: '/payments/generate-wallet',
   BALANCE: '/payments/balance',
-  PROCESS_PAYMENT: '/payments/process',
   TRANSACTIONS: '/payments/transactions',
-  SELLER_TRANSACTIONS: '/payments/seller/transactions', 
+  SELLER_TRANSACTIONS: '/payments/seller/transactions',
   ADMIN_BALANCE: '/payments/admin/balance',
   VERIFY_TX: '/payments/verify',
 };

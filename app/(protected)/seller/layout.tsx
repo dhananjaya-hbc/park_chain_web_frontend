@@ -6,9 +6,7 @@ import { useRole } from '@/hooks/useRole';
 import ProtectedRoute from '@/components/custom/ProtectedRoute';
 import SellerSidebar from '@/components/layout/Sidebar/SellerSidebar'; 
 import SellerNavbar from '@/components/layout/Navbar/SellerNavbar'; 
-
-// 1. IMPORT WEB3AUTH DISCONNECT
-import { useWeb3AuthDisconnect } from "@web3auth/modal/react"; 
+import { xumm } from '@/lib/web3/xaman';
 
 function SellerLayoutContent({
   children,
@@ -19,26 +17,23 @@ function SellerLayoutContent({
   const router = useRouter();
   const pathname = usePathname();
   
-  // 2. INITIALIZE DISCONNECT HOOK
-  const { disconnect } = useWeb3AuthDisconnect();
-  
   // Sidebar States
   const[isOpen, setIsOpen] = useState(false);
   const [disconnectLoading, setDisconnectLoading] = useState(false);
 
-  // 3. UPDATE LOGOUT TO CLEAR WEB3 SESSION
+  // LOGOUT
   const handleLogout = async () => {
     setDisconnectLoading(true);
     
     try {
-      // Disconnect the active Web3Auth session first
-      if (disconnect) {
-        await disconnect();
+      // Disconnect the active Xaman session first
+      if (xumm) {
+        await xumm.logout();
       }
     } catch (error) {
-      console.error("Failed to disconnect Web3Auth:", error);
+      console.error("Failed to logout of Xaman:", error);
     } finally {
-      // Always clear local roles and redirect, even if Web3Auth throws a minor error
+      // Always clear local roles and redirect
       clearRole();
       router.push('/login');
     }
@@ -66,7 +61,6 @@ function SellerLayoutContent({
   return (
     <div className="flex min-h-screen bg-[#f8f9fa]">
       
-      {/* INJECT THE NEW SELLER SIDEBAR */}
       <SellerSidebar 
         isOpen={isOpen}
         setIsOpen={setIsOpen}

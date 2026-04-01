@@ -2,15 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useWeb3AuthDisconnect } from "@web3auth/modal/react";
 import { useRole } from '@/hooks/useRole';
 import ProtectedRoute from '@/components/custom/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar/AdminSidebar';
 import Navbar from '@/components/layout/Navbar/AdminNavbar';
+import { xumm } from '@/lib/web3/xaman';
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const { disconnect, loading: disconnectLoading } = useWeb3AuthDisconnect();
+  const [disconnectLoading, setDisconnectLoading] = useState(false);
   const { clearRole, isLoading } = useRole();
   const router = useRouter();
   const pathname = usePathname();
@@ -20,43 +20,40 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   });
 
   const handleLogout = async () => {
+    setDisconnectLoading(true);
     try {
-      await disconnect();
-      clearRole();
-      router.push('/login');
+      if (xumm) {
+        await xumm.logout();
+      }
     } catch (error) {
       console.error('Logout failed:', error);
+    } finally {
+      clearRole();
+      router.push('/login');
     }
   };
 
-  // Replace this section in your layout.tsx:
+  let currentPageStr = "dashboard";
+  let pageTitle = "Dashboard";
 
-// OLD:
-// let currentPageStr = "dashboard";
-// let pageTitle = "Dashboard";
-// if (pathname.includes('/seller-verification')) ...
+  const pageMap: Record<string, { id: string; title: string }> = {
+    '/admin/seller-verification': { id: 'verification', title: 'Seller Verification Requests' },
+    '/admin/bookings': { id: 'bookings', title: 'All Bookings' },
+    '/admin/transactions': { id: 'transactions', title: 'Transactions' },
+    '/admin/users': { id: 'users', title: 'Users' },
+    '/admin/feedback': { id: 'feedback', title: 'Feedback' },
+    '/admin/settings': { id: 'settings', title: 'Settings' },
+    '/admin/dashboard': { id: 'dashboard', title: 'Dashboard' },
+  };
 
-// NEW - More robust matching (check specific paths first):
-let currentPageStr = "dashboard";
-let pageTitle = "Dashboard";
-
-const pageMap: Record<string, { id: string; title: string }> = {
-  '/admin/seller-verification': { id: 'verification', title: 'Seller Verification Requests' },
-  '/admin/bookings': { id: 'bookings', title: 'All Bookings' },
-  '/admin/transactions': { id: 'transactions', title: 'Transactions' },
-  '/admin/users': { id: 'users', title: 'Users' },
-  '/admin/feedback': { id: 'feedback', title: 'Feedback' },
-  '/admin/settings': { id: 'settings', title: 'Settings' },
-  '/admin/dashboard': { id: 'dashboard', title: 'Dashboard' },
-};
-
-for (const [path, config] of Object.entries(pageMap)) {
-  if (pathname.includes(path)) {
-    currentPageStr = config.id;
-    pageTitle = config.title;
-    break;
+  for (const [path, config] of Object.entries(pageMap)) {
+    if (pathname.includes(path)) {
+      currentPageStr = config.id;
+      pageTitle = config.title;
+      break;
+    }
   }
-}
+  
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa]">
@@ -110,4 +107,3 @@ export default function AdminLayout({
     </ProtectedRoute>
   )
 }
-
