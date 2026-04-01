@@ -2,53 +2,64 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useWeb3Auth } from '@/lib/web3/Web3AuthProvider';
 import { UserRole } from '@/types';
 import { getRoleDashboard } from '@/lib/utils/roleUtils';
 import { useSessionStore } from '@/lib/stores/sessionStore';
+import apiService from '@/lib/api/apiService';
+import { API_ENDPOINTS } from '@/lib/api/endpoints';
 import Link from 'next/link';
-
-// Hardcoded admin credentials
-const ADMIN_EMAIL = "admin@parkchain.com";
-const ADMIN_PASSWORD = "admin123";
-const ADMIN_WALLET = "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH"; // Admin's XRPL wallet
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { setSelectedRole } = useWeb3Auth();
   const { setRole } = useSessionStore();
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setIsLoading(true);
       setError('');
 
-      // Validate admin credentials
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        const role: UserRole = 'admin';
-        
-        // Save role to session store
-        setRole(role);
-        localStorage.setItem('admin_wallet', ADMIN_WALLET);
-        
-        // Update context
-        setSelectedRole(role);
-        
-        // Redirect to admin dashboard
-        const dashboardUrl = getRoleDashboard(role);
-        router.push(dashboardUrl);
-      } else {
-        setError('Invalid email or password');
+      console.log('🔐 Admin login attempt:', email);
+
+      const response = await apiService.post(API_ENDPOINTS.ADMIN_LOGIN, {
+        email,
+        password,
+      });
+
+      console.log('✅ Admin login successful');
+
+      // Store JWT token
+      const token = response.token;
+      if (token) {
+        apiService.setToken(token);
+        console.log('🔐 Admin token stored');
       }
-    } catch (err) {
-      console.error('Login failed:', err);
-      setError('Login failed. Please try again.');
+
+      // Store admin wallet if available
+      if (response.user?.wallet_address) {
+        localStorage.setItem('admin_wallet', response.user.wallet_address);
+      }
+
+      // Set role and redirect
+      const role: UserRole = 'admin';
+      setRole(role);
+
+      // Also set cookie for middleware
+      document.cookie = `park_chain_role=${role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+
+      const dashboardUrl = getRoleDashboard(role);
+      console.log('🚀 Redirecting to:', dashboardUrl);
+      router.push(dashboardUrl);
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      console.error('❌ Admin login failed:', errorMessage);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +84,6 @@ export default function AdminLoginPage() {
         {/* Login Form */}
         <form onSubmit={handleLogin} className="bg-white/90 backdrop-blur-lg rounded-2xl p-8 border border-[#2d5f42]/20 shadow-xl">
           <div className="space-y-6">
-            {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-[#1a4d2e] mb-2">
                 Email Address
@@ -89,7 +99,6 @@ export default function AdminLoginPage() {
               />
             </div>
 
-            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-[#1a4d2e] mb-2">
                 Password
@@ -105,14 +114,12 @@ export default function AdminLoginPage() {
               />
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                 <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
 
-            {/* Login Button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -131,14 +138,10 @@ export default function AdminLoginPage() {
               )}
             </button>
 
-            {/* Back to Seller Login */}
             <div className="text-center pt-4 border-t border-[#2d5f42]/20">
               <p className="text-[#2d5f42] text-sm">
                 Are you a seller?{' '}
-                <Link 
-                  href="/login" 
-                  className="text-[#1a4d2e] font-medium hover:underline">
-                
+                <Link href="/login" className="text-[#1a4d2e] font-medium hover:underline">
                   Sign in here
                 </Link>
               </p>
@@ -146,7 +149,6 @@ export default function AdminLoginPage() {
           </div>
         </form>
 
-        {/* Additional Info */}
         <div className="text-center">
           <p className="text-[#2d5f42] text-xs">
             Admin access only • Authorized personnel

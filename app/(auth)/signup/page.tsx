@@ -1,35 +1,87 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useWeb3Auth } from '@/lib/web3/Web3AuthProvider';
-import { useWeb3AuthConnect } from "@web3auth/modal/react";
+import { useSessionStore } from '@/lib/stores/sessionStore';
 import { UserRole } from '@/types';
+import { getRoleDashboard } from '@/lib/utils/roleUtils';
+import apiService from '@/lib/api/apiService';
+import { API_ENDPOINTS } from '@/lib/api/endpoints';
 import Link from 'next/link';
+import { xumm } from '@/lib/web3/xaman';
 
 export default function SignupPage() {
   const [error, setError] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const { setSelectedRole: setContextRole } = useWeb3Auth();
-  const { connect, isConnected, loading: connectLoading, error: connectError } = useWeb3AuthConnect();
+  const hasRegistered = useRef(false);
+  const { setRole } = useSessionStore();
   const router = useRouter();
 
+  // Xaman listener
   useEffect(() => {
-    if (isConnected) {
-      // Save role to cookies and localStorage (always seller for signup)
-      localStorage.setItem('park_chain_role', 'seller');
-      document.cookie = `park_chain_role=seller; path=/; max-age=86400; SameSite=Lax`;
-      
-      // Redirect to seller dashboard
-      router.push('/seller/dashboard');
-    }
-  }, [isConnected, router]);
+    if (!xumm) return;
 
-  useEffect(() => {
-    if (connectError) {
-      setError('Failed to create account. Please try again.');
+    const handleSuccess = async () => {
+      try {
+        const account = await xumm?.user?.account;
+        if (account && !hasRegistered.current) {
+          hasRegistered.current = true;
+          await registerWithBackend(account);
+        }
+      } catch (e) {
+        console.error("Xaman success error:", e);
+        setError('Failed to get wallet address from Xaman.');
+        setIsLoading(false);
+      }
+    };
+
+    xumm.on("success", handleSuccess);
+    xumm.on("retrieved", handleSuccess);
+
+    return () => {
+      if (xumm) {
+        xumm.off("success", handleSuccess);
+        xumm.off("retrieved", handleSuccess);
+      }
+    };
+  }, []);
+
+  const registerWithBackend = async (walletAddress: string) => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      console.log('📝 Registering new seller with Xaman:', walletAddress);
+
+      const response = await apiService.post(API_ENDPOINTS.XAMAN_LOGIN, {
+        wallet_address: walletAddress,
+        role: 'seller',
+      });
+
+      console.log('✅ Registration successful');
+
+      const token = response.token;
+      if (token) {
+        apiService.setToken(token);
+      }
+
+      const role: UserRole = 'seller';
+      setRole(role);
+      document.cookie = `park_chain_role=${role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+
+      const dashboardUrl = getRoleDashboard(role);
+      router.push(dashboardUrl);
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Registration failed';
+      console.error('❌ Registration failed:', errorMessage);
+      setError(errorMessage);
+      hasRegistered.current = false;
+    } finally {
+      setIsLoading(false);
     }
-  }, [connectError]);
+  };
 
   const handleSignup = async () => {
     if (!acceptTerms) {
@@ -37,13 +89,24 @@ export default function SignupPage() {
       return;
     }
 
+    if (!xumm) {
+      setError('Xaman SDK is not initialized yet. Please refresh.');
+      return;
+    }
+
     try {
       setError('');
-      setContextRole('seller');
-      await connect();
+      setIsLoading(true);
+      hasRegistered.current = false;
+
+      await xumm.logout();
+
+      console.log('🔗 Initiating Xaman signup...');
+      await xumm.authorize();
     } catch (err) {
-      console.error('Signup failed:', err);
-      setError('Failed to create account. Please try again.');
+      console.error('Xaman signup failed:', err);
+      setError('Failed to connect with Xaman. Please try again.');
+      setIsLoading(false);
     }
   };
 
@@ -60,20 +123,21 @@ export default function SignupPage() {
             </div>
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">Join Park Chain</h1>
-          <p className="text-[#2d5f42] text-sm">Create your account to get started</p>
+          <p className="text-[#2d5f42] text-sm">Create your seller account</p>
         </div>
 
         {/* Signup Card */}
         <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-8 border border-[#2d5f42]/20 shadow-xl">
           <div className="space-y-6">
-            {/* Seller Info */}
+            {/* Info */}
             <div className="p-4 rounded-lg bg-[#2c5f9e]/10 border border-[#2c5f9e]/30">
               <p className="text-[#1a4d7e] text-sm">
-                <span className="font-semibold">Note:</span> You&apos;re creating a Seller account. You&apos;ll need to complete KYC verification with documents before listing parking slots.
+                <span className="font-semibold">Note:</span> You&apos;ll need the Xaman wallet app installed.
+                Your XRPL wallet address will be your identity on Park Chain.
               </p>
             </div>
 
-            {/* Terms and Conditions */}
+            {/* Terms */}
             <div className="flex items-start gap-3">
               <input
                 type="checkbox"
@@ -94,7 +158,6 @@ export default function SignupPage() {
               </label>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                 <p className="text-red-400 text-sm">{error}</p>
@@ -104,10 +167,10 @@ export default function SignupPage() {
             {/* Signup Button */}
             <button
               onClick={handleSignup}
-              disabled={connectLoading || !acceptTerms}
+              disabled={isLoading || !acceptTerms}
               className="w-full py-4 px-6 bg-[#41ab5d] text-white rounded-xl font-semibold hover:bg-[#368a4d] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
-              {connectLoading ? (
+              {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
@@ -116,7 +179,7 @@ export default function SignupPage() {
                   Creating Account...
                 </span>
               ) : (
-                'Sign Up with Web3Auth'
+                'Sign Up with Xaman Wallet'
               )}
             </button>
 
@@ -124,10 +187,7 @@ export default function SignupPage() {
             <div className="text-center pt-4 border-t border-[#2d5f42]/20">
               <p className="text-[#2d5f42] text-sm">
                 Already have an account?{' '}
-                <Link 
-                  href="/login" 
-                  className="text-[#1a4d2e] font-medium hover:underline">
-                
+                <Link href="/login" className="text-[#1a4d2e] font-medium hover:underline">
                   Sign in
                 </Link>
               </p>
@@ -135,10 +195,9 @@ export default function SignupPage() {
           </div>
         </div>
 
-        {/* Additional Info */}
         <div className="text-center">
           <p className="text-[#2d5f42] text-xs">
-            Secured with Web3Auth • XRPL Blockchain
+            Secured with Xaman Wallet • XRPL Blockchain
           </p>
         </div>
       </div>

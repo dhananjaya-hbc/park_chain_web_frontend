@@ -2,40 +2,62 @@
 
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useWeb3AuthDisconnect } from "@web3auth/modal/react";
 import { useRole } from '@/hooks/useRole';
 import ProtectedRoute from '@/components/custom/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar/AdminSidebar';
 import Navbar from '@/components/layout/Navbar/AdminNavbar';
+import apiService from '@/lib/api/apiService';
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const { disconnect, loading: disconnectLoading } = useWeb3AuthDisconnect();
+  const [disconnectLoading, setDisconnectLoading] = useState(false);
   const { clearRole, isLoading } = useRole();
   const router = useRouter();
   const pathname = usePathname();
 
-  const [adminWallet, setAdminWallet] = useState<string>(() => {
+  const [adminWallet] = useState<string>(() => {
     return typeof window !== 'undefined' ? localStorage.getItem('admin_wallet') || '' : '';
   });
 
   const handleLogout = async () => {
+    setDisconnectLoading(true);
     try {
-      await disconnect();
+      // Clear JWT token
+      apiService.clearToken();
+      // Clear admin wallet from localStorage
+      localStorage.removeItem('admin_wallet');
+      // Clear role cookie
+      document.cookie = 'park_chain_role=; path=/; max-age=0';
+      // Clear session store
       clearRole();
       router.push('/login');
     } catch (error) {
       console.error('Logout failed:', error);
+    } finally {
+      setDisconnectLoading(false);
     }
   };
 
   let currentPageStr = "dashboard";
   let pageTitle = "Dashboard";
 
-  if (pathname.includes('/seller-verification')) { currentPageStr = "verification"; pageTitle = "Seller Verification Requests"; }
-  else if (pathname.includes('/users')) { currentPageStr = "users"; pageTitle = "Users"; }
-  else if (pathname.includes('/feedback')) { currentPageStr = "feedback"; pageTitle = "Feedback"; }
-  else if (pathname.includes('/settings')) { currentPageStr = "settings"; pageTitle = "Settings"; }
+  const pageMap: Record<string, { id: string; title: string }> = {
+    '/admin/seller-verification': { id: 'verification', title: 'Seller Verification Requests' },
+    '/admin/bookings': { id: 'bookings', title: 'All Bookings' },
+    '/admin/transactions': { id: 'transactions', title: 'Transactions' },
+    '/admin/users': { id: 'users', title: 'Users' },
+    '/admin/feedback': { id: 'feedback', title: 'Feedback' },
+    '/admin/settings': { id: 'settings', title: 'Settings' },
+    '/admin/dashboard': { id: 'dashboard', title: 'Dashboard' },
+  };
+
+  for (const [path, config] of Object.entries(pageMap)) {
+    if (pathname.includes(path)) {
+      currentPageStr = config.id;
+      pageTitle = config.title;
+      break;
+    }
+  }
 
   if (isLoading) {
     return (
@@ -48,22 +70,22 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className="flex min-h-screen h-screen overflow-y-hidden bg-gray-100">
-        <Sidebar 
-          isOpen={isOpen} 
-          setIsOpen={setIsOpen} 
-          handleLogout={handleLogout} 
-          disconnectLoading={disconnectLoading} 
-          currentPage={currentPageStr} 
+        <Sidebar
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          handleLogout={handleLogout}
+          disconnectLoading={disconnectLoading}
+          currentPage={currentPageStr}
         />
-        
+
         <div className="flex-1 bg-gray-100 h-screen min-h-screen overflow-y-scroll">
-          <Navbar 
-            setIsOpen={setIsOpen} 
-            handleLogout={handleLogout} 
-            disconnectLoading={disconnectLoading} 
-            adminWallet={adminWallet} 
-            title={pageTitle} 
-            showSearch={true} 
+          <Navbar
+            setIsOpen={setIsOpen}
+            handleLogout={handleLogout}
+            disconnectLoading={disconnectLoading}
+            adminWallet={adminWallet}
+            title={pageTitle}
+            showSearch={true}
           />
 
           <div className="main-content px-6 pt-5 pb-6 bg-gray-100">
@@ -82,12 +104,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 export default function AdminLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <ProtectedRoute allowedRoles={['admin']}>
       <AdminLayoutContent>{children}</AdminLayoutContent>
     </ProtectedRoute>
-  )
+  );
 }
-

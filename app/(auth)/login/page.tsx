@@ -1,56 +1,118 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useWeb3Auth } from '@/lib/web3/Web3AuthProvider';
-import { useWeb3AuthConnect } from "@web3auth/modal/react";
+import { useSessionStore } from '@/lib/stores/sessionStore';
 import { UserRole } from '@/types';
 import { getRoleDashboard } from '@/lib/utils/roleUtils';
-import { useSessionStore } from '@/lib/stores/sessionStore';
+import apiService from '@/lib/api/apiService';
+import { API_ENDPOINTS } from '@/lib/api/endpoints';
 import Link from 'next/link';
+import { xumm } from '@/lib/web3/xaman';
 
 export default function LoginPage() {
   const [error, setError] = useState<string>('');
-  const { setSelectedRole } = useWeb3Auth();
+  const [isLoading, setIsLoading] = useState(false);
+  const hasRegistered = useRef(false);
   const { setRole } = useSessionStore();
-  const { connect, isConnected, loading: connectLoading, error: connectError } = useWeb3AuthConnect();
   const router = useRouter();
 
+  // Xaman listener — fires when user approves sign-in
   useEffect(() => {
-    if (isConnected) {
+    if (!xumm) return;
+
+    const handleSuccess = async () => {
+      try {
+        const account = await xumm?.user?.account;
+        if (account && !hasRegistered.current) {
+          hasRegistered.current = true;
+          await registerWithBackend(account);
+        }
+      } catch (e) {
+        console.error("Xaman success error:", e);
+        setError('Failed to get wallet address from Xaman.');
+        setIsLoading(false);
+      }
+    };
+
+    xumm.on("success", handleSuccess);
+    xumm.on("retrieved", handleSuccess);
+
+    return () => {
+      // Cleanup listeners on unmount
+      if (xumm) {
+        xumm.off("success", handleSuccess);
+        xumm.off("retrieved", handleSuccess);
+      }
+    };
+  }, []);
+
+  // Register/login with our backend using the Xaman wallet address
+  const registerWithBackend = async (walletAddress: string) => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      console.log('📝 Registering seller with Xaman wallet:', walletAddress);
+
+      // Call backend — creates user if new, returns existing if found
+      const response = await apiService.post(API_ENDPOINTS.XAMAN_LOGIN, {
+        wallet_address: walletAddress,
+        role: 'seller',
+      });
+
+      console.log('✅ Backend authentication successful');
+
+      // Store JWT token
+      const token = response.token;
+      if (token) {
+        apiService.setToken(token);
+        console.log('🔐 Token stored');
+      }
+
+      // Set role and redirect
       const role: UserRole = 'seller';
-      
-      // Save role to session store
       setRole(role);
-      
-      // Update context
-      setSelectedRole(role);
-      
-      // Redirect to appropriate dashboard
+
+      // Also set cookie for middleware
+      document.cookie = `park_chain_role=${role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+
       const dashboardUrl = getRoleDashboard(role);
+      console.log('🚀 Redirecting to:', dashboardUrl);
       router.push(dashboardUrl);
-    }
-  }, [isConnected, router, setSelectedRole, setRole]);
 
-  useEffect(() => {
-    if (connectError) {
-      // Use setTimeout to avoid synchronous setState in effect
-      const timer = setTimeout(() => {
-        setError('Failed to connect. Please try again.');
-      }, 0);
-      return () => clearTimeout(timer);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Registration failed';
+      console.error('❌ Backend registration failed:', errorMessage);
+      setError(errorMessage);
+      hasRegistered.current = false;
+    } finally {
+      setIsLoading(false);
     }
-  }, [connectError]);
+  };
 
-  const handleLogin = async () => {
+  const handleXamanLogin = async (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    if (!xumm) {
+      setError('Xaman SDK is not initialized yet. Please refresh.');
+      return;
+    }
+
     try {
       setError('');
-      const role: UserRole = 'seller';
-      setSelectedRole(role);
-      await connect();
+      setIsLoading(true);
+      hasRegistered.current = false;
+
+      // Clear old session
+      await xumm.logout();
+
+      console.log('🔗 Initiating Xaman login...');
+      await xumm.authorize();
     } catch (err) {
-      console.error('Login failed:', err);
-      setError('Failed to connect. Please try again.');
+      console.error('Xaman login failed:', err);
+      setError('Failed to connect with Xaman. Please try again.');
+      setIsLoading(false);
     }
   };
 
@@ -80,29 +142,39 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Login Button */}
-            <button
-              onClick={handleLogin}
-              disabled={connectLoading}
-              className="w-full py-4 px-6 bg-[#41ab5d] text-white rounded-xl font-semibold hover:bg-[#368a4d] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-              {connectLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                  </svg>
-                  Opening secure login...
-                </span>
-              ) : (
-                'Connect with Web3Auth'
-              )}
-            </button>
+            {/* Loading Status */}
+            {isLoading && (
+              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                <p className="text-green-600 text-sm">Connecting your wallet...</p>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {/* Xaman Login Button */}
+              <button
+                type="button"
+                onClick={handleXamanLogin}
+                disabled={isLoading}
+                className="w-full py-4 px-6 bg-[#41ab5d] text-white rounded-xl font-semibold hover:bg-[#368a4d] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                    </svg>
+                    Setting up account...
+                  </span>
+                ) : (
+                  'Connect with Xaman Wallet'
+                )}
+              </button>
+            </div>
 
             {/* Admin Login Link */}
             <div className="text-center pt-2">
-              <Link 
-                href="/admin-login" 
+              <Link
+                href="/admin-login"
                 className="text-[#2d5f42] text-sm hover:text-[#1a4d2e] transition-colors font-medium"
               >
                 Login as Admin →
@@ -113,8 +185,8 @@ export default function LoginPage() {
             <div className="text-center pt-4 border-t border-[#2d5f42]/20">
               <p className="text-[#2d5f42] text-sm">
                 Don&apos;t have an account?{' '}
-                <Link 
-                  href="/signup" 
+                <Link
+                  href="/signup"
                   className="text-[#1a4d2e] font-medium hover:underline"
                 >
                   Sign up
@@ -124,10 +196,10 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Additional Info */}
+        {/* Footer */}
         <div className="text-center">
           <p className="text-[#2d5f42] text-xs">
-            Secured with Web3Auth • XRPL Blockchain
+            Secured with Xaman Wallet • XRPL Blockchain
           </p>
         </div>
       </div>

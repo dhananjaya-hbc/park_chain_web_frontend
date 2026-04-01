@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Unbounded, Sora } from "next/font/google";
 import "./globals.css";
-import { Web3AuthProvider } from "@/lib/web3/Web3AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,14 +35,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+        <link
+          href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css"
+          rel="stylesheet"
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${unbounded.variable} ${sora.variable} antialiased`}
       >
-        <Web3AuthProvider>
-          {children}
-        </Web3AuthProvider>
+        {children}
       </body>
     </html>
   );
