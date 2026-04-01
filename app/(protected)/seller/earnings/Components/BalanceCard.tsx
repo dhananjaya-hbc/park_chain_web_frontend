@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Copy, Check, RefreshCw } from "lucide-react";
 import apiService from "@/lib/api/apiService";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { xumm } from "@/lib/web3/xaman";
 
 export default function BalanceCard() {
   const [addressCopied, setAddressCopied] = useState(false);
@@ -13,12 +14,38 @@ export default function BalanceCard() {
   const [hasWallet, setHasWallet] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isXamanUser, setIsXamanUser] = useState(false);
 
   const fetchBalance = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
+      let xamanAccount = null;
+      if (xumm) {
+        xamanAccount = await xumm.user?.account;
+      }
+
+      if (xamanAccount) {
+        setIsXamanUser(true);
+        setWalletAddress(xamanAccount);
+        setHasWallet(true);
+
+        try {
+          const response = await apiService.get(API_ENDPOINTS.BALANCE);
+          if (response.balanceXrp) {
+            setBalance(parseFloat(response.balanceXrp || "0").toFixed(2));
+          }
+          if (response.walletAddress) {
+            setWalletAddress(response.walletAddress);
+          }
+        } catch (backendErr) {
+          console.error("Backend couldn't fetch balance for Xaman, using 0.00");
+        }
+        setIsLoading(false);
+        return;
+      }
+
       const response = await apiService.get(API_ENDPOINTS.BALANCE);
       setWalletAddress(response.walletAddress || "");
       setBalance(parseFloat(response.balanceXrp || "0").toFixed(2));
