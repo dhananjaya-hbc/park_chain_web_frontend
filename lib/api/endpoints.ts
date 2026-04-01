@@ -19,4 +19,5 @@ export const API_ENDPOINTS = {
   SELLER_TRANSACTIONS: '/payments/seller/transactions',
   ADMIN_BALANCE: '/payments/admin/balance',
   VERIFY_TX: '/payments/verify',
+  GENERATE_WALLET: '/payments/generate-wallet'
 };
