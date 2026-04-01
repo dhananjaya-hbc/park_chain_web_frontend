@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useRole } from '@/hooks/useRole';
 import ProtectedRoute from '@/components/custom/ProtectedRoute';
-import SellerSidebar from '@/components/layout/Sidebar/SellerSidebar'; 
-import SellerNavbar from '@/components/layout/Navbar/SellerNavbar'; 
+import SellerSidebar from '@/components/layout/Sidebar/SellerSidebar';
+import SellerNavbar from '@/components/layout/Navbar/SellerNavbar';
+import apiService from '@/lib/api/apiService';
 import { xumm } from '@/lib/web3/xaman';
 
 function SellerLayoutContent({
@@ -16,30 +17,34 @@ function SellerLayoutContent({
   const { clearRole, isLoading } = useRole();
   const router = useRouter();
   const pathname = usePathname();
-  
-  // Sidebar States
-  const[isOpen, setIsOpen] = useState(false);
+
+  const [isOpen, setIsOpen] = useState(false);
   const [disconnectLoading, setDisconnectLoading] = useState(false);
 
-  // LOGOUT
   const handleLogout = async () => {
     setDisconnectLoading(true);
-    
     try {
-      // Disconnect the active Xaman session first
+      // Logout from Xaman SDK
       if (xumm) {
         await xumm.logout();
       }
-    } catch (error) {
-      console.error("Failed to logout of Xaman:", error);
-    } finally {
-      // Always clear local roles and redirect
+      // Clear JWT token
+      apiService.clearToken();
+      // Clear role cookie
+      document.cookie = 'park_chain_role=; path=/; max-age=0';
+      // Clear session store
       clearRole();
       router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Always redirect even if Xaman logout fails
+      clearRole();
+      router.push('/login');
+    } finally {
+      setDisconnectLoading(false);
     }
   };
 
-  // Determine which menu item is active based on the URL
   let currentPageStr = "dashboard";
   let pageTitle = "Dashboard";
 
@@ -49,7 +54,7 @@ function SellerLayoutContent({
   else if (pathname.includes('/earnings')) { currentPageStr = "earnings"; pageTitle = "Earnings"; }
   else if (pathname.includes('/reviews')) { currentPageStr = "reviews"; pageTitle = "Reviews"; }
   else if (pathname.includes('/addnew')) { currentPageStr = "add-new"; pageTitle = "Add New Spot"; }
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa]">
@@ -60,8 +65,7 @@ function SellerLayoutContent({
 
   return (
     <div className="flex min-h-screen bg-[#f8f9fa]">
-      
-      <SellerSidebar 
+      <SellerSidebar
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         handleLogout={handleLogout}
@@ -69,19 +73,17 @@ function SellerLayoutContent({
         currentPage={currentPageStr}
       />
 
-      {/* Main Content Area */}
       <div className="flex-1 bg-[#f8f9fa] h-screen min-h-screen overflow-y-scroll">
-        <SellerNavbar 
-            setIsOpen={setIsOpen} 
-            handleLogout={handleLogout} 
-            disconnectLoading={disconnectLoading}
-            title={pageTitle}
+        <SellerNavbar
+          setIsOpen={setIsOpen}
+          handleLogout={handleLogout}
+          disconnectLoading={disconnectLoading}
+          title={pageTitle}
         />
         <main className="p-8">
           {children}
         </main>
       </div>
-      
     </div>
   );
 }

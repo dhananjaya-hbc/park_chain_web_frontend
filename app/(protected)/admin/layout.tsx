@@ -6,7 +6,7 @@ import { useRole } from '@/hooks/useRole';
 import ProtectedRoute from '@/components/custom/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar/AdminSidebar';
 import Navbar from '@/components/layout/Navbar/AdminNavbar';
-import { xumm } from '@/lib/web3/xaman';
+import apiService from '@/lib/api/apiService';
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,21 +15,26 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [adminWallet, setAdminWallet] = useState<string>(() => {
+  const [adminWallet] = useState<string>(() => {
     return typeof window !== 'undefined' ? localStorage.getItem('admin_wallet') || '' : '';
   });
 
   const handleLogout = async () => {
     setDisconnectLoading(true);
     try {
-      if (xumm) {
-        await xumm.logout();
-      }
+      // Clear JWT token
+      apiService.clearToken();
+      // Clear admin wallet from localStorage
+      localStorage.removeItem('admin_wallet');
+      // Clear role cookie
+      document.cookie = 'park_chain_role=; path=/; max-age=0';
+      // Clear session store
+      clearRole();
+      router.push('/login');
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
-      clearRole();
-      router.push('/login');
+      setDisconnectLoading(false);
     }
   };
 
@@ -53,7 +58,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       break;
     }
   }
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa]">
@@ -65,22 +70,22 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className="flex min-h-screen h-screen overflow-y-hidden bg-gray-100">
-        <Sidebar 
-          isOpen={isOpen} 
-          setIsOpen={setIsOpen} 
-          handleLogout={handleLogout} 
-          disconnectLoading={disconnectLoading} 
-          currentPage={currentPageStr} 
+        <Sidebar
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          handleLogout={handleLogout}
+          disconnectLoading={disconnectLoading}
+          currentPage={currentPageStr}
         />
-        
+
         <div className="flex-1 bg-gray-100 h-screen min-h-screen overflow-y-scroll">
-          <Navbar 
-            setIsOpen={setIsOpen} 
-            handleLogout={handleLogout} 
-            disconnectLoading={disconnectLoading} 
-            adminWallet={adminWallet} 
-            title={pageTitle} 
-            showSearch={true} 
+          <Navbar
+            setIsOpen={setIsOpen}
+            handleLogout={handleLogout}
+            disconnectLoading={disconnectLoading}
+            adminWallet={adminWallet}
+            title={pageTitle}
+            showSearch={true}
           />
 
           <div className="main-content px-6 pt-5 pb-6 bg-gray-100">
@@ -99,11 +104,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 export default function AdminLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <ProtectedRoute allowedRoles={['admin']}>
       <AdminLayoutContent>{children}</AdminLayoutContent>
     </ProtectedRoute>
-  )
+  );
 }
