@@ -77,9 +77,14 @@ export default function LoginPage() {
       // Also set cookie for middleware
       document.cookie = `park_chain_role=${role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
 
-      const dashboardUrl = getRoleDashboard(role);
-      console.log('🚀 Redirecting to:', dashboardUrl);
-      router.push(dashboardUrl);
+      // Redirect logic based on KYC status
+      if (response.user && response.user.kyc_status === 'APPROVED') {
+        console.log('✅ User already verified. Redirecting to dashboard...');
+        router.push(getRoleDashboard(role));
+      } else {
+        console.log('🚀 User not verified. Redirecting to KYC...');
+        router.push('/kyc');
+      }
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Registration failed';
