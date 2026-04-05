@@ -77,9 +77,10 @@ export default function LoginPage() {
       // Also set cookie for middleware
       document.cookie = `park_chain_role=${role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
 
-      const dashboardUrl = getRoleDashboard(role);
-      console.log('🚀 Redirecting to:', dashboardUrl);
-      router.push(dashboardUrl);
+      // Redirect to KYC page first
+      const kycUrl = '/kyc';
+      console.log('🚀 Redirecting to:', kycUrl);
+      router.push(kycUrl);
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Registration failed';
