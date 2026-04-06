@@ -8,15 +8,31 @@ import PersonalInfo from './PersonalInfo'
 import DocumentsSection from './DocumentsSection'
 import AdminNotes from './AdminNotes'
 
+interface KYBDetailData {
+    id: number;
+    ownerName?: string;
+    owner?: { name: string };
+    entityName: string;
+    address: string;
+    googleMapsLink: string;
+    spotType: string;
+    documentUrl?: string;
+    date?: string;
+    createdAt?: string;
+    status: 'pending' | 'verified' | 'rejected';
+    adminNotes?: string;
+}
+
 export default function Main() {
     const params = useParams();
     const router = useRouter();
     const id = params?.id;
 
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<KYBDetailData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
+    const [adminNotes, setAdminNotes] = useState(''); // <-- Added local state to hold notes
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -24,7 +40,11 @@ export default function Main() {
             try {
                 // Connects to the specific detail API endpoint using the ID parameter
                 const res = await apiService.get(`/admin/kyb/${id}`);
-                setData(res.data || res);
+                const responseData = res.data || res;
+                setData(responseData);
+                if (responseData.adminNotes) {
+                   setAdminNotes(responseData.adminNotes);
+                }
             } catch (err) {
                 console.error("Fetch detail error:", err);
                 setError('Failed to load verification details. Check backend connection.');
@@ -38,7 +58,11 @@ export default function Main() {
     const updateStatus = async (newStatus: 'verified' | 'rejected') => {
         setIsUpdating(true);
         try {
-            await apiService.put(`/admin/kyb/${id}/status`, { status: newStatus });
+            // Update: Send BOTH status and the updated adminNotes to backend
+            await apiService.put(`/admin/kyb/${id}/status`, { 
+                status: newStatus,
+                adminNotes: adminNotes 
+            });
             // Redirect back to the table after successfully updating!
             router.push('/admin/seller-verification');
         } catch (err) {
@@ -67,8 +91,11 @@ export default function Main() {
                 googleMapsLink={data.googleMapsLink} 
                 address={data.address} 
             />
-            <DocumentsSection documentUrl={data.documentUrl || data.document} />
-            <AdminNotes initialNotes={data.adminNotes || ''} />
+            <DocumentsSection documentUrl={data.documentUrl || data.documentUrl} />
+            <AdminNotes 
+                initialNotes={adminNotes} 
+                onSave={(newNotes) => setAdminNotes(newNotes)} 
+            />
 
             <div className="mt-8 flex items-center gap-4 border-t-2 border-gray-100 pt-6">
                 <button 
