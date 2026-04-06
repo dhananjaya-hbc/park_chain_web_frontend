@@ -4,22 +4,18 @@ import StatusBadge from './StatusBadge'
 
 interface VerificationTableRowProps {
     id: number
-    name: string
-    role: string
-    walletId: string
-    blockchain: string
-    roleId: string
+    entityName: string
+    spotType: string
+    address: string
     date: string
     status: 'pending' | 'verified' | 'rejected'
 }
 
 export default function VerificationTableRow({
     id,
-    name,
-    role,
-    walletId,
-    blockchain,
-    roleId,
+    entityName,
+    spotType,
+    address,
     date,
     status
 }: VerificationTableRowProps) {
@@ -29,19 +25,17 @@ export default function VerificationTableRow({
                 <div>
                     <div className="flex items-center gap-3">
                         <div className="w-5 h-5 rounded-full bg-gray-800 flex items-center justify-center">
-                            <i className="ri-user-2-fill text-white text-xs"></i>
+                            <i className="ri-building-4-fill text-white text-xs"></i>
                         </div>
-                        <span className="text-sm font-semibold text-gray-900">{name}</span>
+                        <span className="text-sm font-semibold text-gray-900">{entityName}</span>
                     </div>
-                    <div className="text-xs text-gray-500 text-center mt-1">{role}</div>
                 </div>
             </td>
             <td className="px-6 py-4 text-center">
-                <div className="text-sm text-gray-900">{walletId}</div>
-                <div className="text-xs text-gray-500">{blockchain}</div>
+                <div className="text-sm text-gray-900 capitalize">{spotType}</div>
             </td>
             <td className="px-6 py-4">
-                <div className="text-sm text-gray-900 text-center">{roleId}</div>
+                <div className="text-sm text-gray-900 text-center truncate max-w-[200px]" title={address}>{address}</div>
                 <div className="text-xs text-gray-500 text-center">{date}</div>
             </td>
             <td className="px-6 py-4">

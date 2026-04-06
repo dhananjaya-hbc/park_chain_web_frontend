@@ -4,7 +4,7 @@ import React from 'react'
 import { useRouter } from 'next/navigation'
 
 interface VerificationHeaderProps {
-    name?: string
+    entityName?: string
     status?: 'pending' | 'verified' | 'rejected'
     submittedDate?: string
 }
@@ -22,9 +22,9 @@ const statusLabels = {
 }
 
 export default function VerificationHeader({ 
-    name = 'Kavindu Prabash',
-    status = 'rejected',
-    submittedDate = '18/06/2026'
+    entityName = 'City Center Plaza Parking',
+    status = 'pending',
+    submittedDate = '01 Dec 2025'
 }: VerificationHeaderProps) {
     const router = useRouter()
 
@@ -41,7 +41,7 @@ export default function VerificationHeader({
 
             {/* Name */}
             <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                {name}
+                {entityName}
             </h1>
             
             {/* Status and Date */}
