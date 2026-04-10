@@ -1,23 +1,11 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-
-// Fix Leaflet default icon issue in Next.js / Webpack
-delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+import BaseLeafletMap from "@/components/custom/BaseLeafletMap";
 
 const DEFAULT_CENTER: [number, number] = [6.9271, 79.8612]; // Colombo, Sri Lanka
-const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-const MAP_STYLE = { width: "100%", height: "100%", minHeight: "260px" };
 
 const createLocationIcon = (
   color: string,
@@ -73,17 +61,11 @@ export default function SpotMap({ spots }: { spots: Spot[] }) {
   );
 
   return (
-    <>
-      <MapContainer
+    <BaseLeafletMap
         className="spot-map"
         center={center}
         zoom={12}
-        style={MAP_STYLE}
-        zoomControl={true}
-        attributionControl={false}
-        scrollWheelZoom={false}
       >
-        <TileLayer attribution={TILE_ATTRIBUTION} url={TILE_URL} />
         <FitBounds spots={spots} />
         {spots.map(({ id, latitude, longitude, isActive, name, address, pricePerHour }) => {
           const statusClass = isActive
@@ -108,16 +90,6 @@ export default function SpotMap({ spots }: { spots: Spot[] }) {
             </Popup>
           </Marker>
         )})}
-      </MapContainer>
-
-      <style jsx global>{`
-        .spot-map .leaflet-control-zoom a {
-          width: 24px;
-          height: 24px;
-          line-height: 22px;
-          font-size: 14px;
-        }
-      `}</style>
-    </>
+    </BaseLeafletMap>
   );
 }
