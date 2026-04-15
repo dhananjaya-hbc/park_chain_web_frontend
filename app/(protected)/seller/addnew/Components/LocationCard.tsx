@@ -35,9 +35,10 @@ interface LocationCardProps {
     latitude: string;
     longitude: string;
     setLocation: (latitude: string, longitude: string) => void;
+    isPricingPartial?: boolean;
 }
 
-export default function LocationCard({ latitude, longitude, setLocation }: LocationCardProps) {
+export default function LocationCard({ latitude, longitude, setLocation, isPricingPartial }: LocationCardProps) {
     // State: user's search input text
     const [searchQuery, setSearchQuery] = useState('');
     // State: whether location search is in progress
@@ -112,7 +113,7 @@ export default function LocationCard({ latitude, longitude, setLocation }: Locat
     };
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm relative z-0">
+        <div className={`bg-white rounded-xl border border-gray-200 p-6 shadow-sm relative z-0${isPricingPartial ? ' flex-1' : ''}`}>
             <div className="-mx-6 -mt-6 mb-6 rounded-t-xl bg-[#F9FAFB80] px-6 py-4">
                 <h2 className="text-sm font-bold text-gray-900 mb-1 leading-tight tracking-[0.7px]">Location</h2>
             </div>

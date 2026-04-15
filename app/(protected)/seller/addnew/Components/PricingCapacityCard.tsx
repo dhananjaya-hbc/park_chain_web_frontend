@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import React from 'react';
 import type { SlotRow } from '@/hooks/useAddNewSpotForm';
 
 interface PricingCapacityCardProps {
@@ -23,19 +22,6 @@ const tableHeadings = [
 ] as const;
 
 export default function PricingCapacityCard({ slots, setSlots, totalSlots, setTotalSlots }: PricingCapacityCardProps) {
-    const addRow = () => {
-        setSlots([
-            ...slots,
-            {
-                id: Date.now(),
-                slotType: '',
-                slots: 0,
-                rate: '0.00',
-                isCustom: true,
-            },
-        ]);
-    };
-
     const updateRow = (id: number, field: 'slotType' | 'slots' | 'rate', value: string | number) => {
         setSlots(slots.map((row) => {
             if (row.id !== id) return row;
@@ -58,18 +44,30 @@ export default function PricingCapacityCard({ slots, setSlots, totalSlots, setTo
         }));
     };
 
+    // A row is partial when exactly one of (slots, rate) is filled
+    const isRowPartial = (row: SlotRow): boolean => {
+        const hasSlots = row.slots > 0;
+        const hasRate = parseFloat(row.rate) > 0;
+        return hasSlots !== hasRate;
+    };
+
+    // The one partial row (if any) — others get locked until it's completed
+    const partialRow = slots.find(isRowPartial);
+    const hasPartialRow = Boolean(partialRow);
+
+    // A row's inputs should be disabled when a DIFFERENT row is partial
+    const isRowLocked = (row: SlotRow) => hasPartialRow && partialRow?.id !== row.id;
+
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 pb-10 shadow-sm">
             <div className="-mx-6 -mt-6 mb-6 rounded-t-xl bg-[#F9FAFB80] px-6 py-4 flex justify-between items-center">
-                <h2 className="text-sm font-bold text-gray-900 mb-1 leading-tight tracking-[0.7px]">Pricing & Capacity</h2>
-                <button
-                    type="button"
-                    onClick={addRow}
-                    className="text-sm font-semibold text-[#2e7d32] bg-[#e8f5e9] hover:bg-[#c8e6c9] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
-                >
-                    <Plus className="w-4 h-4 stroke-[3]" /> Add
-                </button>
+                <h2 className="text-sm font-bold text-gray-900 mb-1 leading-tight tracking-[0.7px]">Pricing &amp; Capacity</h2>
             </div>
+            {hasPartialRow && (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                    Fill both <strong>slot count</strong> and <strong>hourly rate</strong> for <strong>{partialRow?.slotType}</strong> before editing other rows.
+                </p>
+            )}
 
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[500px]">
@@ -103,18 +101,22 @@ export default function PricingCapacityCard({ slots, setSlots, totalSlots, setTo
                                 <td className="py-2 px-4">
                                     <input
                                         type="number"
+                                        min="0"
                                         value={row.slots}
-                                        onChange={(e) => updateRow(row.id, 'slots', Number(e.target.value))}
-                                        className={`${numberFieldBaseClass} pl-4 pr-2 text-left ${focusClass}`}
+                                        disabled={isRowLocked(row)}
+                                        onChange={(e) => updateRow(row.id, 'slots', Math.max(0, Number(e.target.value)))}
+                                        className={`${numberFieldBaseClass} pl-4 pr-2 text-left ${focusClass} disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-50`}
                                     />
                                 </td>
                                 <td className="py-2 pl-4 pr-4">
                                     <input
                                         type="number"
-                                        value={row.rate}
+                                        min="0"
                                         step="0.01"
-                                        onChange={(e) => updateRow(row.id, 'rate', e.target.value)}
-                                        className={`${numberFieldBaseClass} pl-2 pr-1 text-right ${focusClass}`}
+                                        value={row.rate}
+                                        disabled={isRowLocked(row)}
+                                        onChange={(e) => updateRow(row.id, 'rate', String(Math.max(0, Number(e.target.value))))}
+                                        className={`${numberFieldBaseClass} pl-2 pr-1 text-right ${focusClass} disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-50`}
                                     />
                                 </td>
                             </tr>

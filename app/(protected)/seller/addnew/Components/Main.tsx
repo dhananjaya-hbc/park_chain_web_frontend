@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AdminReviewAlert from './AdminReviewAlert';
 import GeneralInfoCard from './GeneralInfoCard';
 import AmenitiesCard from './AmenitiesCard';
@@ -35,9 +35,9 @@ export default function Main() {
 
                 {/* Right Column: Spot Images + Location + Finalize */}
                 <div className="lg:col-span-2 space-y-5">
-                    <SpotImagesCard 
-                        imageFiles={form.formState.imageFiles} 
-                        setImageFiles={form.setImageFiles} 
+                    <SpotImagesCard
+                        imageFiles={form.formState.imageFiles}
+                        setImageFiles={form.setImageFiles}
                     />
                     <LocationCard latitude={form.formState.latitude} longitude={form.formState.longitude} setLocation={form.setLocation} />
                     <FinalizeCard formState={form.formState} setSubmissionState={form.setSubmissionState} resetForm={form.resetForm} prepareSubmissionPayload={form.prepareSubmissionPayload} />
