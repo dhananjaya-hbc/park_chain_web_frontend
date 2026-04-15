@@ -47,7 +47,7 @@ export default function SellerApprovalsPage() {
         if (status === 'verified') {
             return (
                 <button 
-                    onClick={() => router.push('/seller/spots')} 
+                    onClick={() => router.push('/seller/addnew?kyb=done')} 
                     className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition-colors"
                 >
                     You can go ahead

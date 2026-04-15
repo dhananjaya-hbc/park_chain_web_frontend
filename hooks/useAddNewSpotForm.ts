@@ -1,7 +1,7 @@
 /**
  * useAddNewSpotForm Hook
  * Manages the complete state for the seller "Add New Spot" form
- * Supports Cloudinary image upload flow
+ * Images are sent as raw files directly to the backend via FormData
  */
 
 import { useState, useCallback } from 'react';
@@ -31,9 +31,7 @@ export interface AddNewSpotFormState {
     // Amenities
     amenities: string[];
 
-    // Images
-    imageUrls: string[];   // ✅ Final Cloudinary URLs
-    imageFiles: File[];    // ⭐ NEW: Raw selected files
+    imageFiles: File[];    // Raw selected files — sent directly to backend
 
     // Submission state
     isSubmitting: boolean;
@@ -57,7 +55,6 @@ const createInitialState = (): AddNewSpotFormState => ({
     totalSlots: 1,
     amenities: [],
 
-    imageUrls: [],
     imageFiles: [], // ⭐ NEW
 
     isSubmitting: false,
@@ -110,13 +107,7 @@ export function useAddNewSpotForm() {
         }));
     }, []);
 
-    // ✅ Set Cloudinary URLs
-    const setImageUrls = useCallback((urls: string[]) => {
-        setFormState(prev => ({
-            ...prev,
-            imageUrls: urls,
-        }));
-    }, []);
+
 
     // ⭐ NEW: Set raw image files
     const setImageFiles = useCallback((files: File[]) => {
@@ -126,15 +117,35 @@ export function useAddNewSpotForm() {
         }));
     }, []);
 
-    // Prepare submission payload (NO CHANGE except clarity)
+    // Prepare submission payload
     const prepareSubmissionPayload = useCallback(() => {
-        const validSlots = formState.slots.filter(slot => slot.slots > 0);
+        // Rows where at least one of (slots, rate) is filled
+        const activeSlots = formState.slots.filter(
+            slot => slot.slots > 0 || parseFloat(slot.rate) > 0
+        );
 
-        if (validSlots.length === 0) {
-            throw new Error('Please add at least one slot type with quantity > 0');
+        // Partial rows: one field filled but not the other
+        const partialSlots = activeSlots.filter(
+            slot => !(slot.slots > 0 && parseFloat(slot.rate) > 0)
+        );
+
+        if (partialSlots.length > 0) {
+            const names = partialSlots.map(s => s.slotType || 'Unnamed').join(', ');
+            throw new Error(
+                `Incomplete row(s): ${names}. Both slot count and hourly rate are required for each row.`
+            );
         }
 
-        const vehicleTypes = validSlots.map(slot => slot.slotType);
+        // Only complete rows are submitted
+        const validSlots = activeSlots;
+
+        if (validSlots.length === 0) {
+            throw new Error('Please fill at least one slot row (slot count and hourly rate).');
+        }
+
+        // Build three aligned arrays — must always be the same length and order
+        const vehicleTypes  = validSlots.map(slot => slot.slotType);
+        const slotsPerType  = validSlots.map(slot => slot.slots);
         const pricesPerHour = validSlots.map(slot => parseFloat(slot.rate));
 
         if (!formState.title.trim()) throw new Error('Spot name is required');
@@ -147,9 +158,9 @@ export function useAddNewSpotForm() {
 
         if (isNaN(lat) || isNaN(lng)) throw new Error('Invalid coordinates');
 
-        if (pricesPerHour.some(p => isNaN(p) || p <= 0)) {
-            throw new Error('All prices must be valid numbers greater than 0');
-        }
+        const amenities = (formState.amenities || [])
+            .map((a: string) => a.trim())
+            .filter((a: string) => a.length > 0);
 
         return {
             title: formState.title.trim(),
@@ -158,8 +169,9 @@ export function useAddNewSpotForm() {
             latitude: lat,
             longitude: lng,
             vehicleTypes,
+            slotsPerType,
             pricesPerHour,
-            imageUrls: formState.imageUrls, // ✅ URLs only sent
+            amenities,
             totalSlots: formState.totalSlots,
         };
     }, [formState]);
@@ -185,7 +197,6 @@ export function useAddNewSpotForm() {
         setSlots,
         setTotalSlots,
         setAmenities,
-        setImageUrls,
         setImageFiles, // ⭐ NEW (IMPORTANT)
         prepareSubmissionPayload,
         setSubmissionState,
