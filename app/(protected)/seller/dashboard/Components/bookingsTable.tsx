@@ -31,7 +31,6 @@ interface BackendTransaction {
 export default function ParkingSpotsTable() {
   const [spots, setSpots] = useState<SpotRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     const loadSpots = async () => {
@@ -85,14 +84,12 @@ export default function ParkingSpotsTable() {
     loadSpots();
   }, []);
 
-  const visibleSpots = showAll ? spots : spots.slice(0, 3);
-
   return (
     <div className="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-white">
+      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-[#F9FAFB80]">
         <div className="flex items-center gap-3">
           <h2 className="text-base font-bold text-gray-900">Your Parking Spots</h2>
-          <span className="text-xs font-semibold text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full">
+          <span className="text-xs font-semibold text-gray-500 bg-gray-200 px-2.5 py-0.5 rounded-full">
             {spots.length} Total
           </span>
         </div>
@@ -106,7 +103,9 @@ export default function ParkingSpotsTable() {
               <th className="text-left text-sm font-bold text-[#6B7280] px-6 py-3">Title</th>
               <th className="text-left text-sm font-bold text-[#6B7280] px-6 py-3">Location</th>
               <th className="text-left text-sm font-bold text-[#6B7280] px-6 py-3">Status</th>
-              <th className="text-left text-sm font-bold text-[#6B7280] px-6 py-3 whitespace-nowrap">Earnings (Mo)</th>
+              <th className="text-left text-sm font-bold text-[#6B7280] px-6 py-3">
+                Earnings (Mo)
+              </th>
             </tr>
           </thead>
 
@@ -124,10 +123,10 @@ export default function ParkingSpotsTable() {
                 </td>
               </tr>
             ) : (
-              visibleSpots.map((spot) => (
+              spots.map((spot) => (
                 <tr key={spot.id} className="transition-colors hover:bg-gray-50">
                   <td
-                    className={`px-6 py-4 font-medium ${
+                    className={`px-6 py-4 font-bold ${
                       spot.status === "Active" ? "text-gray-700" : "text-gray-500"
                     }`}
                   >
@@ -177,16 +176,11 @@ export default function ParkingSpotsTable() {
         </table>
       </div>
 
-      {!loading && spots.length > 3 && (
-        <div className="border-t border-gray-100 px-6 py-4 text-center bg-[#F9FAFB80]">
-          <button
-            onClick={() => setShowAll((prev) => !prev)}
-            className="text-sm font-semibold text-[#41ab5d] hover:text-[#2e7d32] transition-colors"
-          >
-            {showAll ? "View Less" : "View All Spots"}
-          </button>
-        </div>
-      )}
+      <div className="border-t border-gray-100 px-6 py-4 text-center bg-[#F9FAFB80]">
+        <button className="text-sm font-semibold text-[#41ab5d] hover:text-[#2e7d32] transition-colors">
+          View All Spots
+        </button>
+      </div>
     </div>
   );
 }
