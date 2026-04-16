@@ -1,40 +1,99 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import RevenueLineChart from "@/components/charts/RevenueLineChart";
 
 type Period = "Week" | "Month" | "Year";
+type ApiPeriod = "week" | "month" | "year";
 
-const DATA: Record<Period, { labels: string[]; values: number[] }> = {
-  Week: {
-    labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    values: [120, 180, 150, 290, 210, 380, 310],
-  },
-  Month: {
-    labels: ["Wk 1", "Wk 2", "Wk 3", "Wk 4"],
-    values: [820, 1100, 970, 1360],
-  },
-  Year: {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    values: [400, 600, 500, 800, 700, 950, 850, 1100, 980, 1200, 1050, 1400],
-  },
+type EarningsChartResponse = {
+  period: ApiPeriod;
+  currency: string;
+  labels: string[];
+  values: number[];
+};
+
+const PERIODS: Period[] = ["Week", "Month", "Year"];
+
+const periodToApi = (period: Period): ApiPeriod => {
+  if (period === "Week") return "week";
+  if (period === "Month") return "month";
+  return "year";
+};
+
+const getEarningsChartUrl = (base: string, period: ApiPeriod) => {
+  const normalizedBase = base.replace(/\/+$/, "");
+  const path = normalizedBase.endsWith("/api")
+    ? "/payments/seller/earnings-chart"
+    : "/api/payments/seller/earnings-chart";
+
+  return `${normalizedBase}${path}?period=${period}`;
 };
 
 export default function EarningsChart() {
   const [period, setPeriod] = useState<Period>("Week");
-  const periods: Period[] = ["Week", "Month", "Year"];
+  const [labels, setLabels] = useState<string[]>([]);
+  const [values, setValues] = useState<number[]>([]);
+  const [currency, setCurrency] = useState<"XRP" | "$">("XRP");
+  const [loading, setLoading] = useState(false);
+
+  const apiBase = useMemo(
+    () => process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
+    []
+  );
+
+  useEffect(() => {
+    const fetchChartData = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("park_chain_token");
+        const apiPeriod = periodToApi(period);
+
+        const response = await fetch(getEarningsChartUrl(apiBase, apiPeriod), {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch chart data: ${response.status}`);
+        }
+
+        const data: EarningsChartResponse = await response.json();
+
+        setLabels(Array.isArray(data.labels) ? data.labels : []);
+        setValues(
+          Array.isArray(data.values)
+            ? data.values.map((v) => Number(v) || 0)
+            : []
+        );
+        setCurrency(data.currency === "$" ? "$" : "XRP");
+      } catch (error) {
+        console.error("Earnings chart fetch error:", error);
+        setLabels([]);
+        setValues([]);
+        setCurrency("XRP");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChartData();
+  }, [period, apiBase]);
 
   return (
     <RevenueLineChart
-      title="Earnings Overview"
+      title={loading ? "Earnings Overview (Loading...)" : "Earnings Overview"}
       titleClassName="text-base font-bold text-gray-900"
-      labels={DATA[period].labels}
-      datasets={[{ label: "Earnings", values: DATA[period].values }]}
+      labels={labels}
+      datasets={[{ label: "Earnings", values }]}
       showPeriodSelector
-      periods={periods}
+      periods={PERIODS}
       selectedPeriod={period}
       onPeriodChange={(p) => setPeriod(p as Period)}
-      currency="XRP"
+      currency={currency}
       height="260"
     />
   );
