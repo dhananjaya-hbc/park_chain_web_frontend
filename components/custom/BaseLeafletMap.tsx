@@ -1,6 +1,6 @@
 "use client";
 
-import { PropsWithChildren, useEffect } from 'react';
+import { PropsWithChildren, useEffect, useState } from 'react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import L, { LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -43,6 +43,8 @@ export default function BaseLeafletMap({
     className = '',
     children,
 }: BaseLeafletMapProps) {
+    const [isMapReady, setIsMapReady] = useState(false);
+
     return (
         <>
             <MapContainer
@@ -53,8 +55,9 @@ export default function BaseLeafletMap({
                 style={{ width: '100%', height: '100%', minHeight }}
                 zoomControl={true}
                 attributionControl={false}
+                whenReady={() => setIsMapReady(true)}
             >
-                <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
+                {isMapReady ? <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} /> : null}
                 <InvalidateMapSize />
                 {children}
             </MapContainer>
