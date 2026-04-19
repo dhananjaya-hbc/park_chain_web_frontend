@@ -28,6 +28,11 @@ interface BackendTransaction {
   status?: string;
 }
 
+interface BackendBooking {
+  spot_id?: string;
+  spotId?: string;
+}
+
 export default function ParkingSpotsTable() {
   const [spots, setSpots] = useState<SpotRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,13 +43,15 @@ export default function ParkingSpotsTable() {
       try {
         setLoading(true);
 
-        const [spotsResponse, transactionsResponse] = await Promise.all([
+        const [spotsResponse, transactionsResponse, bookingsResponse] = await Promise.all([
           apiService.get(API_ENDPOINTS.SPOTS),
           apiService.get(API_ENDPOINTS.SELLER_TRANSACTIONS),
+          apiService.get(API_ENDPOINTS.BOOKINGS),
         ]);
 
         const backendSpots: BackendSpot[] = spotsResponse?.spots || [];
         const transactions: BackendTransaction[] = transactionsResponse?.transactions || [];
+        const bookings: BackendBooking[] = bookingsResponse?.bookings || [];
 
         const now = new Date();
         const currentMonth = now.getMonth();
@@ -65,13 +72,23 @@ export default function ParkingSpotsTable() {
             (monthlyEarningsBySpot[tx.spot_id] || 0) + amount;
         });
 
-        const mappedRows: SpotRow[] = backendSpots.map((spot) => ({
-          id: spot.id,
-          title: spot.title,
-          location: spot.address || "-",
-          status: spot.is_available && spot.is_approved ? "Active" : "Inactive",
-          earningsPerMonth: monthlyEarningsBySpot[spot.id] || 0,
-        }));
+        const bookingCountBySpot: Record<string, number> = {};
+        bookings.forEach((booking) => {
+          const spotId = String(booking.spot_id ?? booking.spotId ?? "");
+          if (!spotId) return;
+
+          bookingCountBySpot[spotId] = (bookingCountBySpot[spotId] || 0) + 1;
+        });
+
+        const mappedRows: SpotRow[] = backendSpots
+          .filter((spot) => spot.is_approved === true)
+          .map((spot) => ({
+            id: spot.id,
+            title: spot.title,
+            location: spot.address || "-",
+            status: (bookingCountBySpot[spot.id] || 0) > 0 ? "Active" : "Inactive",
+            earningsPerMonth: monthlyEarningsBySpot[spot.id] || 0,
+          }));
 
         setSpots(mappedRows);
       } catch (error) {
@@ -113,13 +130,13 @@ export default function ParkingSpotsTable() {
           <tbody className="divide-y divide-gray-50">
             {loading ? (
               <tr>
-                <td className="px-6 py-8 text-gray-500" colSpan={5}>
+                <td className="px-6 py-8 text-gray-500 text-center align-middle" colSpan={5}>
                   Loading spots...
                 </td>
               </tr>
             ) : spots.length === 0 ? (
               <tr>
-                <td className="px-6 py-8 text-gray-500" colSpan={5}>
+                <td className="px-6 py-12 text-gray-400 text-sm text-center align-middle" colSpan={5}>
                   No spots found.
                 </td>
               </tr>

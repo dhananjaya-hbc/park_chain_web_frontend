@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import RevenueLineChart from "@/components/charts/RevenueLineChart";
+import apiService from "@/lib/api/apiService";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 type Period = "Week" | "Month" | "Year";
 type ApiPeriod = "week" | "month" | "year";
@@ -21,15 +23,6 @@ const periodToApi = (period: Period): ApiPeriod => {
   return "year";
 };
 
-const getEarningsChartUrl = (base: string, period: ApiPeriod) => {
-  const normalizedBase = base.replace(/\/+$/, "");
-  const path = normalizedBase.endsWith("/api")
-    ? "/payments/seller/earnings-chart"
-    : "/api/payments/seller/earnings-chart";
-
-  return `${normalizedBase}${path}?period=${period}`;
-};
-
 export default function EarningsChart() {
   const [period, setPeriod] = useState<Period>("Week");
   const [labels, setLabels] = useState<string[]>([]);
@@ -37,31 +30,14 @@ export default function EarningsChart() {
   const [currency, setCurrency] = useState<"XRP" | "$">("XRP");
   const [loading, setLoading] = useState(false);
 
-  const apiBase = useMemo(
-    () => process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
-    []
-  );
-
   useEffect(() => {
     const fetchChartData = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("park_chain_token");
         const apiPeriod = periodToApi(period);
-
-        const response = await fetch(getEarningsChartUrl(apiBase, apiPeriod), {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch chart data: ${response.status}`);
-        }
-
-        const data: EarningsChartResponse = await response.json();
+        const data: EarningsChartResponse = await apiService.get(
+          `${API_ENDPOINTS.SELLER_EARNINGS_CHART}?period=${apiPeriod}`
+        );
 
         setLabels(Array.isArray(data.labels) ? data.labels : []);
         setValues(
@@ -81,7 +57,7 @@ export default function EarningsChart() {
     };
 
     fetchChartData();
-  }, [period, apiBase]);
+  }, [period]);
 
   return (
     <RevenueLineChart
