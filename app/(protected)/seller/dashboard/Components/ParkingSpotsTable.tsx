@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { MapPin } from "lucide-react";
 import apiService from "@/lib/api/apiService";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
@@ -8,7 +9,7 @@ interface SpotRow {
   id: string;
   title: string;
   location: string;
-  status: "Active" | "Inactive";
+  approved: boolean;
   earningsPerMonth: number;
 }
 
@@ -81,12 +82,12 @@ export default function ParkingSpotsTable() {
         });
 
         const mappedRows: SpotRow[] = backendSpots
-          .filter((spot) => spot.is_approved === true)
+          .filter((spot) => spot.is_approved === true || spot.is_approved === 1)
           .map((spot) => ({
             id: spot.id,
             title: spot.title,
             location: spot.address || "-",
-            status: (bookingCountBySpot[spot.id] || 0) > 0 ? "Active" : "Inactive",
+            approved: spot.is_approved === true || spot.is_approved === 1,
             earningsPerMonth: monthlyEarningsBySpot[spot.id] || 0,
           }));
 
@@ -101,6 +102,21 @@ export default function ParkingSpotsTable() {
 
     loadSpots();
   }, []);
+
+  const renderSpotId = (id: string) => {
+    const parts = id.split("-");
+    if (parts.length <= 4) return id;
+    
+    const firstPart = parts.slice(0, 4).join("-");
+    const secondPart = parts.slice(4).join("-");
+    
+    return (
+      <>
+        {firstPart}-<br />
+        {secondPart}
+      </>
+    );
+  };
 
   const visibleSpots = showAll ? spots : spots.slice(0, 3);
 
@@ -119,9 +135,9 @@ export default function ParkingSpotsTable() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 bg-[#F9FAFB]">
-              <th className="text-left text-sm font-bold text-[#6B7280] px-6 py-3">Spot ID</th>
               <th className="text-left text-sm font-bold text-[#6B7280] px-6 py-3">Title</th>
               <th className="text-left text-sm font-bold text-[#6B7280] px-6 py-3">Location</th>
+              <th className="text-left text-sm font-bold text-[#6B7280] px-6 py-3 whitespace-nowrap">Spot ID</th>
               <th className="text-left text-sm font-bold text-[#6B7280] px-6 py-3">Status</th>
               <th className="text-left text-sm font-bold text-[#6B7280] px-6 py-3 whitespace-nowrap">Earnings (Mo)</th>
             </tr>
@@ -143,35 +159,28 @@ export default function ParkingSpotsTable() {
             ) : (
               visibleSpots.map((spot) => (
                 <tr key={spot.id} className="transition-colors hover:bg-gray-50">
-                  <td
-                    className={`px-6 py-4 font-medium ${
-                      spot.status === "Active" ? "text-gray-700" : "text-gray-500"
-                    }`}
-                  >
-                    {spot.id}
+                  <td className="px-6 py-4 font-medium text-gray-900">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="truncate">{spot.title}</span>
+                    </div>
                   </td>
 
-                  <td
-                    className={`px-6 py-4 font-medium ${
-                      spot.status === "Active" ? "text-gray-900" : "text-gray-500"
-                    }`}
-                  >
-                    {spot.title}
+                  <td className="px-6 py-4 text-gray-900 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-[#2e7d32] flex-shrink-0" />
+                      <span>{spot.location}</span>
+                    </div>
                   </td>
 
-                  <td
-                    className={`px-6 py-4 ${
-                      spot.status === "Active" ? "text-gray-900" : "text-gray-500"
-                    }`}
-                  >
-                    {spot.location}
+                  <td className="px-6 py-4 text-gray-700 whitespace-normal">
+                    {renderSpotId(spot.id)}
                   </td>
 
                   <td className="px-6 py-4">
-                    {spot.status === "Active" ? (
+                    {spot.approved ? (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-100">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                        Active
+                        Approved
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
@@ -180,12 +189,8 @@ export default function ParkingSpotsTable() {
                     )}
                   </td>
 
-                  <td
-                    className={`px-6 py-4 font-medium ${
-                      spot.status === "Active" ? "text-gray-700" : "text-gray-500"
-                    }`}
-                  >
-                    ${spot.earningsPerMonth.toFixed(2)}
+                  <td className="px-6 py-4 font-medium text-[#2e7d32] whitespace-nowrap">
+                    {spot.earningsPerMonth.toFixed(2)} XRP
                   </td>
                 </tr>
               ))

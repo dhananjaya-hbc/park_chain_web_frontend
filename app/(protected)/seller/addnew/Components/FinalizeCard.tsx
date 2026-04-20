@@ -13,13 +13,14 @@ import { API_ENDPOINTS } from '@/lib/api/endpoints';
 import type { AddNewSpotFormState } from '@/hooks/useAddNewSpotForm';
 import { useRouter } from 'next/navigation';
 
-type PopupMode = 'success' | 'saveSuccess' | 'confirmDiscard' | null;
+type PopupMode = 'success' | 'confirmDiscard' | null;
 
 interface FinalizeCardProps {
     formState: AddNewSpotFormState;
     setSubmissionState: (isSubmitting: boolean, error?: string | null) => void;
     resetForm: () => void;
     prepareSubmissionPayload: () => any;
+    kybSubmissionId?: string | null;
 }
 
 export default function FinalizeCard({
@@ -27,6 +28,7 @@ export default function FinalizeCard({
     setSubmissionState,
     resetForm,
     prepareSubmissionPayload,
+    kybSubmissionId,
 }: FinalizeCardProps) {
     const router = useRouter();
     const [localError, setLocalError] = useState<string | null>(null);
@@ -65,6 +67,11 @@ export default function FinalizeCard({
             formData.append('pricesPerHour', JSON.stringify(payload.pricesPerHour || []));
             formData.append('amenities', JSON.stringify(payload.amenities || []));
 
+            // Append KYB submission ID if available
+            if (kybSubmissionId) {
+                formData.append('kybSubmissionId', String(kybSubmissionId));
+            }
+
             // Append raw image files
             formState.imageFiles.forEach((file: File) => {
                 formData.append('images', file);
@@ -97,34 +104,10 @@ export default function FinalizeCard({
         }
     };
 
-    const handleSaveDraft = () => {
-        const hasAnyInput = Boolean(
-            formState.title.trim() ||
-            formState.description.trim() ||
-            formState.address.trim() ||
-            formState.latitude.trim() ||
-            formState.longitude.trim() ||
-            formState.amenities.length > 0 ||
-            formState.imageFiles.length > 0 ||
-            formState.slots.some((slot) => slot.slotType.trim() || slot.slots > 0 || parseFloat(slot.rate) > 0)
-        );
-
-        if (!hasAnyInput) return;
-
-        setLocalError(null);
-        setSuccessMessage(null);
-        setPopupMode('saveSuccess');
-    };
-
     const handleGoToSpots = () => {
         setPopupMode(null);
         resetForm();
         router.push('/seller/spots');
-    };
-
-    const handleGoToApprovals = () => {
-        setPopupMode(null);
-        router.push('/seller/approvals');
     };
 
     const handleDiscardCancel = () => {
@@ -159,7 +142,7 @@ export default function FinalizeCard({
 
     return (
         <>
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm min-h-[272px] relative z-0">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm min-h-[230px] relative z-0">
                 <h2 className="text-sm font-bold text-gray-900 mb-6">Finalize</h2>
 
                 {/* Error/Success Message */}
@@ -185,15 +168,6 @@ export default function FinalizeCard({
                     </Button>
 
                     <Button
-                        onClick={handleSaveDraft}
-                        disabled={formState.isSubmitting}
-                        variant="outline"
-                        className="w-full h-[46px] rounded-[8px] border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium disabled:opacity-50"
-                    >
-                        Save Draft
-                    </Button>
-
-                    <Button
                         onClick={handleCancel}
                         disabled={formState.isSubmitting}
                         variant="ghost"
@@ -216,17 +190,15 @@ export default function FinalizeCard({
                                     <Check className="w-8 h-8 text-white" strokeWidth={3} />
                                 )}
                             </div>
-                            {popupMode === 'success' || popupMode === 'saveSuccess' ? (
+                            {popupMode === 'success' ? (
                                 <>
                                     <h3 className="text-3xl font-semibold text-gray-900">Success!</h3>
                                     <p className="mt-6 text-lg text-gray-600 leading-8 max-w-lg mx-auto">
-                                        {popupMode === 'saveSuccess'
-                                            ? 'Your data has been saved successfully.'
-                                            : 'Your spot has been created successfully. We&apos;ll check the spots .'}
+                                        Your spot has been created successfully. We&apos;ll check the spots .
                                     </p>
                                     <button
                                         type="button"
-                                        onClick={popupMode === 'saveSuccess' ? handleGoToApprovals : handleGoToSpots}
+                                        onClick={handleGoToSpots}
                                         className="mt-8 inline-flex items-center justify-center rounded-lg bg-[#111827] px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-[#0f172a]"
                                     >
                                         Go back home

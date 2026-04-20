@@ -12,7 +12,6 @@ export default function AmenitiesCard({ amenities, setAmenities }: AmenitiesCard
         "24/7 Security",
         "Covered",
         "EV Charging",
-        "Disabled Access",
         "Lighting at night",
         "Gated Entry"
     ];
@@ -30,7 +29,7 @@ export default function AmenitiesCard({ amenities, setAmenities }: AmenitiesCard
     };
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm min-h-[272px]">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm min-h-[230px]">
             <div className="-mx-6 -mt-6 mb-6 rounded-t-xl bg-[#F9FAFB80] px-6 py-4">
                 <h2 className="text-sm font-bold text-gray-900 mb-1 tracking-[0.7px]">
                     Features & Amenities

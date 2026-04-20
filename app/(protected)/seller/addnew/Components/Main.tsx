@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminReviewAlert from './AdminReviewAlert';
 import GeneralInfoCard from './GeneralInfoCard';
 import AmenitiesCard from './AmenitiesCard';
@@ -7,10 +7,43 @@ import SpotImagesCard from './SpotImagesCard';
 import LocationCard from '@/app/(protected)/seller/addnew/Components/LocationCard';
 import FinalizeCard from './FinalizeCard';
 import { useAddNewSpotForm } from '@/hooks/useAddNewSpotForm';
+import apiService from '@/lib/api/apiService';
 
-export default function Main() {
+interface KybData {
+    kybId?: string | number;
+    name?: string;
+    address?: string;
+    entityName?: string;
+}
+
+export default function Main({ kybId }: { kybId?: string }) {
     // Initialize form state hook for managing all form data
     const form = useAddNewSpotForm();
+    const [isSpotIdentityLocked, setIsSpotIdentityLocked] = useState(false);
+
+    useEffect(() => {
+        if (!kybId) return;
+
+        const loadKybData = async () => {
+            try {
+                const kybData: KybData = await apiService.get(`/seller/kyb/${kybId}`);
+                const spotName = kybData.name || kybData.entityName || '';
+                const spotAddress = kybData.address || '';
+
+                form.setGeneralInfo({
+                    title: spotName,
+                    address: spotAddress,
+                });
+                form.setKybSubmissionId(String(kybData.kybId || kybId));
+                setIsSpotIdentityLocked(true);
+            } catch (error) {
+                console.error('Failed to load KYB data:', error);
+                setIsSpotIdentityLocked(false);
+            }
+        };
+
+        loadKybData();
+    }, [kybId, form]);
 
     return (
         <>
@@ -28,7 +61,7 @@ export default function Main() {
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
                 {/* Left Column: General Info + Pricing + Amenities */}
                 <div className="lg:col-span-3 space-y-5">
-                    <GeneralInfoCard formState={form.formState} setGeneralInfo={form.setGeneralInfo} />
+                    <GeneralInfoCard formState={form.formState} setGeneralInfo={form.setGeneralInfo} isSpotIdentityLocked={isSpotIdentityLocked} />
                     <PricingCapacityCard slots={form.formState.slots} setSlots={form.setSlots} totalSlots={form.formState.totalSlots} setTotalSlots={form.setTotalSlots} />
                     <AmenitiesCard amenities={form.formState.amenities} setAmenities={form.setAmenities} />
                 </div>
@@ -40,7 +73,7 @@ export default function Main() {
                         setImageFiles={form.setImageFiles}
                     />
                     <LocationCard latitude={form.formState.latitude} longitude={form.formState.longitude} setLocation={form.setLocation} />
-                    <FinalizeCard formState={form.formState} setSubmissionState={form.setSubmissionState} resetForm={form.resetForm} prepareSubmissionPayload={form.prepareSubmissionPayload} />
+                    <FinalizeCard formState={form.formState} setSubmissionState={form.setSubmissionState} resetForm={form.resetForm} prepareSubmissionPayload={form.prepareSubmissionPayload} kybSubmissionId={form.formState.kybSubmissionId} />
                 </div>
             </div>
         </>
