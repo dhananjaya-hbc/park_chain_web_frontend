@@ -73,21 +73,13 @@ export default function ParkingSpotsTable() {
             (monthlyEarningsBySpot[tx.spot_id] || 0) + amount;
         });
 
-        const bookingCountBySpot: Record<string, number> = {};
-        bookings.forEach((booking) => {
-          const spotId = String(booking.spot_id ?? booking.spotId ?? "");
-          if (!spotId) return;
-
-          bookingCountBySpot[spotId] = (bookingCountBySpot[spotId] || 0) + 1;
-        });
-
         const mappedRows: SpotRow[] = backendSpots
-          .filter((spot) => spot.is_approved === true || spot.is_approved === 1)
+          .filter((spot) => spot.is_approved === true )
           .map((spot) => ({
             id: spot.id,
             title: spot.title,
             location: spot.address || "-",
-            approved: spot.is_approved === true || spot.is_approved === 1,
+            approved: spot.is_approved === true,
             earningsPerMonth: monthlyEarningsBySpot[spot.id] || 0,
           }));
 
