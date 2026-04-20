@@ -32,6 +32,7 @@ export interface AddNewSpotFormState {
     amenities: string[];
 
     imageFiles: File[];    // Raw selected files — sent directly to backend
+    kybSubmissionId: string | null;
 
     // Submission state
     isSubmitting: boolean;
@@ -55,7 +56,8 @@ const createInitialState = (): AddNewSpotFormState => ({
     totalSlots: 1,
     amenities: [],
 
-    imageFiles: [], // ⭐ NEW
+    imageFiles: [],
+    kybSubmissionId: null,
 
     isSubmitting: false,
     submitError: null,
@@ -114,6 +116,14 @@ export function useAddNewSpotForm() {
         setFormState(prev => ({
             ...prev,
             imageFiles: files,
+        }));
+    }, []);
+
+    // Set KYB submission ID
+    const setKybSubmissionId = useCallback((id: string | null) => {
+        setFormState(prev => ({
+            ...prev,
+            kybSubmissionId: id,
         }));
     }, []);
 
@@ -197,7 +207,8 @@ export function useAddNewSpotForm() {
         setSlots,
         setTotalSlots,
         setAmenities,
-        setImageFiles, // ⭐ NEW (IMPORTANT)
+        setImageFiles,
+        setKybSubmissionId,
         prepareSubmissionPayload,
         setSubmissionState,
         resetForm,

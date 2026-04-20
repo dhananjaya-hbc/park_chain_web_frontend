@@ -54,10 +54,16 @@ export default function StatsCards() {
           return approved && (hasActiveFlag || activeByStatus || status === "");
         }).length;
 
-        const activeBookings = bookings.filter(
-          (booking: Record<string, string>) => booking.booking_status === "active"
-        ).length;
-        const occupancyPercent = activeCount > 0 ? (activeBookings / activeCount) * 100 : 0;
+        // Calculate total slots across all spots for this seller
+        let totalSlots = 0;
+        spots.forEach((spot: Record<string, unknown>) => {
+          const slots = Number(spot.total_slots) || 0;
+          totalSlots += slots;
+        });
+
+        // Calculate occupancy: (Total Booked / Total Slots) × 100
+        const totalBooked = bookings.length;
+        const occupancyPercent = totalSlots > 0 ? (totalBooked / totalSlots) * 100 : 0;
 
         setTotalEarnings(earnings.toFixed(2));
         setTotalBookings(bookings.length);

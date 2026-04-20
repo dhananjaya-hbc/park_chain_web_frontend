@@ -4,9 +4,10 @@ import type { AddNewSpotFormState } from '@/hooks/useAddNewSpotForm';
 interface GeneralInfoCardProps {
     formState: AddNewSpotFormState;
     setGeneralInfo: (data: { title?: string; description?: string; address?: string }) => void;
+    isSpotIdentityLocked?: boolean;
 }
 
-export default function GeneralInfoCard({ formState, setGeneralInfo }: GeneralInfoCardProps) {
+export default function GeneralInfoCard({ formState, setGeneralInfo, isSpotIdentityLocked = false }: GeneralInfoCardProps) {
     return (
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
             <div className="-mx-6 -mt-6 mb-6 rounded-t-xl bg-[#F9FAFB80] px-6 py-4">
@@ -20,8 +21,9 @@ export default function GeneralInfoCard({ formState, setGeneralInfo }: GeneralIn
                         type="text" 
                         value={formState.title}
                         onChange={(e) => setGeneralInfo({ title: e.target.value })}
+                        readOnly={isSpotIdentityLocked}
                         placeholder="e.g. Secure Downtown Garage" 
-                        className="w-full bg-white border border-[#D1D5DB] rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-[#111827] placeholder:opacity-60 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] transition-all"
+                        className={`w-full border rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-[#111827] placeholder:opacity-60 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] transition-all ${isSpotIdentityLocked ? 'bg-gray-50 border-gray-200 cursor-not-allowed' : 'bg-white border-[#D1D5DB]'}`}
                     />
                 </div>
 
@@ -31,8 +33,9 @@ export default function GeneralInfoCard({ formState, setGeneralInfo }: GeneralIn
                         type="text" 
                         value={formState.address}
                         onChange={(e) => setGeneralInfo({ address: e.target.value })}
+                        readOnly={isSpotIdentityLocked}
                         placeholder="e.g. No 457, 5th Avenue, Colombo 07" 
-                        className="w-full bg-white border border-[#D1D5DB] rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-[#111827] placeholder:opacity-60 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] transition-all"
+                        className={`w-full border rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-[#111827] placeholder:opacity-60 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] transition-all ${isSpotIdentityLocked ? 'bg-gray-50 border-gray-200 cursor-not-allowed' : 'bg-white border-[#D1D5DB]'}`}
                     />
                 </div>
                 
@@ -49,4 +52,4 @@ export default function GeneralInfoCard({ formState, setGeneralInfo }: GeneralIn
             </div>
         </div>
     );
-}
+}   
