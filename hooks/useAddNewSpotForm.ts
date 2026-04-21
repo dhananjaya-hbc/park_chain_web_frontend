@@ -28,8 +28,6 @@ export interface AddNewSpotFormState {
     slots: SlotRow[];
     totalSlots: number;
 
-    // Amenities
-    amenities: string[];
 
     imageFiles: File[];    // Raw selected files — sent directly to backend
     kybSubmissionId: string | null;
@@ -54,7 +52,6 @@ const createInitialState = (): AddNewSpotFormState => ({
         { id: 6, slotType: 'Truck', slots: 0, rate: '0.00', isCustom: false },
     ],
     totalSlots: 1,
-    amenities: [],
 
     imageFiles: [],
     kybSubmissionId: null,
@@ -100,15 +97,6 @@ export function useAddNewSpotForm() {
             totalSlots: total,
         }));
     }, []);
-
-    // Update amenities
-    const setAmenities = useCallback((amenities: string[]) => {
-        setFormState(prev => ({
-            ...prev,
-            amenities,
-        }));
-    }, []);
-
 
 
     // ⭐ NEW: Set raw image files
@@ -168,10 +156,6 @@ export function useAddNewSpotForm() {
 
         if (isNaN(lat) || isNaN(lng)) throw new Error('Invalid coordinates');
 
-        const amenities = (formState.amenities || [])
-            .map((a: string) => a.trim())
-            .filter((a: string) => a.length > 0);
-
         return {
             title: formState.title.trim(),
             description: formState.description.trim() || '',
@@ -181,7 +165,6 @@ export function useAddNewSpotForm() {
             vehicleTypes,
             slotsPerType,
             pricesPerHour,
-            amenities,
             totalSlots: formState.totalSlots,
         };
     }, [formState]);
@@ -206,7 +189,6 @@ export function useAddNewSpotForm() {
         setLocation,
         setSlots,
         setTotalSlots,
-        setAmenities,
         setImageFiles,
         setKybSubmissionId,
         prepareSubmissionPayload,

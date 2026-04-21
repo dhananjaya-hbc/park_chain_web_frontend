@@ -46,10 +46,6 @@ export default function FinalizeCard({
             // Validate all required fields
             const payload = prepareSubmissionPayload();
 
-            // ✅ FIXED: Clean amenities
-            payload.amenities = (payload.amenities || [])
-                .map((item: string) => item.trim())
-                .filter((item: string) => item.length > 0);
 
             // Build FormData with explicit fields for backend validators.
             const formData = new FormData();
@@ -65,7 +61,6 @@ export default function FinalizeCard({
             formData.append('vehicleTypes', JSON.stringify(payload.vehicleTypes || []));
             formData.append('slotsPerType', JSON.stringify(payload.slotsPerType || []));
             formData.append('pricesPerHour', JSON.stringify(payload.pricesPerHour || []));
-            formData.append('amenities', JSON.stringify(payload.amenities || []));
 
             // Append KYB submission ID if available
             if (kybSubmissionId) {
@@ -127,7 +122,6 @@ export default function FinalizeCard({
             formState.address.trim() ||
             formState.latitude.trim() ||
             formState.longitude.trim() ||
-            formState.amenities.length > 0 ||
             formState.imageFiles.length > 0 ||
             formState.slots.some((slot) => slot.slotType.trim() || slot.slots > 0 || parseFloat(slot.rate) > 0)
         );
@@ -148,8 +142,8 @@ export default function FinalizeCard({
                 {/* Error/Success Message */}
                 {displayMessage && (
                     <div className={`mb-4 p-3 rounded-lg text-sm ${isError
-                            ? 'bg-red-50 border border-red-200 text-red-700'
-                            : 'bg-green-50 border border-green-200 text-green-700'
+                        ? 'bg-red-50 border border-red-200 text-red-700'
+                        : 'bg-green-50 border border-green-200 text-green-700'
                         }`}>
                         {displayMessage}
                     </div>
@@ -194,7 +188,7 @@ export default function FinalizeCard({
                                 <>
                                     <h3 className="text-3xl font-semibold text-gray-900">Success!</h3>
                                     <p className="mt-6 text-lg text-gray-600 leading-8 max-w-lg mx-auto">
-                                        Your spot has been created successfully. We&apos;ll check the spots .
+                                        Your spot has been created successfully.View your spot in spot page .
                                     </p>
                                     <button
                                         type="button"

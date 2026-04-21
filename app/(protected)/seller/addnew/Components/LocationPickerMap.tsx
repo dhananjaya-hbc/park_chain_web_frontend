@@ -22,6 +22,7 @@ export type MapPosition = [number, number];
 interface LocationPickerMapProps {
     selectedPosition: MapPosition | null;  // Currently selected location
     onSelect: (position: MapPosition) => void;  // Callback when user selects a location
+    readOnly?: boolean;  // When true, disables map click to select
 }
 
 // Default map center: Colombo, Sri Lanka
@@ -62,15 +63,15 @@ function RecenterMap({ selectedPosition }: { selectedPosition: MapPosition | nul
     return null;
 }
 
-export default function LocationPickerMap({ selectedPosition, onSelect }: LocationPickerMapProps) {
+export default function LocationPickerMap({ selectedPosition, onSelect, readOnly = false }: LocationPickerMapProps) {
     return (
         <BaseLeafletMap
             center={selectedPosition ?? DEFAULT_CENTER}  // Center on selected position or default to Colombo
             zoom={12}
             minHeight="230px"
         >
-            {/* Listen for map clicks and capture coordinates */}
-            <MapClickHandler onSelect={onSelect} />
+            {/* Listen for map clicks and capture coordinates — disabled in readOnly mode */}
+            {!readOnly && <MapClickHandler onSelect={onSelect} />}
             {/* Auto-center map when location is selected */}
             <RecenterMap selectedPosition={selectedPosition} />
 
