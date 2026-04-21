@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { faCalendarCheck, faSpinner, faCheckCircle, faBan } from '@fortawesome/free-solid-svg-icons';
+import { faCalendarCheck, faSpinner, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import apiService from '@/lib/api/apiService';
@@ -49,17 +49,15 @@ export default function BookingStatCards() {
     const totalBookings = bookings.length;
     const activeBookings = bookings.filter(b => b.booking_status === 'active').length;
     const completedBookings = bookings.filter(b => b.booking_status === 'completed').length;
-    const cancelledBookings = bookings.filter(b => b.booking_status === 'cancelled').length;
 
     const stats = [
         { title: 'Total Bookings', value: totalBookings, icon: faCalendarCheck, bgColor: 'bg-[#197729]' },
         { title: 'Active Now', value: activeBookings, icon: faSpinner, bgColor: 'bg-[#1565c0]' },
         { title: 'Completed', value: completedBookings, icon: faCheckCircle, bgColor: 'bg-[#2e7d32]' },
-        { title: 'Cancelled', value: cancelledBookings, icon: faBan, bgColor: 'bg-[#c62828]' },
     ];
 
     return (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-5'>
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-5 mb-5'>
             {stats.map((stat, index) => (
                 <StatCard key={index} title={stat.title} value={stat.value} icon={stat.icon} bgColor={stat.bgColor} />
             ))}
