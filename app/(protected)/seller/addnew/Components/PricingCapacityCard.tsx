@@ -102,10 +102,14 @@ export default function PricingCapacityCard({ slots, setSlots, totalSlots, setTo
                                     <input
                                         type="number"
                                         min="0"
-                                        value={row.slots}
+                                        value={row.slots === 0 ? '' : row.slots}
                                         disabled={isRowLocked(row)}
-                                        onChange={(e) => updateRow(row.id, 'slots', Math.max(0, Number(e.target.value)))}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            updateRow(row.id, 'slots', val === '' ? 0 : Math.max(0, parseInt(val, 10)));
+                                        }}
                                         className={`${numberFieldBaseClass} pl-4 pr-2 text-left ${focusClass} disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-50`}
+                                        placeholder="0"
                                     />
                                 </td>
                                 <td className="py-2 pl-4 pr-4">
@@ -113,10 +117,11 @@ export default function PricingCapacityCard({ slots, setSlots, totalSlots, setTo
                                         type="number"
                                         min="0"
                                         step="0.01"
-                                        value={row.rate}
+                                        value={row.rate === '0.00' || row.rate === '0' ? '' : row.rate}
                                         disabled={isRowLocked(row)}
-                                        onChange={(e) => updateRow(row.id, 'rate', String(Math.max(0, Number(e.target.value))))}
+                                        onChange={(e) => updateRow(row.id, 'rate', e.target.value)}
                                         className={`${numberFieldBaseClass} pl-2 pr-1 text-right ${focusClass} disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-50`}
+                                        placeholder="0.00"
                                     />
                                 </td>
                             </tr>

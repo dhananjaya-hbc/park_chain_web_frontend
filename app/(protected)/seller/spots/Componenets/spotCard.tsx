@@ -35,7 +35,6 @@ interface Spot {
   vehicleTypes?: string[];
   slotsPerType?: number[];
   pricesPerHour?: number[];
-  amenities?: string[];
   imageUrl?: string;
 }
 
@@ -73,7 +72,6 @@ interface BackendSpot {
   slots_per_type?: Array<number | string> | string;
   pricesPerHour?: Array<number | string> | string;
   prices_per_hour?: Array<number | string> | string;
-  amenities?: string[] | string;
   features?: string[] | string;
   images?: string[] | string;
   image_urls?: string[] | string;
@@ -165,7 +163,6 @@ const mapBackendSpotToSpot = (spot: BackendSpot, bookingStatsBySpot: Map<string,
   const vehicleTypes = normalizeStringArray(spot.vehicleTypes ?? spot.vehicle_types);
   const slotsPerType = normalizeNumberArray(spot.slotsPerType ?? spot.slots_per_type);
   const pricesPerHour = normalizeNumberArray(spot.pricesPerHour ?? spot.prices_per_hour);
-  const amenities = normalizeStringArray(spot.amenities ?? spot.features);
   const images = normalizeStringArray(spot.images ?? spot.image_urls);
 
   return {
@@ -185,7 +182,6 @@ const mapBackendSpotToSpot = (spot: BackendSpot, bookingStatsBySpot: Map<string,
     vehicleTypes,
     slotsPerType,
     pricesPerHour,
-    amenities,
     imageUrl: firstNonEmptyString(spot.image, images[0]),
     pricePerHour: Number(spot.pricePerHour ?? spot.price_per_hour ?? 0),
   };

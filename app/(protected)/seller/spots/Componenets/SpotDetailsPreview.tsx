@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, Car, CarFront, Truck, BusFront, Bike, Video, ShieldCheck, Fuel, ArrowUpDown, Lightbulb, Accessibility, Fence, Home } from "lucide-react";
+import { X, Car, CarFront, Truck, BusFront, Bike } from "lucide-react";
 
 interface SpotDetailsPreviewProps {
   onClose: () => void;
@@ -16,7 +16,6 @@ interface SpotDetailsPreviewProps {
     vehicleTypes?: string[];
     slotsPerType?: number[];
     pricesPerHour?: number[];
-    amenities?: string[];
     imageUrl?: string;
   } | null;
 }
@@ -81,10 +80,6 @@ export default function SpotDetailsPreview({ onClose, status = "inactive", spot 
     ];
   }, [spot]);
 
-  const amenitiesList = React.useMemo(() => {
-    return Array.isArray(spot?.amenities) ? spot.amenities : [];
-  }, [spot?.amenities]);
-
   const getVehicleIcon = React.useCallback((type: string) => {
     const key = type.toLowerCase();
 
@@ -107,42 +102,7 @@ export default function SpotDetailsPreview({ onClose, status = "inactive", spot 
     return Car;
   }, []);
 
-  const getAmenityIcon = React.useCallback((amenity: string) => {
-    const key = amenity.toLowerCase();
-
-    if (includesAny(key, ["cctv", "camera"])) {
-      return Video;
-    }
-
-    if (includesAny(key, ["security", "24/7", "guard"])) {
-      return ShieldCheck;
-    }
-
-    if (includesAny(key, ["gated", "gated entry"])) {
-      return Fence;
-    }
-
-    if (includesAny(key, ["ev", "charging"])) {
-      return Fuel;
-    }
-
-    if (includesAny(key, ["cover", "covered"])) {
-      return Home;
-    }
-
-    if (includesAny(key, ["light", "lighting", "night"])) {
-      return Lightbulb;
-    }
-
-    if (includesAny(key, ["disabled", "accessible", "access"])) {
-      return Accessibility;
-    }
-
-    return ArrowUpDown;
-  }, []);
-
   const vehicleIconPool = React.useMemo(() => [Car, CarFront, Truck, BusFront, Bike], []);
-  const amenityIconPool = React.useMemo(() => [Video, ShieldCheck, Fence, Fuel, Home, Lightbulb, Accessibility, ArrowUpDown], []);
 
   const pricingRowsWithIcons = React.useMemo(() => {
     const usedIcons = new Set<(typeof vehicleIconPool)[number]>();
@@ -159,20 +119,6 @@ export default function SpotDetailsPreview({ onClose, status = "inactive", spot 
     });
   }, [pricingRows, getVehicleIcon, vehicleIconPool]);
 
-  const amenitiesWithIcons = React.useMemo(() => {
-    const usedIcons = new Set<(typeof amenityIconPool)[number]>();
-
-    return amenitiesList.map((amenity, index) => {
-      let icon = getAmenityIcon(amenity);
-
-      if (usedIcons.has(icon)) {
-        icon = amenityIconPool[index % amenityIconPool.length];
-      }
-
-      usedIcons.add(icon);
-      return { amenity, icon };
-    });
-  }, [amenitiesList, getAmenityIcon, amenityIconPool]);
 
   const occupiedSpaces = Math.max(0, Number(spot?.activeBookings ?? 0));
   const computedTotalSlots = Number(spot?.totalSlots ?? 0);
@@ -263,31 +209,7 @@ export default function SpotDetailsPreview({ onClose, status = "inactive", spot 
             </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-              <div className="rounded-xl border border-gray-100 bg-[#f6faf6]/70 p-4 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-gray-500">
-                Amenities & Security
-              </p>
-
-                {amenitiesWithIcons.length > 0 ? (
-                  <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-x-3 gap-y-4 text-center text-[10px] font-semibold text-gray-700 sm:text-xs">
-                    {amenitiesWithIcons.map(({ amenity, icon: AmenityIcon }, index) => (
-                      <div key={`${amenity}-${index}`} className="flex flex-col items-center gap-2">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-100 bg-white shadow-sm">
-                          <AmenityIcon className="h-5 w-5 text-[#2e7d32]" />
-                        </div>
-                        <span>{amenity}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-4 flex items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white/80 py-6 text-sm font-medium text-gray-500">
-                    No amenities found
-                  </div>
-                )}
-            </div>
-
-            <div className="rounded-xl border border-gray-100 bg-[#f6faf6]/70 p-4 shadow-sm">
+          <div className="rounded-xl border border-gray-100 bg-[#f6faf6]/70 p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-gray-500">
                   Live Occupancy
@@ -306,7 +228,6 @@ export default function SpotDetailsPreview({ onClose, status = "inactive", spot 
                 <span>{availableSpaces} Spaces Available</span>
               </div>
             </div>
-          </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
             <div className="min-h-[28px] min-w-[240px] flex-1">
