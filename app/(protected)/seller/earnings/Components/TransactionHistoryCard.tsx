@@ -30,10 +30,10 @@ const ITEMS_PER_PAGE = 5;
 // --- Status Badge ---
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    validated: "bg-[#e8f5e9] text-[#2e7d32]",
-    pending: "bg-[#fff8e1] text-[#f57f17]",
-    submitted: "bg-[#e3f2fd] text-[#1565c0]",
-    failed: "bg-[#ffebee] text-[#c62828]",
+    validated: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    pending: "bg-amber-50 text-amber-700 border-amber-200",
+    submitted: "bg-gray-100 text-gray-600 border-gray-200",
+    failed: "bg-red-50 text-red-700 border-red-200",
   };
 
   const displayText = status.charAt(0).toUpperCase() + status.slice(1);
