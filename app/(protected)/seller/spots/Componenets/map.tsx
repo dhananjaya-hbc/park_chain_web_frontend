@@ -28,11 +28,6 @@ const activeIcon = createLocationIcon(
   "0 2px 6px rgba(65,171,93,0.5)",
   -20
 );
-const blockedIcon = createLocationIcon(
-  "#ef4444",
-  "0 2px 6px rgba(239,68,68,0.45)",
-  -20
-);
 
 interface Spot {
   id: string;
@@ -103,7 +98,7 @@ export default function SpotMap({ spots, onView, isLoading = false }: SpotMapPro
               name,
               address,
             } = spot;
-            const isActiveStatus = hasBooking === true;
+            const isActiveStatus = (spot.activeBookings || 0) > 0;
             const statusClass = isActiveStatus
               ? "bg-green-100 text-green-700"
               : "bg-gray-100 text-gray-500";
@@ -113,7 +108,7 @@ export default function SpotMap({ spots, onView, isLoading = false }: SpotMapPro
               <Marker
                 key={id}
                 position={[latitude, longitude]}
-                icon={isBlocked ? blockedIcon : activeIcon}
+                icon={activeIcon}
               >
                 <Popup>
                   <div className="text-xs min-w-[140px]">
