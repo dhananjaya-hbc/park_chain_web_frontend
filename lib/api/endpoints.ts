@@ -2,7 +2,7 @@
 
 export const API_ENDPOINTS = {
   // Auth
-  XAMAN_LOGIN: '/auth/xaman',        // ← replaces WEB3AUTH_LOGIN
+  XAMAN_LOGIN: '/auth/xaman',        
   ADMIN_LOGIN: '/auth/admin/login',
   AUTH_ME: '/auth/me',
 
