@@ -1,18 +1,24 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import { X, Car, CarFront, Truck, BusFront, Bike } from "lucide-react";
+import apiService from "@/lib/api/apiService";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 interface SpotDetailsPreviewProps {
   onClose: () => void;
-  status?: "active" | "inactive" | "blocked";
+  onSpotDeleted?: () => void;
+  status?: "active" | "inactive";
   spot?: {
+    id: string;
     name: string;
     description?: string;
     address: string;
     pricePerHour: number;
     totalSlots?: number;
     activeBookings?: number;
+    totalBookings?: number;
     vehicleTypes?: string[];
     slotsPerType?: number[];
     pricesPerHour?: number[];
@@ -24,29 +30,42 @@ const includesAny = (key: string, words: string[]) => words.some((word) => key.i
 
 const toLooseNumber = (value: unknown) => Number((value as string | number | boolean | null | undefined) || 0);
 
-export default function SpotDetailsPreview({ onClose, status = "inactive", spot }: SpotDetailsPreviewProps) {
+export default function SpotDetailsPreview({ onClose, onSpotDeleted, status = "inactive", spot }: SpotDetailsPreviewProps) {
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const statusBadge =
-    status === "blocked"
+    status === "active"
       ? {
-          label: "Blocked",
-          className: "bg-[#fee2e2] text-[#b91c1c]",
-        }
-      : status === "active"
-      ? {
-          label: "Active",
-          className: "bg-[#dff4e3] text-[#2e7d32]",
-        }
+        label: "Active",
+        className: "bg-[#dff4e3] text-[#2e7d32]",
+      }
       : {
-          label: "Inactive",
-          className: "bg-gray-100 text-gray-600",
-        };
+        label: "Inactive",
+        className: "bg-gray-100 text-gray-600",
+      };
 
-  const canEdit = status !== "blocked";
-  const canToggleBlock = status === "blocked";
-  const canDelete = false;
+  const canEdit = true;
+  const canDelete = Number(spot?.totalBookings ?? 0) === 0;
   const [inlineError, setInlineError] = React.useState<string>("");
   const showNoAccessError = () => {
-    setInlineError("Already have bookings for this spot. Cannot detelete or block . ");
+    setInlineError("Already have bookings for this spot. Cannot delete.");
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!spot?.id) return;
+    try {
+      setIsDeleting(true);
+      await apiService.delete(`${API_ENDPOINTS.SPOTS}/${spot.id}`);
+      setShowDeletePopup(false);
+      onSpotDeleted?.();
+      onClose();
+    } catch (error: unknown) {
+      console.error("Failed to delete spot:", error);
+      setInlineError("Failed to delete spot. Please try again.");
+      setShowDeletePopup(false);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   React.useEffect(() => {
@@ -128,88 +147,89 @@ export default function SpotDetailsPreview({ onClose, status = "inactive", spot 
   const capacityPercent = totalSpaces > 0 ? Math.min(100, Math.round((occupiedSpaces / totalSpaces) * 100)) : 0;
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-white">
-      <div className="relative h-full w-full p-0">
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-5 top-5 inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm hover:text-gray-700 hover:bg-gray-50 transition-colors"
-          aria-label="Close preview"
-        >
-          <X className="h-5 w-5" />
-        </button>
+    <>
+      <div className="flex-1 w-full">
+        <div className="relative w-full p-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-5 top-5 inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm hover:text-gray-700 hover:bg-gray-50 transition-colors"
+            aria-label="Close preview"
+          >
+            <X className="h-5 w-5" />
+          </button>
 
-        <div className="flex h-full w-full flex-col gap-5 bg-white px-4 py-4 sm:px-6 sm:py-6">
-          <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-            <div className="rounded-xl overflow-hidden bg-gray-100">
-              <img
-                src={spot?.imageUrl || "/placeholder-spot-preview.jpg"}
-                alt="Spot preview"
-                className="h-full w-full object-cover min-h-[170px] lg:min-h-[180px]"
-              />
-            </div>
+          <div className="flex w-full flex-col gap-5 bg-white px-4 py-4 sm:px-6 sm:py-6">
+            <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+              <div className="rounded-xl overflow-hidden bg-gray-100">
+                <img
+                  src={spot?.imageUrl || "/placeholder-spot-preview.jpg"}
+                  alt="Spot preview"
+                  className="h-full w-full object-cover min-h-[170px] lg:min-h-[180px]"
+                />
+              </div>
 
-            <div className="rounded-xl bg-[#f6faf6]/70 p-4 sm:p-5 flex flex-col justify-between gap-4">
-              <div className="space-y-3">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 leading-tight">
-                    {spot?.name || "Emerald Plaza Secure Deck"}
-                  </h2>
-                  <p className="mt-2 flex items-center gap-2 text-sm font-bold text-gray-700">
-                    <svg
-                      className="h-4 w-4 shrink-0"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M12 22C12 22 20 14.5 20 9.5C20 5.35786 16.6421 2 12.5 2C8.35786 2 5 5.35786 5 9.5C5 14.5 12 22 12 22Z"
-                        fill="#2e7d32"
-                      />
-                      <circle cx="12.5" cy="9.5" r="2.2" fill="white" />
-                    </svg>
-                    <span>{spot?.address || "452 Botanical Avenue, Green District, SF 94105"}</span>
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center rounded-full bg-[#dff4e3] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#2e7d32]">
-                      Approved
-                    </span>
-                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${statusBadge.className}`}>
-                      {statusBadge.label}
-                    </span>
+              <div className="rounded-xl bg-[#f6faf6]/70 p-4 sm:p-5 flex flex-col justify-between gap-4">
+                <div className="space-y-3">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 leading-tight">
+                      {spot?.name || "Emerald Plaza Secure Deck"}
+                    </h2>
+                    <p className="mt-2 flex items-center gap-2 text-sm font-bold text-gray-700">
+                      <svg
+                        className="h-4 w-4 shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M12 22C12 22 20 14.5 20 9.5C20 5.35786 16.6421 2 12.5 2C8.35786 2 5 5.35786 5 9.5C5 14.5 12 22 12 22Z"
+                          fill="#2e7d32"
+                        />
+                        <circle cx="12.5" cy="9.5" r="2.2" fill="white" />
+                      </svg>
+                      <span>{spot?.address || "452 Botanical Avenue, Green District, SF 94105"}</span>
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="inline-flex items-center rounded-full bg-[#dff4e3] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#2e7d32]">
+                        Approved
+                      </span>
+                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${statusBadge.className}`}>
+                        {statusBadge.label}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <p className="mt-5 text-sm font-medium leading-5 text-gray-500 max-w-xl">
-                  {spot?.description || "A premium, secure underground parking facility located in the heart of the Green District. Features 24/7 monitoring, EV charging, and wide slots for easy maneuverability."}
-                </p>
+                  <p className="mt-5 text-sm font-medium leading-5 text-gray-500 max-w-xl">
+                    {spot?.description || "A premium, secure underground parking facility located in the heart of the Green District. Features 24/7 monitoring, EV charging, and wide slots for easy maneuverability."}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-4 rounded-xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900">Pricing & Capacity</h3>
+            <div className="space-y-4 rounded-xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900">Pricing & Capacity</h3>
 
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
-              {pricingRowsWithIcons.map((row, index) => {
-                const VehicleIcon = row.icon;
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+                {pricingRowsWithIcons.map((row, index) => {
+                  const VehicleIcon = row.icon;
 
-                return (
-                  <div key={`${row.label}-${index}`} className="rounded-2xl border-l-4 border-l-[#2e7d32] border border-gray-200 bg-white p-4 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                      <VehicleIcon className="h-5 w-5 text-[#2e7d32]" />
-                      <p className="text-sm font-semibold text-gray-800">{row.label}</p>
+                  return (
+                    <div key={`${row.label}-${index}`} className="rounded-2xl border-l-4 border-l-[#2e7d32] border border-gray-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <VehicleIcon className="h-5 w-5 text-[#2e7d32]" />
+                        <p className="text-sm font-semibold text-gray-800">{row.label}</p>
+                      </div>
+                      <p className="mt-2 text-xl font-bold text-gray-900">{Number(row.price || 0).toFixed(2)} XRP<span className="text-sm text-gray-500">/hr</span></p>
+                      <p className="mt-1 text-xs text-gray-500">{Number(row.slots || 0)} spots </p>
                     </div>
-                    <p className="mt-2 text-xl font-bold text-gray-900">{Number(row.price || 0).toFixed(2)} XRP<span className="text-sm text-gray-500">/hr</span></p>
-                    <p className="mt-1 text-xs text-gray-500">{Number(row.slots || 0)} spots </p>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          <div className="rounded-xl border border-gray-100 bg-[#f6faf6]/70 p-4 shadow-sm">
+            <div className="rounded-xl border border-gray-100 bg-[#f6faf6]/70 p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-gray-500">
                   Live Occupancy
@@ -229,58 +249,85 @@ export default function SpotDetailsPreview({ onClose, status = "inactive", spot 
               </div>
             </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-            <div className="min-h-[28px] min-w-[240px] flex-1">
-              {inlineError ? (
-                <span className="inline-flex w-full items-center rounded-md border border-red-200 bg-red-50 px-3 py-1 text-xs font-medium text-red-700">
-                  {inlineError}
-                </span>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                if (!canEdit) {
-                  showNoAccessError();
-                } else {
-                  setInlineError("");
-                }
-              }}
-              className={`rounded-md bg-[#43a047] px-5 py-2 text-sm font-semibold text-white shadow-sm ${canEdit ? "" : "opacity-45"}`}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (!canToggleBlock) {
-                  showNoAccessError();
-                } else {
-                  setInlineError("");
-                }
-              }}
-              className={`rounded-md bg-[#f59e0b] px-5 py-2 text-sm font-semibold text-white shadow-sm ${canToggleBlock ? "" : "opacity-45"}`}
-            >
-              {status === "blocked" ? "Unblock" : "Block"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (!canDelete) {
-                  showNoAccessError();
-                } else {
-                  setInlineError("");
-                }
-              }}
-              className={`rounded-md bg-[#ef4444] px-5 py-2 text-sm font-semibold text-white shadow-sm ${canDelete ? "" : "opacity-45"}`}
-            >
-              Delete
-            </button>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <div className="min-h-[28px] min-w-[240px] flex-1">
+                {inlineError ? (
+                  <span className="inline-flex w-full items-center rounded-md border border-red-200 bg-red-50 px-3 py-1 text-xs font-medium text-red-700">
+                    {inlineError}
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!canEdit) {
+                      showNoAccessError();
+                    } else {
+                      setInlineError("");
+                    }
+                  }}
+                  className={`rounded-md bg-[#43a047] px-5 py-2 text-sm font-semibold text-white shadow-sm ${canEdit ? "" : "opacity-45"}`}
+                >
+                  Edit
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!canDelete) {
+                      showNoAccessError();
+                    } else {
+                      setInlineError("");
+                      setShowDeletePopup(true);
+                    }
+                  }}
+                  disabled={isDeleting}
+                  className={`rounded-md bg-[#ef4444] px-5 py-2 text-sm font-semibold text-white shadow-sm ${canDelete && !isDeleting ? "" : "opacity-45"}`}
+                >
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Delete Confirmation Popup */}
+      {showDeletePopup && typeof document !== "undefined" && ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[9999] bg-gray-100 flex items-center justify-center p-4">
+          <div className="w-full max-w-[540px] rounded-xl bg-white border border-gray-200 shadow-[0_8px_20px_rgba(0,0,0,0.12)] overflow-hidden">
+            <div className="h-2 bg-[#ef4444]" />
+            <div className="py-14 px-8 text-center">
+              <div className="mx-auto mb-8 h-16 w-16 rounded-full flex items-center justify-center border-4 border-[#ef4444]">
+                <X className="w-8 h-8 text-[#ef4444]" strokeWidth={3} />
+              </div>
+              <h3 className="text-3xl font-semibold text-[#4a5f72]">Are you sure?</h3>
+              <p className="mt-6 text-lg text-[#7b8794] leading-8 max-w-lg mx-auto">
+                Do you really want to delete <strong>{spot?.name}</strong>? This process cannot be undone.
+              </p>
+              <div className="mt-8 flex items-center justify-center gap-5">
+                <button
+                  type="button"
+                  onClick={() => setShowDeletePopup(false)}
+                  className="h-12 min-w-[120px] rounded-md bg-[#d8dadd] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#cfd2d6]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteConfirm}
+                  disabled={isDeleting}
+                  className="h-12 min-w-[120px] rounded-md bg-[#ef3636] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#dc2626] disabled:opacity-60"
+                >
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }

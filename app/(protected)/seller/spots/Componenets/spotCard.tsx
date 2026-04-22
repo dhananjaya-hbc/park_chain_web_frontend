@@ -11,12 +11,6 @@ const SpotMap = dynamic(() => import("./map"), {
   ssr: false,
 });
 
-const FILTER_TABS = [
-  { value: "all", label: "All" },
-  { value: "active", label: "Active" },
-  { value: "blocked", label: "Blocked" },
-] as const;
-
 interface Spot {
   id: string;
   name: string;
@@ -30,6 +24,7 @@ interface Spot {
   totalBookings?: number;
   isBlocked?: boolean;
   isApproved?: boolean;
+  isAvailable?: boolean;
   pricePerHour: number;
   totalSlots?: number;
   vehicleTypes?: string[];
@@ -38,12 +33,13 @@ interface Spot {
   imageUrl?: string;
 }
 
-type SpotDetailsStatus = "active" | "inactive" | "blocked";
+type SpotDetailsStatus = "active" | "inactive";
 
 interface BackendBooking {
   spot_id?: string;
   spotId?: string;
   booking_status?: string;
+  status?: string;
 }
 
 interface BackendSpot {
@@ -178,6 +174,7 @@ const mapBackendSpotToSpot = (spot: BackendSpot, bookingStatsBySpot: Map<string,
     totalBookings: bookingStats.total,
     isBlocked,
     isApproved,
+    isAvailable: spot.is_available === true || spot.available === true,
     totalSlots,
     vehicleTypes,
     slotsPerType,
@@ -191,7 +188,6 @@ export default function SpotCard() {
   const [spots, setSpots] = React.useState<Spot[]>([]);
   const [isLoadingSpots, setIsLoadingSpots] = React.useState(true);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [activeFilter, setActiveFilter] = React.useState<(typeof FILTER_TABS)[number]["value"]>("all");
   const [showPreview, setShowPreview] = React.useState(false);
   const [currentSpot, setCurrentSpot] = React.useState<Spot | null>(null);
   const [previewSpot, setPreviewSpot] = React.useState<Spot | null>(null);
@@ -212,8 +208,7 @@ export default function SpotCard() {
 
   const currentSpotStatus: SpotDetailsStatus = React.useMemo(() => {
     if (!selectedPreviewSpot) return "inactive";
-    if (selectedPreviewSpot.isBlocked) return "blocked";
-    return selectedPreviewSpot.hasBooking ? "active" : "inactive";
+    return (selectedPreviewSpot.activeBookings || 0) > 0 ? "active" : "inactive";
   }, [selectedPreviewSpot]);
 
   const filteredSpots = React.useMemo(() => {
@@ -221,51 +216,55 @@ export default function SpotCard() {
 
     return spots.filter((spot) => {
       if (spot.isApproved !== true) return false;
-      if (activeFilter === "blocked" && spot.isBlocked !== true) return false;
-      if (activeFilter === "active" && spot.isBlocked === true) return false;
       if (!q) return true;
 
       return spot.name.toLowerCase().includes(q) || spot.address.toLowerCase().includes(q);
     });
-  }, [spots, activeFilter, searchQuery]);
+  }, [spots, searchQuery]);
+
+  const loadSpots = React.useCallback(async () => {
+    try {
+      setIsLoadingSpots(true);
+      const [spotsResponse, bookingsResponse] = await Promise.all([
+        apiService.get(API_ENDPOINTS.SPOTS),
+        apiService.get(API_ENDPOINTS.BOOKINGS),
+      ]);
+
+      const backendSpots: BackendSpot[] = Array.isArray(spotsResponse?.spots) ? spotsResponse.spots : [];
+      const backendBookings: BackendBooking[] = Array.isArray(bookingsResponse?.bookings) ? bookingsResponse.bookings : [];
+      const bookingStatsBySpot = backendBookings.reduce((acc, booking) => {
+        const spotId = getSpotId(booking.spot_id ?? booking.spotId);
+        if (!spotId) return acc;
+
+        const bookingStatus = typeof booking.booking_status === "string"
+          ? booking.booking_status.toLowerCase()
+          : typeof booking.status === "string"
+            ? booking.status.toLowerCase()
+            : "";
+
+        const current = acc.get(spotId) || { ...EMPTY_BOOKING_STATS };
+        current.total += 1;
+
+        if (["pending", "confirmed", "active"].includes(bookingStatus)) {
+          current.active += 1;
+        }
+        acc.set(spotId, current);
+        return acc;
+      }, new Map<string, SpotBookingStats>());
+
+      setBookingStatsBySpot(bookingStatsBySpot);
+      setSpots(backendSpots.map((spot) => mapBackendSpotToSpot(spot, bookingStatsBySpot)));
+    } catch (error) {
+      console.error("Failed to load spots:", error);
+      setSpots([]);
+    } finally {
+      setIsLoadingSpots(false);
+    }
+  }, []);
 
   React.useEffect(() => {
-    const loadSpots = async () => {
-      try {
-        setIsLoadingSpots(true);
-        const [spotsResponse, bookingsResponse] = await Promise.all([
-          apiService.get(API_ENDPOINTS.SPOTS),
-          apiService.get(API_ENDPOINTS.BOOKINGS),
-        ]);
-
-        const backendSpots: BackendSpot[] = Array.isArray(spotsResponse?.spots) ? spotsResponse.spots : [];
-        const backendBookings: BackendBooking[] = Array.isArray(bookingsResponse?.bookings) ? bookingsResponse.bookings : [];
-        const bookingStatsBySpot = backendBookings.reduce((acc, booking) => {
-          const spotId = getSpotId(booking.spot_id ?? booking.spotId);
-          if (!spotId) return acc;
-
-          const bookingStatus = typeof booking.booking_status === "string" ? booking.booking_status.toLowerCase() : "";
-          const current = acc.get(spotId) || { ...EMPTY_BOOKING_STATS };
-          current.total += 1;
-          if (bookingStatus === "active") {
-            current.active += 1;
-          }
-          acc.set(spotId, current);
-          return acc;
-        }, new Map<string, SpotBookingStats>());
-
-        setBookingStatsBySpot(bookingStatsBySpot);
-        setSpots(backendSpots.map((spot) => mapBackendSpotToSpot(spot, bookingStatsBySpot)));
-      } catch (error) {
-        console.error("Failed to load spots:", error);
-        setSpots([]);
-      } finally {
-        setIsLoadingSpots(false);
-      }
-    };
-
     loadSpots();
-  }, []);
+  }, [loadSpots]);
 
   React.useEffect(() => {
     if (!showPreview || !currentSpot?.id) return;
@@ -287,58 +286,51 @@ export default function SpotCard() {
   }, [showPreview, currentSpot?.id, bookingStatsBySpot]);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col h-full overflow-hidden relative z-0">
+    <div className={`flex flex-col ${showPreview ? "" : "h-full overflow-hidden"}`}>
+      {/* Page Header integrated into SpotCard */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 shrink-0">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Manage Spots</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            View your spot locations and availability.
+          </p>
+        </div>
 
-      {showPreview ? (
-        <SpotDetailsPreview
-          onClose={handlePreviewClose}
-          status={currentSpotStatus}
-          spot={selectedPreviewSpot}
-        />
-      ) : (
-        <>
-          {/* Header */}
-          <div className="p-4 border-b border-gray-100 bg-[#F9FAFB80]">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by spot name or adress"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047]"
-                />
-              </div>
-
-              <div className="flex items-center gap-1 bg-gray-50 rounded-lg p-1">
-                {FILTER_TABS.map((tab) => (
-                  <button
-                    key={tab.value}
-                    onClick={() => setActiveFilter(tab.value)}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                      activeFilter === tab.value
-                        ? "bg-[#2e7d32] text-white shadow-sm"
-                        : "text-gray-600 hover:text-gray-900"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+        {!showPreview && (
+          <div className="flex items-center gap-3">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search spot name or address"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] shadow-sm transition-all"
+              />
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Map */}
+      {/* Main Card Content */}
+      <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col relative z-0 overflow-hidden ${showPreview ? "" : "flex-1 min-h-0"}`}>
+        {showPreview ? (
+          <SpotDetailsPreview
+            onClose={handlePreviewClose}
+            onSpotDeleted={loadSpots}
+            status={currentSpotStatus}
+            spot={selectedPreviewSpot as any}
+          />
+        ) : (
           <div className="flex-1 min-h-0 relative z-0">
-            <SpotMap 
+            <SpotMap
               isLoading={isLoadingSpots}
-              spots={filteredSpots} 
+              spots={filteredSpots}
               onView={handlePreviewOpen}
             />
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
