@@ -1,13 +1,20 @@
-import React from 'react';
+'use client';
 
-export default function AdminUsersPage() {
+import React from 'react';
+import Main from '@/app/(protected)/admin/spot-management/components/Main';
+
+/**
+ * Admin Spot Management Page
+ * 
+ * Serves as the root page for spot management functionality.
+ * Delegates rendering to the Main component which handles all
+ * spot-related operations including map display and spot listings.
+ */
+export default function AdminSpotManagementPage() {
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">Spot Management</h1>
             
-            <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-                <p className="text-gray-500">Spot management content will go here...</p>
-            </div>
+            <Main />
         </div>
     );
 }
