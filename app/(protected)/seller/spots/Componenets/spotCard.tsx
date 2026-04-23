@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import apiService from "@/lib/api/apiService";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import SpotDetailsPreview from "./SpotDetailsPreview";
+import EditSpot from "./EditSpot";
 
 const SpotMap = dynamic(() => import("./map"), {
   ssr: false,
@@ -22,6 +23,7 @@ interface Spot {
   hasBooking?: boolean;
   activeBookings?: number;
   totalBookings?: number;
+  pendingBookings?: number;
   isBlocked?: boolean;
   isApproved?: boolean;
   isAvailable?: boolean;
@@ -79,9 +81,10 @@ interface BackendSpot {
 interface SpotBookingStats {
   total: number;
   active: number;
+  pending: number;
 }
 
-const EMPTY_BOOKING_STATS: SpotBookingStats = { total: 0, active: 0 };
+const EMPTY_BOOKING_STATS: SpotBookingStats = { total: 0, active: 0, pending: 0 };
 
 const getSpotId = (value: unknown) => String(value ?? "");
 
@@ -172,6 +175,7 @@ const mapBackendSpotToSpot = (spot: BackendSpot, bookingStatsBySpot: Map<string,
     hasBooking: bookingStats.total > 0,
     activeBookings: bookingStats.active,
     totalBookings: bookingStats.total,
+    pendingBookings: bookingStats.pending,
     isBlocked,
     isApproved,
     isAvailable: spot.is_available === true || spot.available === true,
@@ -189,6 +193,7 @@ export default function SpotCard() {
   const [isLoadingSpots, setIsLoadingSpots] = React.useState(true);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [showPreview, setShowPreview] = React.useState(false);
+  const [isEditing, setIsEditing] = React.useState(false);
   const [currentSpot, setCurrentSpot] = React.useState<Spot | null>(null);
   const [previewSpot, setPreviewSpot] = React.useState<Spot | null>(null);
   const [bookingStatsBySpot, setBookingStatsBySpot] = React.useState<Map<string, SpotBookingStats>>(new Map());
@@ -202,6 +207,15 @@ export default function SpotCard() {
     setCurrentSpot(spot);
     setPreviewSpot(spot);
     setShowPreview(true);
+    setIsEditing(false);
+  }, []);
+
+  const handleEditOpen = React.useCallback(() => {
+    setIsEditing(true);
+  }, []);
+
+  const handleEditClose = React.useCallback(() => {
+    setIsEditing(false);
   }, []);
 
   const selectedPreviewSpot = previewSpot ?? currentSpot;
@@ -248,6 +262,9 @@ export default function SpotCard() {
         if (["pending", "confirmed", "active"].includes(bookingStatus)) {
           current.active += 1;
         }
+        if (bookingStatus === "pending") {
+          current.pending += 1;
+        }
         acc.set(spotId, current);
         return acc;
       }, new Map<string, SpotBookingStats>());
@@ -290,13 +307,17 @@ export default function SpotCard() {
       {/* Page Header integrated into SpotCard */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Manage Spots</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isEditing ? "Edit Parking Spot" : "Manage Spots"}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
-            View your spot locations and availability.
+            {isEditing
+              ? "Pricing, capacity, and descriptions can be updated here."
+              : "View your spot locations and availability."}
           </p>
         </div>
 
-        {!showPreview && (
+        {!showPreview && !isEditing && (
           <div className="flex items-center gap-3">
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -314,10 +335,20 @@ export default function SpotCard() {
 
       {/* Main Card Content */}
       <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col relative z-0 overflow-hidden ${showPreview ? "" : "flex-1 min-h-0"}`}>
-        {showPreview ? (
+        {isEditing ? (
+          <EditSpot
+            spot={selectedPreviewSpot}
+            onClose={handleEditClose}
+            onSpotUpdated={() => {
+              loadSpots();
+              handleEditClose();
+            }}
+          />
+        ) : showPreview ? (
           <SpotDetailsPreview
             onClose={handlePreviewClose}
             onSpotDeleted={loadSpots}
+            onEdit={handleEditOpen}
             status={currentSpotStatus}
             spot={selectedPreviewSpot as any}
           />

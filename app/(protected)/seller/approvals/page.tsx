@@ -57,7 +57,7 @@ export default function SellerApprovalsPage() {
             return (
                 <button 
                     onClick={() => router.push('/seller/addnew')} 
-                    className="px-4 py-2 border border-red-500 text-red-600 rounded-lg text-sm font-bold hover:bg-red-50 transition-colors"
+                    className="whitespace-nowrap px-4 py-2 border border-red-500 text-red-600 rounded-lg text-sm font-bold hover:bg-red-50 transition-colors"
                 >
                     Do KYB Again
                 </button>
@@ -67,7 +67,7 @@ export default function SellerApprovalsPage() {
             return (
                 <button 
                     disabled
-                    className="px-4 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg text-sm font-bold cursor-not-allowed"
+                    className="whitespace-nowrap px-4 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg text-sm font-bold cursor-not-allowed"
                 >
                     Spot Created
                 </button>
@@ -78,7 +78,7 @@ export default function SellerApprovalsPage() {
             return (
                 <button 
                     onClick={() => router.push(`/seller/addnew?kybId=${kyb.id}`)} 
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition-colors"
+                    className="whitespace-nowrap px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition-colors"
                 >
                     You can go ahead
                 </button>
@@ -87,7 +87,7 @@ export default function SellerApprovalsPage() {
         return (
             <button 
                 disabled 
-                className="px-4 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg text-sm font-bold cursor-not-allowed"
+                className="whitespace-nowrap px-4 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg text-sm font-bold cursor-not-allowed"
             >
                 Under Review
             </button>
@@ -137,7 +137,7 @@ export default function SellerApprovalsPage() {
                                         <td className="px-6 py-4 text-sm text-gray-600 max-w-[250px] truncate" title={kyb.adminNotes}>
                                             {kyb.adminNotes ? kyb.adminNotes : <span className="text-gray-400 italic">No notes</span>}
                                         </td>
-                                        <td className="px-6 py-4 text-center">
+                                        <td className="px-6 py-4 text-center whitespace-nowrap">
                                             {renderNextAction(kyb)}
                                         </td>
                                     </tr>
