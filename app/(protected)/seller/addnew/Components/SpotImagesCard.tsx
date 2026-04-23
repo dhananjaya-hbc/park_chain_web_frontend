@@ -5,11 +5,12 @@ import { UploadCloud, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface SpotImagesCardProps {
-  imageFiles: File[]; // ✅ CHANGED
-  setImageFiles: (files: File[]) => void; // ✅ CHANGED
+  imageFiles: File[];
+  setImageFiles: (files: File[]) => void;
+  readOnly?: boolean;
 }
 
-export default function SpotImagesCard({ imageFiles, setImageFiles }: SpotImagesCardProps) {
+export default function SpotImagesCard({ imageFiles, setImageFiles, readOnly = false }: SpotImagesCardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [startIndex, setStartIndex] = useState(0);
 
@@ -48,53 +49,57 @@ export default function SpotImagesCard({ imageFiles, setImageFiles }: SpotImages
       </div>
 
       {/* Hidden File Input */}
-      <input
-        type="file"
-        multiple
-        hidden
-        ref={fileInputRef}
-        onChange={(e) => {
-          if (e.target.files) handleFiles(e.target.files);
-        }}
-      />
+      {!readOnly && (
+        <input
+          type="file"
+          multiple
+          hidden
+          ref={fileInputRef}
+          onChange={(e) => {
+            if (e.target.files) handleFiles(e.target.files);
+          }}
+        />
+      )}
 
       {/* Upload Box */}
-      <div
-        tabIndex={0}
-        onClick={() => fileInputRef.current?.click()}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          handleFiles(e.dataTransfer.files);
-        }}
-        className={`border border-[#C7CDD8] bg-[#F9FAFB4D] rounded-2xl px-6 relative cursor-pointer 
-        focus-within:outline-none focus-within:ring-2 focus-within:ring-[#43a047]/30 
-        focus-within:border-[#43a047] transition-all flex items-center justify-center
-        ${imageFiles.length > 0 ? "h-[200px] mt-auto" : "h-[280px]"}`}
-      >
-        <div className="text-center">
-          <div className="w-14 h-14 bg-white border border-gray-200 rounded-full flex items-center justify-center mb-4 mx-auto">
-            <UploadCloud className="w-6 h-6 text-[#9CA3AF]" />
-          </div>
-          <span className="text-base font-medium text-[#111827] block mb-1">
-            Click to upload or drag
-          </span>
-          <span className="text-sm text-[#6B7280] block">
-            SVG, PNG, JPG (max 5MB)
-          </span>
+      {!readOnly && (
+        <div
+          tabIndex={0}
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            handleFiles(e.dataTransfer.files);
+          }}
+          className={`border border-[#C7CDD8] bg-[#F9FAFB4D] rounded-2xl px-6 relative cursor-pointer 
+          focus-within:outline-none focus-within:ring-2 focus-within:ring-[#43a047]/30 
+          focus-within:border-[#43a047] transition-all flex items-center justify-center
+          ${imageFiles.length > 0 ? "h-[200px] mt-auto" : "h-[280px]"}`}
+        >
+          <div className="text-center">
+            <div className="w-14 h-14 bg-white border border-gray-200 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <UploadCloud className="w-6 h-6 text-[#9CA3AF]" />
+            </div>
+            <span className="text-base font-medium text-[#111827] block mb-1">
+              Click to upload or drag
+            </span>
+            <span className="text-sm text-[#6B7280] block">
+              SVG, PNG, JPG (max 5MB)
+            </span>
 
-          <Button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              fileInputRef.current?.click();
-            }}
-            className="mt-3 !h-auto text-sm font-semibold text-[#2e7d32] bg-[#e8f5e9] hover:bg-[#c8e6c9] px-3 py-1.5 rounded-lg"
-          >
-            Browse File
-          </Button>
+            <Button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
+              className="mt-3 !h-auto text-sm font-semibold text-[#2e7d32] bg-[#e8f5e9] hover:bg-[#c8e6c9] px-3 py-1.5 rounded-lg"
+            >
+              Browse File
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Preview Section */}
       {imageFiles.length > 0 && (
@@ -103,9 +108,11 @@ export default function SpotImagesCard({ imageFiles, setImageFiles }: SpotImages
           {imageFiles.length === 1 && (
             <div className="relative h-24">
               <img src={URL.createObjectURL(imageFiles[0])} className="w-full h-full object-cover rounded-md"/>
-              <button onClick={() => removeImage(0)} className="absolute -top-2 -right-2 bg-white border rounded-full p-1 shadow">
-                <X className="w-3 h-3" />
-              </button>
+              {!readOnly && (
+                <button onClick={() => removeImage(0)} className="absolute -top-2 -right-2 bg-white border rounded-full p-1 shadow">
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
           )}
 
@@ -114,9 +121,11 @@ export default function SpotImagesCard({ imageFiles, setImageFiles }: SpotImages
               {imageFiles.map((file, index) => (
                 <div key={index} className="relative w-1/2 h-24">
                   <img src={URL.createObjectURL(file)} className="w-full h-full object-cover rounded-md"/>
-                  <button onClick={() => removeImage(index)} className="absolute -top-2 -right-2 bg-white border rounded-full p-1 shadow">
-                    <X className="w-3 h-3" />
-                  </button>
+                  {!readOnly && (
+                    <button onClick={() => removeImage(index)} className="absolute -top-2 -right-2 bg-white border rounded-full p-1 shadow">
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -127,9 +136,11 @@ export default function SpotImagesCard({ imageFiles, setImageFiles }: SpotImages
               {imageFiles.map((file, index) => (
                 <div key={index} className="relative h-24">
                   <img src={URL.createObjectURL(file)} className="w-full h-full object-cover rounded-md"/>
-                  <button onClick={() => removeImage(index)} className="absolute -top-2 -right-2 bg-white border rounded-full p-1 shadow">
-                    <X className="w-3 h-3" />
-                  </button>
+                  {!readOnly && (
+                    <button onClick={() => removeImage(index)} className="absolute -top-2 -right-2 bg-white border rounded-full p-1 shadow">
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -145,9 +156,11 @@ export default function SpotImagesCard({ imageFiles, setImageFiles }: SpotImages
                 {imageFiles.slice(startIndex, startIndex + 3).map((file, index) => (
                   <div key={index} className="relative h-24">
                     <img src={URL.createObjectURL(file)} className="w-full h-full object-cover rounded-md"/>
-                    <button onClick={() => removeImage(startIndex + index)} className="absolute -top-2 -right-2 bg-white border rounded-full p-1 shadow">
-                      <X className="w-3 h-3" />
-                    </button>
+                    {!readOnly && (
+                      <button onClick={() => removeImage(startIndex + index)} className="absolute -top-2 -right-2 bg-white border rounded-full p-1 shadow">
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

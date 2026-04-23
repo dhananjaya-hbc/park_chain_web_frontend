@@ -8,6 +8,7 @@ interface PricingCapacityCardProps {
     setSlots: (slots: SlotRow[]) => void;
     totalSlots: number;
     setTotalSlots: (total: number) => void;
+    lockSlotCount?: boolean; // when true, slot count column is read-only
 }
 
 const headingBaseClass = 'pb-4 text-[14px] font-medium text-[#374151] tracking-normal';
@@ -21,7 +22,7 @@ const tableHeadings = [
     { label: 'Hourly rate (XRP)', className: `${headingBaseClass} pl-4 w-[25%] text-left` },
 ] as const;
 
-export default function PricingCapacityCard({ slots, setSlots, totalSlots, setTotalSlots }: PricingCapacityCardProps) {
+export default function PricingCapacityCard({ slots, setSlots, totalSlots, setTotalSlots, lockSlotCount = false }: PricingCapacityCardProps) {
     const updateRow = (id: number, field: 'slotType' | 'slots' | 'rate', value: string | number) => {
         setSlots(slots.map((row) => {
             if (row.id !== id) return row;
@@ -63,7 +64,7 @@ export default function PricingCapacityCard({ slots, setSlots, totalSlots, setTo
             <div className="-mx-6 -mt-6 mb-6 rounded-t-xl bg-[#F9FAFB80] px-6 py-4 flex justify-between items-center">
                 <h2 className="text-sm font-bold text-gray-900 mb-1 leading-tight tracking-[0.7px]">Pricing &amp; Capacity</h2>
             </div>
-            {hasPartialRow && (
+            {hasPartialRow && !lockSlotCount && (
                 <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
                     Fill both <strong>slot count</strong> and <strong>hourly rate</strong> for <strong>{partialRow?.slotType}</strong> before editing other rows.
                 </p>
@@ -103,12 +104,18 @@ export default function PricingCapacityCard({ slots, setSlots, totalSlots, setTo
                                         type="number"
                                         min="0"
                                         value={row.slots === 0 ? '' : row.slots}
-                                        disabled={isRowLocked(row)}
+                                        disabled={!lockSlotCount && isRowLocked(row)}
+                                        readOnly={lockSlotCount}
                                         onChange={(e) => {
+                                            if (lockSlotCount) return;
                                             const val = e.target.value;
                                             updateRow(row.id, 'slots', val === '' ? 0 : Math.max(0, parseInt(val, 10)));
                                         }}
-                                        className={`${numberFieldBaseClass} pl-4 pr-2 text-left ${focusClass} disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-50`}
+                                        className={`${numberFieldBaseClass} pl-4 pr-2 text-left ${focusClass} ${
+                                            lockSlotCount
+                                                ? 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60'
+                                                : 'disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-50'
+                                        }`}
                                         placeholder="0"
                                     />
                                 </td>

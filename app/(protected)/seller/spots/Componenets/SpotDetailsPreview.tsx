@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
-import { X, Car, CarFront, Truck, BusFront, Bike } from "lucide-react";
+import { X, Car, CarFront, Truck, BusFront, Bike, Check } from "lucide-react";
 import apiService from "@/lib/api/apiService";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 interface SpotDetailsPreviewProps {
   onClose: () => void;
   onSpotDeleted?: () => void;
+  onEdit?: () => void;
   status?: "active" | "inactive";
   spot?: {
     id: string;
@@ -19,6 +20,7 @@ interface SpotDetailsPreviewProps {
     totalSlots?: number;
     activeBookings?: number;
     totalBookings?: number;
+    pendingBookings?: number;
     vehicleTypes?: string[];
     slotsPerType?: number[];
     pricesPerHour?: number[];
@@ -30,9 +32,10 @@ const includesAny = (key: string, words: string[]) => words.some((word) => key.i
 
 const toLooseNumber = (value: unknown) => Number((value as string | number | boolean | null | undefined) || 0);
 
-export default function SpotDetailsPreview({ onClose, onSpotDeleted, status = "inactive", spot }: SpotDetailsPreviewProps) {
+export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, status = "inactive", spot }: SpotDetailsPreviewProps) {
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
   const statusBadge =
     status === "active"
       ? {
@@ -44,11 +47,14 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, status = "i
         className: "bg-gray-100 text-gray-600",
       };
 
-  const canEdit = true;
+  const canEdit = Number(spot?.pendingBookings ?? 0) === 0;
   const canDelete = Number(spot?.totalBookings ?? 0) === 0;
   const [inlineError, setInlineError] = React.useState<string>("");
   const showNoAccessError = () => {
     setInlineError("Already have bookings for this spot. Cannot delete.");
+  };
+  const showEditError = () => {
+    setInlineError("Cannot edit this spot while there are pending bookings.");
   };
 
   const handleDeleteConfirm = async () => {
@@ -56,9 +62,7 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, status = "i
     try {
       setIsDeleting(true);
       await apiService.delete(`${API_ENDPOINTS.SPOTS}/${spot.id}`);
-      setShowDeletePopup(false);
-      onSpotDeleted?.();
-      onClose();
+      setDeleteSuccess(true);
     } catch (error: unknown) {
       console.error("Failed to delete spot:", error);
       setInlineError("Failed to delete spot. Please try again.");
@@ -139,12 +143,16 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, status = "i
   }, [pricingRows, getVehicleIcon, vehicleIconPool]);
 
 
-  const occupiedSpaces = Math.max(0, Number(spot?.activeBookings ?? 0));
+  const occupiedSpaces  = Math.max(0, Number(spot?.activeBookings ?? 0));
   const computedTotalSlots = Number(spot?.totalSlots ?? 0);
-  const fallbackSlots = pricingRows.reduce((sum, row) => sum + toLooseNumber(row.slots), 0);
-  const totalSpaces = Math.max(occupiedSpaces, computedTotalSlots > 0 ? computedTotalSlots : fallbackSlots);
-  const availableSpaces = Math.max(0, totalSpaces - occupiedSpaces);
-  const capacityPercent = totalSpaces > 0 ? Math.min(100, Math.round((occupiedSpaces / totalSpaces) * 100)) : 0;
+  const fallbackSlots  = pricingRows.reduce((sum, row) => sum + toLooseNumber(row.slots), 0);
+  // totalSlots: prefer backend totalSlots, fall back to sum of pricing rows
+  const totalSlots = computedTotalSlots > 0 ? computedTotalSlots : fallbackSlots;
+  // availableSpaces: straight subtraction — never below 0 (stale bookings reads can lag)
+  const availableSpaces = Math.max(0, totalSlots - occupiedSpaces);
+  // totalSpaces is used only for the capacity bar chart to avoid division-by-zero
+  const totalSpaces = Math.max(1, totalSlots);
+  const capacityPercent = Math.min(100, Math.round((occupiedSpaces / totalSpaces) * 100));
 
   return (
     <>
@@ -262,9 +270,10 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, status = "i
                   type="button"
                   onClick={() => {
                     if (!canEdit) {
-                      showNoAccessError();
+                      showEditError();
                     } else {
                       setInlineError("");
+                      if (onEdit) onEdit();
                     }
                   }}
                   className={`rounded-md bg-[#43a047] px-5 py-2 text-sm font-semibold text-white shadow-sm ${canEdit ? "" : "opacity-45"}`}
@@ -279,6 +288,7 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, status = "i
                       showNoAccessError();
                     } else {
                       setInlineError("");
+                      setDeleteSuccess(false);
                       setShowDeletePopup(true);
                     }
                   }}
@@ -297,33 +307,64 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, status = "i
       {showDeletePopup && typeof document !== "undefined" && ReactDOM.createPortal(
         <div className="fixed inset-0 z-[9999] bg-gray-100 flex items-center justify-center p-4">
           <div className="w-full max-w-[540px] rounded-xl bg-white border border-gray-200 shadow-[0_8px_20px_rgba(0,0,0,0.12)] overflow-hidden">
-            <div className="h-2 bg-[#ef4444]" />
-            <div className="py-14 px-8 text-center">
-              <div className="mx-auto mb-8 h-16 w-16 rounded-full flex items-center justify-center border-4 border-[#ef4444]">
-                <X className="w-8 h-8 text-[#ef4444]" strokeWidth={3} />
-              </div>
-              <h3 className="text-3xl font-semibold text-[#4a5f72]">Are you sure?</h3>
-              <p className="mt-6 text-lg text-[#7b8794] leading-8 max-w-lg mx-auto">
-                Do you really want to delete <strong>{spot?.name}</strong>? This process cannot be undone.
-              </p>
-              <div className="mt-8 flex items-center justify-center gap-5">
-                <button
-                  type="button"
-                  onClick={() => setShowDeletePopup(false)}
-                  className="h-12 min-w-[120px] rounded-md bg-[#d8dadd] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#cfd2d6]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteConfirm}
-                  disabled={isDeleting}
-                  className="h-12 min-w-[120px] rounded-md bg-[#ef3636] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#dc2626] disabled:opacity-60"
-                >
-                  {isDeleting ? "Deleting..." : "Delete"}
-                </button>
-              </div>
-            </div>
+            {deleteSuccess ? (
+              <>
+                <div className="h-2 bg-[#43a047]" />
+                <div className="py-14 px-8 text-center">
+                  <div className="mx-auto mb-8 h-16 w-16 rounded-full flex items-center justify-center border-4 border-[#43a047]">
+                    <Check className="w-8 h-8 text-[#43a047]" strokeWidth={3} />
+                  </div>
+                  <h3 className="text-3xl font-semibold text-[#4a5f72]">Successfully Deleted</h3>
+                  <p className="mt-6 text-lg text-[#7b8794] leading-8 max-w-lg mx-auto">
+                    The spot {spot?.name} has been successfully deleted.
+                  </p>
+                  <div className="mt-8 flex items-center justify-center gap-5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDeletePopup(false);
+                        setDeleteSuccess(false);
+                        onSpotDeleted?.();
+                        onClose();
+                      }}
+                      className="h-12 min-w-[120px] rounded-md bg-[#43a047] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#2e7d32]"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="h-2 bg-[#ef4444]" />
+                <div className="py-14 px-8 text-center">
+                  <div className="mx-auto mb-8 h-16 w-16 rounded-full flex items-center justify-center border-4 border-[#ef4444]">
+                    <X className="w-8 h-8 text-[#ef4444]" strokeWidth={3} />
+                  </div>
+                  <h3 className="text-3xl font-semibold text-[#4a5f72]">Are you sure?</h3>
+                  <p className="mt-6 text-lg text-[#7b8794] leading-8 max-w-lg mx-auto">
+                    Do you really want to delete {spot?.name}? This process cannot be undone.
+                  </p>
+                  <div className="mt-8 flex items-center justify-center gap-5">
+                    <button
+                      type="button"
+                      onClick={() => setShowDeletePopup(false)}
+                      className="h-12 min-w-[120px] rounded-md bg-[#d8dadd] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#cfd2d6]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeleteConfirm}
+                      disabled={isDeleting}
+                      className="h-12 min-w-[120px] rounded-md bg-[#ef3636] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#dc2626] disabled:opacity-60"
+                    >
+                      {isDeleting ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>,
         document.body
