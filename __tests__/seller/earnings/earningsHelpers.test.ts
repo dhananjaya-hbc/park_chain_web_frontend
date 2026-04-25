@@ -1,5 +1,5 @@
 // __tests__/seller/earnings/earningsHelpers.test.ts
-
+export {};
 // ── Helper functions extracted from the components ────
 // We test the same logic used in TotalEarningsCard
 // and TransactionHistoryCard
