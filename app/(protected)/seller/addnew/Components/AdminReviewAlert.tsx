@@ -22,7 +22,7 @@ export default function AdminReviewAlert() {
             <div>
                 <h3 className="text-sm font-bold text-gray-900 mb-1 leading-tight">Admin Review Required</h3>
                 <p className="text-sm text-gray-500 leading-relaxed">
-                    For quality assurance and safety, all new parking spots require admin approval before going live on the platform. The review process typically takes less than 24 hours. You will be notified via email immediately once approved.
+                    For quality assurance and safety, all new parking spots require admin approval before going live on the platform. The review process typically takes less than 24 hours.
                 </p>
             </div>
         </div>
