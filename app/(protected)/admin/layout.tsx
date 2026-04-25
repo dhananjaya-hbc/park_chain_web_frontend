@@ -49,6 +49,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     '/admin/feedback': { id: 'feedback', title: 'Feedback' },
     '/admin/settings': { id: 'settings', title: 'Settings' },
     '/admin/dashboard': { id: 'dashboard', title: 'Dashboard' },
+    '/admin/spot-management': { id: 'spot-management', title: 'Spot Management' },
   };
 
   for (const [path, config] of Object.entries(pageMap)) {
@@ -85,7 +86,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             disconnectLoading={disconnectLoading}
             adminWallet={adminWallet}
             title={pageTitle}
-            showSearch={true}
+            showSearch={false}
           />
 
           <div className="main-content px-6 pt-5 pb-6 bg-gray-100">
