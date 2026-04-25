@@ -26,33 +26,34 @@ export default function OwnerProfilePage() {
         const fetchOwnerData = async () => {
             try {
                 setIsLoading(true);
-                const response = await apiService.get(`/users/${ownerId}`);
-                const data = response.user || response;
-                
-                setOwnerData({
-                    id: data.id || ownerId,
-                    name: data.name || "Unknown Owner",
-                    email: data.email || "No email provided",
-                    phone: data.phone || "No phone provided",
-                    wallet_address: data.wallet_address || "",
-                    kyc_status: data.kyc_status || "PENDING",
-                    created_at: data.created_at || new Date().toISOString(),
-                });
-            } catch (error) {
-                console.error("Failed to fetch owner details, attempting fallback to spot data:", error);
-                
-                // Fallback: If /users/:id fails, try to extract owner info from their first spot
+                // Currently, there is no explicit /users/:id endpoint on the backend.
+                // We extract the owner info from their first spot in the spots array!
                 const firstSpot = displaySpots[0];
                 
-                setOwnerData({
-                    id: ownerId,
-                    name: firstSpot?.owner_name || "Mock Owner Data",
-                    email: firstSpot?.owner_email || "mock.owner@example.com",
-                    phone: firstSpot?.owner_phone || "+1 (555) 987-6543",
-                    wallet_address: firstSpot?.owner_wallet || "rM8P3...7gV9X",
-                    kyc_status: "APPROVED",
-                    created_at: firstSpot?.created_at || new Date().toISOString(),
-                });
+                if (firstSpot) {
+                    setOwnerData({
+                        id: ownerId,
+                        name: firstSpot.owner_name || "Unknown Owner",
+                        email: firstSpot.owner_email || "No email provided",
+                        phone: firstSpot.owner_phone || "No phone provided",
+                        wallet_address: firstSpot.owner_wallet || "",
+                        kyc_status: "APPROVED", // Admin interface default assumption if not in spot data
+                        created_at: firstSpot.created_at || new Date().toISOString(),
+                    });
+                } else {
+                    // Absolute fallback if they have 0 spots and no API endpoint
+                    setOwnerData({
+                        id: ownerId,
+                        name: "Owner Profile",
+                        email: "Data unavailable (no spots listed)",
+                        phone: "N/A",
+                        wallet_address: "N/A",
+                        kyc_status: "PENDING",
+                        created_at: new Date().toISOString(),
+                    });
+                }
+            } catch (error) {
+                console.error("Error setting owner data:", error);
             } finally {
                 setIsLoading(false);
             }
