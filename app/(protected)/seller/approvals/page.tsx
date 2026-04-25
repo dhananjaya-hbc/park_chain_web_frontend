@@ -9,6 +9,7 @@ interface SellerKYB {
     entityName: string;
     status: 'pending' | 'verified' | 'rejected';
     adminNotes?: string;
+    spotCreated?: boolean;
 }
 
 export default function SellerApprovalsPage() {
@@ -20,9 +21,25 @@ export default function SellerApprovalsPage() {
     useEffect(() => {
         const fetchMyKYBs = async () => {
             try {
-                // This points to the new route your backend Copilot will build!
-                const res = await apiService.get('/seller/kyb/my-requests');
-                setKybList(Array.isArray(res) ? res : (res.data || []));
+                const [requestsRes, approvedRes] = await Promise.all([
+                    apiService.get('/seller/kyb/my-requests'),
+                    apiService.get('/seller/kyb/approved'),
+                ]);
+
+                const requests: SellerKYB[] = Array.isArray(requestsRes) ? requestsRes : (requestsRes.data || []);
+                const approved: SellerKYB[] = Array.isArray(approvedRes) ? approvedRes : (approvedRes.data || []);
+                const approvedById = new Map(approved.map((item) => [String(item.id), item]));
+
+                setKybList(
+                    requests.map((item) => {
+                        const matchedApproved = approvedById.get(String(item.id));
+
+                        return {
+                            ...item,
+                            spotCreated: matchedApproved?.spotCreated ?? false,
+                        };
+                    })
+                );
             } catch (err) {
                 console.error("Failed to load approvals:", err);
                 setError('Failed to load your KYB verification history. Please check your backend connection.');
@@ -33,22 +50,35 @@ export default function SellerApprovalsPage() {
         fetchMyKYBs();
     }, []);
 
-    const renderNextAction = (status: string) => {
-        if (status === 'rejected') {
+    const renderNextAction = (kyb: SellerKYB) => {
+        const isVerified = kyb.status === 'verified';
+
+        if (kyb.status === 'rejected') {
             return (
                 <button 
                     onClick={() => router.push('/seller/addnew')} 
-                    className="px-4 py-2 border border-red-500 text-red-600 rounded-lg text-sm font-bold hover:bg-red-50 transition-colors"
+                    className="whitespace-nowrap px-4 py-2 border border-red-500 text-red-600 rounded-lg text-sm font-bold hover:bg-red-50 transition-colors"
                 >
                     Do KYB Again
                 </button>
             );
         }
-        if (status === 'verified') {
+        if (isVerified && kyb.spotCreated) {
             return (
                 <button 
-                    onClick={() => router.push('/seller/spots')} 
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition-colors"
+                    disabled
+                    className="whitespace-nowrap px-4 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg text-sm font-bold cursor-not-allowed"
+                >
+                    Spot Created
+                </button>
+            );
+        }
+
+        if (isVerified) {
+            return (
+                <button 
+                    onClick={() => router.push(`/seller/addnew?kybId=${kyb.id}`)} 
+                    className="whitespace-nowrap px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition-colors"
                 >
                     You can go ahead
                 </button>
@@ -57,7 +87,7 @@ export default function SellerApprovalsPage() {
         return (
             <button 
                 disabled 
-                className="px-4 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg text-sm font-bold cursor-not-allowed"
+                className="whitespace-nowrap px-4 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg text-sm font-bold cursor-not-allowed"
             >
                 Under Review
             </button>
@@ -107,8 +137,8 @@ export default function SellerApprovalsPage() {
                                         <td className="px-6 py-4 text-sm text-gray-600 max-w-[250px] truncate" title={kyb.adminNotes}>
                                             {kyb.adminNotes ? kyb.adminNotes : <span className="text-gray-400 italic">No notes</span>}
                                         </td>
-                                        <td className="px-6 py-4 text-center">
-                                            {renderNextAction(kyb.status)}
+                                        <td className="px-6 py-4 text-center whitespace-nowrap">
+                                            {renderNextAction(kyb)}
                                         </td>
                                     </tr>
                                 ))}
