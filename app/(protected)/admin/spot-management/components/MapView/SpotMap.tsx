@@ -9,6 +9,7 @@ import {
     InfoWindow, 
     useMap 
 } from '@vis.gl/react-google-maps';
+import SpotDetailsCard from '../SpotDetailsCard/SpotDetailsCard';
 
 interface MapLocation {
     lat: number;
@@ -43,16 +44,20 @@ export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, fil
 
     const defaultCenter: MapLocation = {
         lat: 37.7749,
-        lng: -122.4194, // San Francisco default
+        lng: -122.4194, 
     };
 
-    // Filter spots based on Search Query and Status
+    // FIX: Added safety checks for undefined titles
     const filteredSpots = useMemo(() => {
         if (!spots) return [];
         
         return spots.filter(spot => {
+            // Safe access to strings
+            const spotTitle = spot.title || '';
+            const query = searchQuery || '';
+
             // 1. Text match (case-insensitive)
-            const matchesSearch = searchQuery === '' || spot.title.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesSearch = query === '' || spotTitle.toLowerCase().includes(query.toLowerCase());
             
             // 2. Status match
             const matchesStatus = 
@@ -66,8 +71,6 @@ export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, fil
 
     // Handle Map Centering
     useEffect(() => {
-        // Use the raw 'spots' array instead of 'filteredSpots' to prevent the map 
-        // from jumping around wildly when typing in the search bar.
         if (selectedSpotId && spots) {
             const selectedSpot = spots.find(spot => spot.id === selectedSpotId);
             if (selectedSpot) {
@@ -81,6 +84,7 @@ export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, fil
                 }
             }
         } else if (spots && spots.length > 0) {
+            // Optional: Center on first spot if nothing selected
             const firstSpot = spots[0];
             const lat = Number(firstSpot.latitude);
             const lng = Number(firstSpot.longitude);
@@ -91,9 +95,8 @@ export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, fil
                 });
             }
         }
-    }, [selectedSpotId, spots]); // Safely depending strictly on the selected ID and raw data
+    }, [selectedSpotId, spots]);
 
-    // Data Loading state
     if (isLoading) {
         return (
             <div className="w-full h-full flex justify-center items-center bg-gray-50">
@@ -105,7 +108,6 @@ export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, fil
         );
     }
 
-    // Data Error state
     if (error) {
         return (
             <div className="w-full h-full flex justify-center items-center bg-red-50/50">
@@ -118,7 +120,6 @@ export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, fil
         );
     }
 
-    // API Key Check
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
         return (
@@ -128,7 +129,6 @@ export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, fil
         );
     }
 
-    // Fallback logic for map center just in case
     const currentCenter = centerLocation && !isNaN(centerLocation.lat) && !isNaN(centerLocation.lng) 
         ? centerLocation 
         : defaultCenter;
@@ -139,7 +139,7 @@ export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, fil
                 <Map
                     defaultZoom={13}
                     defaultCenter={currentCenter}
-                    mapId="DEMO_MAP_ID" // Required for AdvancedMarkers
+                    mapId="DEMO_MAP_ID" 
                     disableDefaultUI={false}
                     gestureHandling={'greedy'}
                     streetViewControl={false}
@@ -147,7 +147,6 @@ export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, fil
                     <MapCenterUpdater center={currentCenter} />
 
                     {filteredSpots.map((spot) => {
-                        // Ensure coords are valid numbers before rendering the marker
                         const lat = Number(spot.latitude);
                         const lng = Number(spot.longitude);
                         
@@ -155,16 +154,14 @@ export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, fil
 
                         const isSelected = selectedSpotId === spot.id;
                         
-                        // Determine marker color
                         const colorClass = isSelected 
-                            ? 'text-[#197729]' // Selected (Green)
+                            ? 'text-[#197729]' 
                             : spot.is_available 
-                                ? 'text-blue-600' // Available
-                                : 'text-gray-400'; // Inactive
+                                ? 'text-blue-600' 
+                                : 'text-gray-400'; 
 
                         return (
                             <React.Fragment key={spot.id}>
-                                {/* Custom SVG Marker */}
                                 <AdvancedMarker
                                     position={{ lat, lng }}
                                     onClick={() => onSpotSelect(spot.id)}
@@ -181,57 +178,13 @@ export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, fil
                                     </div>
                                 </AdvancedMarker>
 
-                                {/* Popup Window - Shows only for the selected spot */}
                                 {isSelected && (
                                     <InfoWindow
                                         position={{ lat, lng }}
                                         onCloseClick={() => onSpotSelect('')}
-                                        pixelOffset={[0, -38]} // Shifts popup slightly above the marker
+                                        pixelOffset={[0, -38]} 
                                     >
-                                        <div className="min-w-[200px] max-w-[250px] p-1 font-sans">
-                                            <p className="font-bold text-gray-900 text-base mb-1">
-                                                {spot.title}
-                                            </p>
-                                            <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-                                                📍 {spot.address}
-                                            </p>
-                                            
-                                            {/* Capacity and Availability */}
-                                            <div className="grid grid-cols-2 gap-2 mb-3">
-                                                <div className="bg-gray-50 p-2 rounded-md border border-gray-100">
-                                                    <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Capacity</p>
-                                                    <p className="font-semibold text-gray-900 text-sm">
-                                                        {spot.total_slots}
-                                                    </p>
-                                                </div>
-                                                <div className="bg-[#197729]/10 p-2 rounded-md border border-[#197729]/20">
-                                                    <p className="text-[10px] text-[#197729]/80 uppercase tracking-wide mb-1">Available</p>
-                                                    <p className="font-bold text-[#197729] text-sm">
-                                                        {spot.available_slots}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            {/* Price and Status */}
-                                            <div className="flex justify-between items-center mb-3 pb-3 border-b border-gray-100">
-                                                <span className="text-sm font-bold text-gray-900">
-                                                    ${spot.prices_per_hour[0]}<span className="text-xs text-gray-500 font-normal">/hr</span>
-                                                </span>
-                                                <span className={`px-2 py-1 rounded-md text-[10px] uppercase font-bold tracking-wide ${
-                                                    spot.is_available
-                                                        ? 'bg-green-100 text-[#197729]'
-                                                        : 'bg-red-50 text-red-600'
-                                                }`}>
-                                                    {spot.is_available ? '✓ Active' : '✗ Inactive'}
-                                                </span>
-                                            </div>
-
-                                            {/* Owner Info */}
-                                            <div>
-                                                <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Owner</p>
-                                                <p className="text-xs font-medium text-gray-700">{spot.owner_name}</p>
-                                            </div>
-                                        </div>
+                                        <SpotDetailsCard spot={spot} />
                                     </InfoWindow>
                                 )}
                             </React.Fragment>

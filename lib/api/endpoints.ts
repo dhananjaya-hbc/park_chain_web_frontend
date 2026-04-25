@@ -10,6 +10,8 @@ export const API_ENDPOINTS = {
   SPOTS: '/spots',
   PENDING_SPOTS: '/spots/pending',
 
+  SPOT_IMAGES : (spotId: string) => `/spots/${spotId}/images`,
+
   // Bookings
   BOOKINGS: '/bookings',
 
