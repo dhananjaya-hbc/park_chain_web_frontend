@@ -18,6 +18,12 @@ interface SpotDetailsCardProps {
   spot: Spot;
 }
 
+/**
+ * SpotDetailsCard Component
+ * 
+ * Displays a summary card for a specific spot when selected on the map.
+ * Includes a link to navigate to the full detail view of the spot.
+ */
 export default function SpotDetailsCard({ spot }: SpotDetailsCardProps) {
   const router = useRouter();
 

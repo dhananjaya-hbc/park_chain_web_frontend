@@ -1,64 +1,124 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import AdminActions from './components/AdminActions';
 import OwnerCard from './components/OwnerCard';
 import BookingHistory from './components/BookingHistory';
-
-// You would usually create a ReviewsList component similar to BookingHistory
-// For brevity, I'll inline a simple reviews section or you can add ReviewsList.tsx later.
+import SpotHeader from './components/SpotHeader';
+import HeroImageCarousel from './components/HeroImageCarousel';
+import ReviewsList from './components/ReviewsList';
+import MiniMap from './components/MiniMap';
 
 export default function SpotDetailsPage() {
     const params = useParams();
     const router = useRouter();
     const spotId = params.id;
 
-    // MOCK DATA - In a real app, use your `useSpot(spotId)` hook here
-    const spotData = {
-        id: spotId,
-        title: "Downtown Metro Parking",
-        address: "123 Market St, San Francisco, CA",
-        price: "$6.00 / hr",
-        description: "Secure underground parking spot located near the financial district. 24/7 access with surveillance cameras. Suitable for SUVs and Sedans.",
-        images: ["/api/placeholder/800/400"], // Placeholder for spot image
-        rating: 4.8,
-        reviewCount: 124,
-        amenities: ["CCTV", "Covered", "24/7 Access", "EV Charging"],
-        is_active: true
-    };
+    const [spotData, setSpotData] = React.useState<any>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        const fetchSpotData = async () => {
+            try {
+                setIsLoading(true);
+                // Dynamically import apiService and endpoints to avoid top-level issues if not needed
+                const { default: apiService } = await import('@/lib/api/apiService');
+                const { API_ENDPOINTS } = await import('@/lib/api/endpoints');
+                
+                const response = await apiService.get(`${API_ENDPOINTS.SPOTS}/${spotId}`);
+                const rawSpot = response.spot || response;
+                
+                // Ensure images are properly parsed if they come as stringified JSON or Postgres strings
+                const normalizeImages = (val: any): string[] => {
+                    if (Array.isArray(val)) return val;
+                    if (typeof val === 'string') {
+                        try {
+                            const parsed = JSON.parse(val);
+                            if (Array.isArray(parsed)) return parsed;
+                        } catch(e) {}
+                        // Fallback for CSV or Postgres array "{url1,url2}"
+                        return val.replace(/^\{|\}$/g, '').split(',').map(s => s.trim()).filter(Boolean);
+                    }
+                    return [];
+                };
+                const fetchedImages = normalizeImages(rawSpot.image_urls || rawSpot.imageUrls);
+
+                setSpotData({
+                    id: rawSpot.id || spotId,
+                    title: rawSpot.name || rawSpot.title || "Unknown Spot",
+                    address: rawSpot.address || "No address provided",
+                    price: rawSpot.pricePerHour || rawSpot.prices_per_hour?.[0] ? `${rawSpot.pricePerHour || rawSpot.prices_per_hour[0]} XRP / hr` : "N/A",
+                    description: rawSpot.description || "No description available.",
+                    images: fetchedImages.length > 0 ? fetchedImages : ["/api/placeholder/800/400"],
+                    rating: rawSpot.rating || 4.8,
+                    reviewCount: rawSpot.reviewCount || 124,
+                    amenities: rawSpot.amenities || ["CCTV", "Covered", "24/7 Access", "EV Charging"],
+                    is_active: rawSpot.is_available !== false, // Maps admin status to is_available
+                    latitude: Number(rawSpot.latitude) || 37.7749,
+                    longitude: Number(rawSpot.longitude) || -122.4194,
+                    owner_name: rawSpot.owner_name || rawSpot.ownerName || "Unknown Owner",
+                    owner_email: rawSpot.owner_email || rawSpot.ownerEmail || "No email provided",
+                    owner_phone: rawSpot.owner_phone || rawSpot.ownerPhone || "No phone provided",
+                    owner_id: rawSpot.owner_id || rawSpot.ownerId,
+                    created_at: rawSpot.owner_created_at || rawSpot.ownerCreatedAt || rawSpot.created_at || new Date().toISOString()
+                });
+            } catch (error) {
+                console.error("Failed to fetch spot details:", error);
+                // Fallback to mock data on error for development purposes
+                setSpotData({
+                    id: spotId,
+                    title: "Downtown Metro Parking",
+                    address: "123 Market St, San Francisco, CA",
+                    price: "$6.00 / hr",
+                    description: "Secure underground parking spot located near the financial district. 24/7 access with surveillance cameras. Suitable for SUVs and Sedans.",
+                    images: ["/api/placeholder/800/400"],
+                    rating: 4.8,
+                    reviewCount: 124,
+                    amenities: ["CCTV", "Covered", "24/7 Access", "EV Charging"],
+                    is_active: true,
+                    owner_name: "Mock Owner",
+                    owner_email: "mock@example.com",
+                    owner_phone: "+1 555-0000",
+                    created_at: new Date().toISOString()
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (spotId) {
+            fetchSpotData();
+        }
+    }, [spotId]);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50/50 p-6 flex items-center justify-center">
+                <div className="animate-spin h-8 w-8 border-4 border-[#197729] border-t-transparent rounded-full"></div>
+            </div>
+        );
+    }
+
+    if (!spotData) {
+        return (
+            <div className="min-h-screen bg-gray-50/50 p-6 flex items-center justify-center">
+                <p className="text-gray-500">Spot not found.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50/50 p-6 pb-20">
-            {/* --- Top Navigation --- */}
-            <div className="max-w-7xl mx-auto mb-6">
-                <button 
-                    onClick={() => router.back()} 
-                    className="flex items-center text-sm text-gray-500 hover:text-[#197729] transition-colors mb-4"
-                >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>
-                    Back to Map
-                </button>
-
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{spotData.title}</h1>
-                        <p className="text-gray-500 mt-1 flex items-center gap-2">
-                            <span>📍 {spotData.address}</span>
-                            <span className="text-gray-300">|</span>
-                            <span className="text-gray-900 font-medium">{spotData.price}</span>
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center bg-yellow-50 px-3 py-1.5 rounded-lg border border-yellow-100">
-                            <span className="text-yellow-500 mr-1">★</span>
-                            <span className="font-bold text-gray-900">{spotData.rating}</span>
-                            <span className="text-gray-400 text-sm ml-1">({spotData.reviewCount} reviews)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {/* --- Top Navigation & Header --- */}
+            <SpotHeader 
+                title={spotData.title}
+                address={spotData.address}
+                price={spotData.price}
+                rating={spotData.rating}
+                reviewCount={spotData.reviewCount}
+                onBack={() => router.back()}
+            />
 
             {/* --- Main Grid Layout --- */}
             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -66,20 +126,12 @@ export default function SpotDetailsPage() {
                 {/* LEFT COLUMN (2/3 width) - Details & History */}
                 <div className="lg:col-span-2 space-y-6">
                     
-                    {/* Hero Image */}
-                    <div className="w-full h-64 bg-gray-200 rounded-xl overflow-hidden shadow-sm relative">
-                         {/* Replace with <Image /> in real usage */}
-                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-gray-400">
-                            Spot Image Preview
-                        </div>
-                        <div className="absolute bottom-4 left-4 flex gap-2">
-                            {spotData.amenities.map(amenity => (
-                                <span key={amenity} className="px-3 py-1 bg-white/90 backdrop-blur text-xs font-medium text-gray-700 rounded-full shadow-sm">
-                                    {amenity}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
+                    {/* Hero Image Carousel */}
+                    <HeroImageCarousel 
+                        images={spotData.images} 
+                        title={spotData.title} 
+                        amenities={spotData.amenities} 
+                    />
 
                     {/* Description */}
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -88,26 +140,10 @@ export default function SpotDetailsPage() {
                     </div>
 
                     {/* Booking History Component */}
-                    <BookingHistory />
+                    <BookingHistory spotId={spotData.id} />
                     
-                    {/* Reviews Section (Inline for now) */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                        <h3 className="text-gray-900 font-bold text-lg mb-4">Recent Feedback</h3>
-                        <div className="space-y-4">
-                            {[1, 2].map((i) => (
-                                <div key={i} className="pb-4 border-b border-gray-50 last:border-0">
-                                    <div className="flex justify-between mb-1">
-                                        <span className="font-medium text-gray-900">User #{100 + i}</span>
-                                        <span className="text-xs text-gray-400">2 days ago</span>
-                                    </div>
-                                    <p className="text-sm text-gray-600">"Great spot, easy to find and very secure. Will book again!"</p>
-                                </div>
-                            ))}
-                        </div>
-                        <button className="w-full mt-2 text-center text-sm text-[#197729] font-medium hover:underline">
-                            View All Reviews
-                        </button>
-                    </div>
+                    {/* Reviews List Component */}
+                    <ReviewsList />
                 </div>
 
                 {/* RIGHT COLUMN (1/3 width) - Actions & Owner */}
@@ -115,18 +151,26 @@ export default function SpotDetailsPage() {
                     
                     {/* Admin Actions Component */}
                     <AdminActions 
+                        spotId={spotData.id}
                         initialStatus={spotData.is_active} 
                         onStatusChange={(status) => console.log("New status:", status)}
                     />
 
                     {/* Owner Card Component */}
-                    <OwnerCard />
+                    <OwnerCard 
+                        ownerId={spotData.owner_id}
+                        name={spotData.owner_name}
+                        email={spotData.owner_email}
+                        phone={spotData.owner_phone}
+                        joinDate={spotData.created_at}
+                    />
 
-                    {/* Location Mini Map Placeholder */}
+                    {/* Location Mini Map */}
                     <div className="bg-white p-1 rounded-xl shadow-sm border border-gray-100 h-48 overflow-hidden">
-                        <div className="w-full h-full bg-blue-50 flex items-center justify-center text-blue-200 text-sm font-medium rounded-lg border-2 border-dashed border-blue-100">
-                            Mini Map View
-                        </div>
+                        <MiniMap 
+                            latitude={spotData.latitude} 
+                            longitude={spotData.longitude} 
+                        />
                     </div>
                 </div>
 

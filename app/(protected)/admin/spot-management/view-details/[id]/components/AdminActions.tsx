@@ -1,25 +1,43 @@
 'use client';
 
 import React, { useState } from 'react';
+import apiService from '@/lib/api/apiService';
+import { API_ENDPOINTS } from '@/lib/api/endpoints';
 
 interface AdminActionsProps {
+    spotId: string;
     initialStatus: boolean;
     onStatusChange: (newStatus: boolean) => void;
 }
 
-export default function AdminActions({ initialStatus, onStatusChange }: AdminActionsProps) {
+export default function AdminActions({ spotId, initialStatus, onStatusChange }: AdminActionsProps) {
     const [isActive, setIsActive] = useState(initialStatus);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const handleToggle = async () => {
+        if (!spotId) return;
+        
         setIsLoading(true);
-        // Simulate API call
-        setTimeout(() => {
+        setError(null);
+        
+        try {
             const newStatus = !isActive;
+            
+            // Send a PUT request to the admin-specific toggle endpoint.
+            // As per backend docs, we send is_available for clarity.
+            await apiService.put(API_ENDPOINTS.ADMIN_TOGGLE_SPOT(spotId), {
+                is_available: newStatus
+            });
+
             setIsActive(newStatus);
             onStatusChange(newStatus);
+        } catch (err) {
+            console.error("Failed to update spot status:", err);
+            setError(err instanceof Error ? err.message : "Failed to update status");
+        } finally {
             setIsLoading(false);
-        }, 800);
+        }
     };
 
     return (
@@ -59,6 +77,11 @@ export default function AdminActions({ initialStatus, onStatusChange }: AdminAct
                         ? 'Blocking will prevent new bookings immediately.' 
                         : 'Activating makes this spot visible on the map.'}
                 </p>
+                {error && (
+                    <div className="text-red-500 text-xs mt-1 text-center font-medium bg-red-50 py-1 rounded">
+                        {error}
+                    </div>
+                )}
             </div>
         </div>
     );

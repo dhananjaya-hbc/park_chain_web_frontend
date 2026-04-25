@@ -18,11 +18,14 @@ export interface Spot {
     available_slots: number;
     is_available: boolean;
     is_approved: boolean;
+    is_active?: boolean;
+    is_blocked?: boolean;
     vehicle_types: string[];
     slots_per_type: number[];
     prices_per_hour: number[];
     image_urls: string[];
     amenities: string[];
+    owner_id: string;
     owner_name: string;
     owner_email: string;
     owner_phone?: string;

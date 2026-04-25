@@ -3,12 +3,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useSpots } from '@/hooks/useSpots';
 import { 
-    APIProvider, 
-    Map, 
     AdvancedMarker, 
     InfoWindow, 
     useMap 
 } from '@vis.gl/react-google-maps';
+import GoogleMapContainer from '@/components/custom/GoogleMapContainer';
 import SpotDetailsCard from '../SpotDetailsCard/SpotDetailsCard';
 
 interface MapLocation {
@@ -38,6 +37,12 @@ function MapCenterUpdater({ center }: { center: MapLocation | null }) {
     return null;
 }
 
+/**
+ * SpotMap Component
+ * 
+ * Renders the Google Map view, displaying spot locations as custom markers.
+ * Handles marker selection, panning to selected markers, and filtering.
+ */
 export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, filterStatus }: SpotMapProps) {
     const { spots, isLoading, error } = useSpots();
     const [centerLocation, setCenterLocation] = useState<MapLocation | null>(null);
@@ -59,11 +64,12 @@ export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, fil
             // 1. Text match (case-insensitive)
             const matchesSearch = query === '' || spotTitle.toLowerCase().includes(query.toLowerCase());
             
-            // 2. Status match
+            // 2. Status match (Admin level block uses is_available)
+            const isActive = spot.is_available;
             const matchesStatus = 
                 filterStatus === 'all' || 
-                (filterStatus === 'active' && spot.is_available) || 
-                (filterStatus === 'inactive' && !spot.is_available);
+                (filterStatus === 'active' && isActive) || 
+                (filterStatus === 'inactive' && !isActive);
 
             return matchesSearch && matchesStatus;
         });
@@ -120,78 +126,68 @@ export default function SpotMap({ selectedSpotId, onSpotSelect, searchQuery, fil
         );
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-        return (
-            <div className="w-full h-full flex justify-center items-center bg-gray-50">
-                <p className="text-red-500 font-medium">Google Maps API key is missing in .env.local</p>
-            </div>
-        );
-    }
-
     const currentCenter = centerLocation && !isNaN(centerLocation.lat) && !isNaN(centerLocation.lng) 
         ? centerLocation 
         : defaultCenter;
 
     return (
-        <APIProvider apiKey={apiKey}>
-            <div className="w-full h-full relative">
-                <Map
-                    defaultZoom={13}
-                    defaultCenter={currentCenter}
-                    mapId="DEMO_MAP_ID" 
-                    disableDefaultUI={false}
-                    gestureHandling={'greedy'}
-                    streetViewControl={false}
-                >
-                    <MapCenterUpdater center={currentCenter} />
+        <div className="w-full h-full relative">
+            <GoogleMapContainer
+                defaultZoom={13}
+                defaultCenter={currentCenter}
+                mapId="DEMO_MAP_ID" 
+                disableDefaultUI={false}
+                gestureHandling={'greedy'}
+                streetViewControl={false}
+            >
+                <MapCenterUpdater center={currentCenter} />
 
-                    {filteredSpots.map((spot) => {
-                        const lat = Number(spot.latitude);
-                        const lng = Number(spot.longitude);
-                        
-                        if (isNaN(lat) || isNaN(lng)) return null;
+                {filteredSpots.map((spot) => {
+                    const lat = Number(spot.latitude);
+                    const lng = Number(spot.longitude);
+                    
+                    if (isNaN(lat) || isNaN(lng)) return null;
 
-                        const isSelected = selectedSpotId === spot.id;
-                        
-                        const colorClass = isSelected 
-                            ? 'text-[#197729]' 
-                            : spot.is_available 
-                                ? 'text-blue-600' 
-                                : 'text-gray-400'; 
+                    const isSelected = selectedSpotId === spot.id;
+                    
+                    const isActive = spot.is_available;
+                    const colorClass = isSelected 
+                        ? 'text-[#197729]' 
+                        : isActive 
+                            ? 'text-blue-600' 
+                            : 'text-red-500'; 
 
-                        return (
-                            <React.Fragment key={spot.id}>
-                                <AdvancedMarker
-                                    position={{ lat, lng }}
-                                    onClick={() => onSpotSelect(spot.id)}
-                                    zIndex={isSelected ? 50 : 1}
-                                >
-                                    <div className="relative flex justify-center items-center -mt-8 cursor-pointer">
-                                        <svg 
-                                            className={`${colorClass} transition-colors duration-200 drop-shadow-lg`} 
-                                            width="36" height="36" viewBox="0 0 24 24" fill="currentColor"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                                        </svg>
-                                    </div>
-                                </AdvancedMarker>
-
-                                {isSelected && (
-                                    <InfoWindow
-                                        position={{ lat, lng }}
-                                        onCloseClick={() => onSpotSelect('')}
-                                        pixelOffset={[0, -38]} 
+                    return (
+                        <React.Fragment key={spot.id}>
+                            <AdvancedMarker
+                                position={{ lat, lng }}
+                                onClick={() => onSpotSelect(spot.id)}
+                                zIndex={isSelected ? 50 : 1}
+                            >
+                                <div className="relative flex justify-center items-center -mt-8 cursor-pointer">
+                                    <svg 
+                                        className={`${colorClass} transition-colors duration-200 drop-shadow-lg`} 
+                                        width="36" height="36" viewBox="0 0 24 24" fill="currentColor"
+                                        xmlns="http://www.w3.org/2000/svg"
                                     >
-                                        <SpotDetailsCard spot={spot} />
-                                    </InfoWindow>
-                                )}
-                            </React.Fragment>
-                        );
-                    })}
-                </Map>
-            </div>
-        </APIProvider>
+                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                                    </svg>
+                                </div>
+                            </AdvancedMarker>
+
+                            {isSelected && (
+                                <InfoWindow
+                                    position={{ lat, lng }}
+                                    onCloseClick={() => onSpotSelect('')}
+                                    pixelOffset={[0, -38]} 
+                                >
+                                    <SpotDetailsCard spot={spot} />
+                                </InfoWindow>
+                            )}
+                        </React.Fragment>
+                    );
+                })}
+            </GoogleMapContainer>
+        </div>
     );
 }
