@@ -189,4 +189,19 @@ describe('AdminNotes Component', () => {
         
         expect(mockOnSave).toHaveBeenCalledTimes(2)
     })
+
+            it('should log error when save callback throws', async () => {
+                const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+                const mockOnSave = jest.fn().mockRejectedValue(new Error('save failed'))
+
+                render(<AdminNotes onSave={mockOnSave} />)
+
+                fireEvent.click(screen.getByRole('button'))
+
+                await waitFor(() => {
+                    expect(errorSpy).toHaveBeenCalled()
+                })
+
+                errorSpy.mockRestore()
+            })
 })

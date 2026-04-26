@@ -5,9 +5,11 @@ import apiService from '@/lib/api/apiService';
 
 const mockPush = jest.fn();
 const mockAlert = jest.fn();
+type MockRouteParams = { id?: string } | null;
+const mockUseParams = jest.fn<MockRouteParams, []>(() => ({ id: 'kyb-123' }));
 
 jest.mock('next/navigation', () => ({
-  useParams: () => ({ id: 'kyb-123' }),
+  useParams: () => mockUseParams(),
   useRouter: () => ({ push: mockPush }),
 }));
 
@@ -21,7 +23,11 @@ jest.mock('@/lib/api/apiService', () => ({
 
 jest.mock('@/app/(protected)/admin/kyb/[id]/components/VerificationHeader', () => ({
   __esModule: true,
-  default: ({ entityName }: { entityName: string }) => <div>Header:{entityName}</div>,
+  default: ({ entityName, submittedDate }: { entityName: string; submittedDate: string }) => (
+    <div>
+      Header:{entityName} Date:{submittedDate}
+    </div>
+  ),
 }));
 
 jest.mock('@/app/(protected)/admin/kyb/[id]/components/PersonalInfo', () => ({
@@ -58,6 +64,7 @@ const detailResponse = {
 describe('Admin KYB Detail Review Main', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseParams.mockReturnValue({ id: 'kyb-123' });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (global as any).alert = mockAlert;
   });
@@ -71,7 +78,7 @@ describe('Admin KYB Detail Review Main', () => {
       expect(mockApi.get).toHaveBeenCalledWith('/admin/kyb/kyb-123');
     });
 
-    expect(await screen.findByText('Header:City Center Plaza')).toBeTruthy();
+    expect(await screen.findByText(/Header:\s*City Center Plaza/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Approve KYB' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Reject' })).toBeTruthy();
   });
@@ -82,7 +89,7 @@ describe('Admin KYB Detail Review Main', () => {
 
     render(<KybDetailMain />);
 
-    await screen.findByText('Header:City Center Plaza');
+    await screen.findByText(/Header:\s*City Center Plaza/);
     fireEvent.click(screen.getByRole('button', { name: 'Set Admin Note' }));
     fireEvent.click(screen.getByRole('button', { name: 'Approve KYB' }));
 
@@ -102,7 +109,7 @@ describe('Admin KYB Detail Review Main', () => {
 
     render(<KybDetailMain />);
 
-    await screen.findByText('Header:City Center Plaza');
+    await screen.findByText(/Header:\s*City Center Plaza/);
     fireEvent.click(screen.getByRole('button', { name: 'Set Admin Note' }));
     fireEvent.click(screen.getByRole('button', { name: 'Reject' }));
 
@@ -122,7 +129,7 @@ describe('Admin KYB Detail Review Main', () => {
 
     render(<KybDetailMain />);
 
-    await screen.findByText('Header:City Center Plaza');
+    await screen.findByText(/Header:\s*City Center Plaza/);
     fireEvent.click(screen.getByRole('button', { name: 'Approve KYB' }));
 
     await waitFor(() => {
@@ -130,5 +137,94 @@ describe('Admin KYB Detail Review Main', () => {
     });
 
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  test('shows error message when detail fetch fails', async () => {
+    mockApi.get.mockRejectedValue(new Error('backend down'));
+
+    render(<KybDetailMain />);
+
+    expect(
+      await screen.findByText('Failed to load verification details. Check backend connection.')
+    ).toBeTruthy();
+  });
+
+  test('shows no-data state when backend returns falsy primitive payload', async () => {
+    mockApi.get.mockResolvedValue(0 as never);
+
+    render(<KybDetailMain />);
+
+    expect(await screen.findByText('No details found.')).toBeTruthy();
+  });
+
+  test('uses existing adminNotes from API when updating without editing notes', async () => {
+    mockApi.get.mockResolvedValue({ ...detailResponse, adminNotes: 'Existing backend note' } as never);
+    mockApi.put.mockResolvedValue({ ok: true } as never);
+
+    render(<KybDetailMain />);
+
+    await screen.findByText(/Header:City Center Plaza/);
+    fireEvent.click(screen.getByRole('button', { name: 'Approve KYB' }));
+
+    await waitFor(() => {
+      expect(mockApi.put).toHaveBeenCalledWith('/admin/kyb/kyb-123/status', {
+        status: 'verified',
+        adminNotes: 'Existing backend note',
+      });
+    });
+  });
+
+  test('uses owner name fallback from nested owner object', async () => {
+    mockApi.get.mockResolvedValue({ ...detailResponse, ownerName: '', owner: { name: 'Nested Owner' } } as never);
+
+    render(<KybDetailMain />);
+
+    expect(await screen.findByText('Owner:Nested Owner')).toBeTruthy();
+  });
+
+  test('uses Unknown Owner fallback when owner name is missing', async () => {
+    mockApi.get.mockResolvedValue({ ...detailResponse, ownerName: '', owner: undefined } as never);
+
+    render(<KybDetailMain />);
+
+    expect(await screen.findByText('Owner:Unknown Owner')).toBeTruthy();
+  });
+
+  test('prefers date over createdAt for submittedDate', async () => {
+    mockApi.get.mockResolvedValue({ ...detailResponse, date: '2026-02-10', createdAt: '2026-01-20' } as never);
+
+    render(<KybDetailMain />);
+
+    expect(await screen.findByText('Header:City Center Plaza Date:2026-02-10')).toBeTruthy();
+  });
+
+  test('uses Recently when both date and createdAt are missing', async () => {
+    mockApi.get.mockResolvedValue({ ...detailResponse, date: '', createdAt: '' } as never);
+
+    render(<KybDetailMain />);
+
+    expect(await screen.findByText('Header:City Center Plaza Date:Recently')).toBeTruthy();
+  });
+
+  test('keeps loading and does not fetch when route id is missing', async () => {
+    mockUseParams.mockReturnValue({});
+
+    render(<KybDetailMain />);
+
+    expect(screen.getByText('Loading details from database...')).toBeTruthy();
+    await waitFor(() => {
+      expect(mockApi.get).not.toHaveBeenCalled();
+    });
+  });
+
+  test('keeps loading and does not fetch when params is null', async () => {
+    mockUseParams.mockReturnValue(null);
+
+    render(<KybDetailMain />);
+
+    expect(screen.getByText('Loading details from database...')).toBeTruthy();
+    await waitFor(() => {
+      expect(mockApi.get).not.toHaveBeenCalled();
+    });
   });
 });

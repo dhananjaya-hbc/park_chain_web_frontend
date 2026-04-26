@@ -126,4 +126,24 @@ describe('Admin KYB VerificationTable', () => {
       await screen.findByText('No KYB verification requests found for this status.')
     ).toBeTruthy();
   });
+
+  test('uses data array when backend wraps result in object', async () => {
+    mockApi.get.mockResolvedValue({ data: sampleRows } as never);
+
+    render(<VerificationTable selectedFilter="all" />);
+
+    expect(await screen.findByText('City Center Plaza')).toBeTruthy();
+    expect(screen.getByText('Riverside Open Lot')).toBeTruthy();
+    expect(screen.getByText('Mall Basement')).toBeTruthy();
+  });
+
+  test('falls back to empty list when wrapped response has no data field', async () => {
+    mockApi.get.mockResolvedValue({} as never);
+
+    render(<VerificationTable selectedFilter="all" />);
+
+    expect(
+      await screen.findByText('No KYB verification requests found for this status.')
+    ).toBeTruthy();
+  });
 });
