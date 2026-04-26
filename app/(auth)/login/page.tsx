@@ -185,19 +185,6 @@ export default function LoginPage() {
                 Login as Admin →
               </Link>
             </div>
-
-            {/* Sign Up Link */}
-            <div className="text-center pt-4 border-t border-[#2d5f42]/20">
-              <p className="text-[#2d5f42] text-sm">
-                Don&apos;t have an account?{' '}
-                <Link
-                  href="/signup"
-                  className="text-[#1a4d2e] font-medium hover:underline"
-                >
-                  Sign up
-                </Link>
-              </p>
-            </div>
           </div>
         </div>
 

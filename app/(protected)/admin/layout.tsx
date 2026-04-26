@@ -42,7 +42,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   let pageTitle = "Dashboard";
 
   const pageMap: Record<string, { id: string; title: string }> = {
-    '/admin/seller-verification': { id: 'verification', title: 'Seller Verification Requests' },
+    '/admin/kyb': { id: 'verification', title: 'KYB Spot Verification Requests' },
     '/admin/bookings': { id: 'bookings', title: 'All Bookings' },
     '/admin/transactions': { id: 'transactions', title: 'Transactions' },
     '/admin/users': { id: 'users', title: 'Users' },

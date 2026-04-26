@@ -2,7 +2,7 @@
 
 import Main from './components/Main'
 
-export default function SellerVerificationPage() {
+export default function AdminKybPage() {
     return (
         <Main />
     )

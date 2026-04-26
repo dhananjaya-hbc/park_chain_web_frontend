@@ -42,7 +42,7 @@ export default function VerificationTableRow({
                 <StatusBadge status={status} />
             </td>
             <td className="px-6 py-4 text-center">
-                <Link href={`/admin/seller-verification/${id}`}>
+                <Link href={`/admin/kyb/${id}`}>
                     <button className="px-4 py-2 border border-black rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-md transition-colors">
                         View Details
                     </button>

@@ -1,4 +1,4 @@
-seller-verification/
+kyb/
 ├── page.tsx                    # Layout wrapper
 └── components/
     ├── Main.tsx                # Main orchestrator

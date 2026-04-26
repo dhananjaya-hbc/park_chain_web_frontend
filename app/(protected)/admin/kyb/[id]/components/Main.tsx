@@ -64,7 +64,7 @@ export default function Main() {
                 adminNotes: adminNotes 
             });
             // Redirect back to the table after successfully updating!
-            router.push('/admin/seller-verification');
+            router.push('/admin/kyb');
         } catch (err) {
             console.error("Update status error:", err);
             alert("Failed to update status. Check backend connection.");
