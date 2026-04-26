@@ -75,9 +75,9 @@ export default function VerificationHeader({ filterHook }: VerificationHeaderPro
                     </div>
                     <input 
                         type="text" 
-                        placeholder="" 
-                        className="flex-1 h-7 px-3 rounded-lg text-sm focus:outline-none mr-0"
-                        style={{backgroundColor: '#f7fcf5'}}
+                        placeholder="Search verifications"
+                        aria-label="Search verifications"
+                        className="flex-1 h-7 px-3 rounded-lg text-sm focus:outline-none mr-0 bg-[#f7fcf5]"
                     />
                 </div>
             </div>
