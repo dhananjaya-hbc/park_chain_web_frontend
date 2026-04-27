@@ -48,6 +48,7 @@ class ApiService {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'GET',
       headers: this.headers,
+      cache: 'no-store', // Disable caching so frontend always gets latest data
     });
     return this.handleResponse(response);
   }
