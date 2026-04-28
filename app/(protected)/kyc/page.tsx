@@ -52,7 +52,7 @@ export default function KycPage() {
         <Button 
           onClick={startKYC} 
           disabled={isLoading}
-          className="w-full py-6 text-lg"
+          className="w-full py-6 text-lg bg-green-600 hover:bg-green-700 text-white"
         >
           {isLoading ? "Starting Verification..." : "Verify Identity"}
         </Button>
