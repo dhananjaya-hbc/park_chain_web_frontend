@@ -16,7 +16,7 @@ export default function KYBModal() {
     setIsLoading(true);
     setErrorMsg('');
 
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData(e.target as HTMLFormElement);
 
     // Make sure we connect directly to the Backend rather than the Next.js frontend proxy
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
