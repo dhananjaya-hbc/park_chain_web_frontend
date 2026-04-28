@@ -122,6 +122,7 @@ export default function KYBModal() {
                   name="googleMapsLink"
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="https://maps.google.com/... (Google Maps location link from address bar)"
+                  required
                 />
               </div>
 
