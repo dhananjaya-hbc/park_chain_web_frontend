@@ -16,7 +16,7 @@ export default function KycPage() {
       // Call your own backend to start a session using apiService
       const data = await apiService.post('/create-didit-session');
 
-      // REDIRECT THE USER DIRECTLY TO DIDIT (No pop-up window)
+      // REDIRECT THE USER DIRECTLY TO DIDIT
       if (data.didit_url) {
         window.location.href = data.didit_url;
       } else {
