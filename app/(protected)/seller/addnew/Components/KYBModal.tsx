@@ -16,7 +16,7 @@ export default function KYBModal() {
     setIsLoading(true);
     setErrorMsg('');
 
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData(e.target as HTMLFormElement);
 
     // Custom validation for Google Maps Link
     const googleMapsLink = formData.get('googleMapsLink')?.toString().trim() || '';
