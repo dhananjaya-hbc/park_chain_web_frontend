@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import AdminReviewAlert from './AdminReviewAlert';
 import GeneralInfoCard from './GeneralInfoCard';
 import PricingCapacityCard from './PricingCapacityCard';
 import SpotImagesCard from './SpotImagesCard';
@@ -201,8 +200,6 @@ export default function Main({ kybId }: { kybId?: string }) {
                     Fill in the details of your parking spot to get started
                 </p>
             </div>
-
-            <AdminReviewAlert />
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
