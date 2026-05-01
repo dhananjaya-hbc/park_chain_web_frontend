@@ -23,7 +23,7 @@ export default function VerificationHeader({ filterHook }: VerificationHeaderPro
 
     return (
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-1 mb-2 p-4 sm:p-3 pb-0">
-            <h1 className="text-l font-bold text-gray-800">Verification list (1522)</h1>
+            <h1 className="text-l font-bold text-gray-800">Verification list</h1>
             
             <div className="flex flex-wrap items-center gap-2">
                 {/* Filter Button with Dropdown */}
@@ -67,19 +67,7 @@ export default function VerificationHeader({ filterHook }: VerificationHeaderPro
                     <i className="ri-time-fill text-sm"></i>
                     Pending
                 </button>
-                
-                {/* Search Input */}
-                <div className="relative w-full sm:w-64 lg:w-96 h-10 bg-white border border-gray-300 rounded-lg flex items-center px-2">
-                    <div className="flex items-center justify-center pl-1 pr-2">
-                        <i className="ri-search-2-line text-green-600 text-xl"></i>
-                    </div>
-                    <input 
-                        type="text" 
-                        placeholder="Search verifications"
-                        aria-label="Search verifications"
-                        className="flex-1 h-7 px-3 rounded-lg text-sm focus:outline-none mr-0 bg-[#f7fcf5]"
-                    />
-                </div>
+            
             </div>
         </div>
     )
