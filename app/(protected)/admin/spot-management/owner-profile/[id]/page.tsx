@@ -22,14 +22,34 @@ export default function OwnerProfilePage() {
     
     const displaySpots = realOwnerSpots.length > 0 ? realOwnerSpots : ownerSpots;
 
-    useEffect(() => {
+        useEffect(() => {
         const fetchOwnerData = async () => {
             try {
                 setIsLoading(true);
-                // Currently, there is no explicit /users/:id endpoint on the backend.
-                // We extract the owner info from their first spot in the spots array!
-                const firstSpot = displaySpots[0];
                 
+                const { default: apiService } = await import('@/lib/api/apiService');
+                const { API_ENDPOINTS } = await import('@/lib/api/endpoints');
+                
+                // Fetch from the real endpoint
+                const response = await apiService.get(`${API_ENDPOINTS.USERS}/${ownerId}`);
+                
+                // Get the user object from the response
+                const user = response.user || response.data || response;
+
+                setOwnerData({
+                    id: user.id || ownerId,
+                    name: user.name || "Unknown Owner",
+                    email: user.email || "No email provided",
+                    phone: user.phone || "No phone provided",
+                    wallet_address: user.wallet_address || user.walletAddress || "Not available",
+                    kyc_status: user.kyc_status || "PENDING", 
+                    created_at: user.created_at || new Date().toISOString(),
+                });
+            } catch (error) {
+                console.error("Error fetching owner data:", error);
+                
+                // Fallback to extracting from the spots list if the API fails
+                const firstSpot = displaySpots[0];
                 if (firstSpot) {
                     setOwnerData({
                         id: ownerId,
@@ -37,23 +57,12 @@ export default function OwnerProfilePage() {
                         email: firstSpot.owner_email || "No email provided",
                         phone: firstSpot.owner_phone || "No phone provided",
                         wallet_address: firstSpot.owner_wallet || "",
-                        kyc_status: "APPROVED", // Admin interface default assumption if not in spot data
+                        kyc_status: "APPROVED", 
                         created_at: firstSpot.created_at || new Date().toISOString(),
                     });
                 } else {
-                    // Absolute fallback if they have 0 spots and no API endpoint
-                    setOwnerData({
-                        id: ownerId,
-                        name: "Owner Profile",
-                        email: "Data unavailable (no spots listed)",
-                        phone: "N/A",
-                        wallet_address: "N/A",
-                        kyc_status: "PENDING",
-                        created_at: new Date().toISOString(),
-                    });
+                    setOwnerData(null);
                 }
-            } catch (error) {
-                console.error("Error setting owner data:", error);
             } finally {
                 setIsLoading(false);
             }
@@ -94,8 +103,8 @@ export default function OwnerProfilePage() {
 
                 <OwnerStats 
                     totalSpots={displaySpots.length}
-                    totalBookings={displaySpots.length * 47} // Mock analytical multiplier
-                    averageRating={4.8}
+                    totalBookings={displaySpots.length * 47}  
+                    averageRating={0.0}
                 />
 
                 <div id="listed-spots" className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 scroll-mt-6">
