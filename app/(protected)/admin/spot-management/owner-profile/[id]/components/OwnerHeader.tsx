@@ -61,8 +61,8 @@ export default function OwnerHeader({ name, email, phone, joinDate, kycStatus, w
                         </div>
                         <div>
                             <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">Wallet Address</p>
-                            <p className="text-gray-900 font-medium truncate" title={walletAddress}>
-                                {walletAddress || 'Not provided'}
+                            <p className="text-gray-900 font-medium truncate" title={walletAddress || 'Not available'}>
+                                {walletAddress || <span className="text-gray-400 italic">Not available</span>}
                             </p>
                         </div>
                     </div>

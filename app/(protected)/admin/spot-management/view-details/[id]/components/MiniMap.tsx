@@ -9,11 +9,6 @@ interface MiniMapProps {
     longitude: number;
 }
 
-/**
- * MiniMap Component
- * 
- * Displays a small, read-only Google Map centered on the spot's location.
- */
 export default function MiniMap({ latitude, longitude }: MiniMapProps) {
     if (isNaN(latitude) || isNaN(longitude)) {
         return (

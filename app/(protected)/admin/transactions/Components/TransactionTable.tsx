@@ -76,7 +76,7 @@ export default function TransactionTable() {
             try {
                 const response = await apiService.get(API_ENDPOINTS.TRANSACTIONS);
                 setTransactions(response.transactions || []);
-                console.log(`✅ Loaded ${response.transactions?.length || 0} transactions`);
+                console.log(`Loaded ${response.transactions?.length || 0} transactions`);
             } catch (err) {
                 console.error('Failed to fetch transactions:', err);
             } finally {

@@ -7,6 +7,7 @@ interface OwnerCardProps {
     email: string;
     phone: string;
     joinDate: string;
+    walletAddress?: string;
 }
 
 export default function OwnerCard({ ownerId, name, email, phone, joinDate }: OwnerCardProps) {

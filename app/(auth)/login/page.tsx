@@ -150,7 +150,7 @@ export default function LoginPage() {
             {/* Loading Status */}
             {isLoading && (
               <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                <p className="text-green-600 text-sm">Connecting your wallet...</p>
+                <p className="text-green-60 0 text-sm">Connecting your wallet...</p>
               </div>
             )}
 

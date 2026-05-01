@@ -51,7 +51,7 @@ export default function SpotDetailsPage() {
                     price: rawSpot.pricePerHour || rawSpot.prices_per_hour?.[0] ? `${rawSpot.pricePerHour || rawSpot.prices_per_hour[0]} XRP / hr` : "N/A",
                     description: rawSpot.description || "No description available.",
                     images: fetchedImages.length > 0 ? fetchedImages : ["/api/placeholder/800/400"],
-                    rating: rawSpot.rating || 4.8,
+                    rating: rawSpot.rating || 0.0,
                     reviewCount: rawSpot.reviewCount || 124,
                     amenities: rawSpot.amenities || ["CCTV", "Covered", "24/7 Access", "EV Charging"],
                     is_active: rawSpot.is_available !== false, // Maps admin status to is_available
@@ -65,23 +65,7 @@ export default function SpotDetailsPage() {
                 });
             } catch (error) {
                 console.error("Failed to fetch spot details:", error);
-                // Fallback to mock data on error for development purposes
-                setSpotData({
-                    id: spotId,
-                    title: "Downtown Metro Parking",
-                    address: "123 Market St, San Francisco, CA",
-                    price: "$6.00 / hr",
-                    description: "Secure underground parking spot located near the financial district. 24/7 access with surveillance cameras. Suitable for SUVs and Sedans.",
-                    images: ["/api/placeholder/800/400"],
-                    rating: 4.8,
-                    reviewCount: 124,
-                    amenities: ["CCTV", "Covered", "24/7 Access", "EV Charging"],
-                    is_active: true,
-                    owner_name: "Mock Owner",
-                    owner_email: "mock@example.com",
-                    owner_phone: "+1 555-0000",
-                    created_at: new Date().toISOString()
-                });
+                
             } finally {
                 setIsLoading(false);
             }

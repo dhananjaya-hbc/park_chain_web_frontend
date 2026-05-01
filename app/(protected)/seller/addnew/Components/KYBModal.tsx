@@ -16,7 +16,16 @@ export default function KYBModal() {
     setIsLoading(true);
     setErrorMsg('');
 
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData(e.target as HTMLFormElement);
+
+    // Custom validation for Google Maps Link
+    const googleMapsLink = formData.get('googleMapsLink')?.toString().trim() || '';
+    const googleMapsPattern = /^https?:\/\/(www\.)?google\.[a-z.]+\/maps\//i;
+    if (!googleMapsPattern.test(googleMapsLink)) {
+      setIsLoading(false);
+      setErrorMsg('Please enter a valid Google Maps link (copied from the address bar).');
+      return;
+    }
 
     // Make sure we connect directly to the Backend rather than the Next.js frontend proxy
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -64,8 +73,8 @@ export default function KYBModal() {
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
               Your parking spot details have been submitted successfully. This is currently under review and should not take more than 24 hours.
             </p>
-            <Button onClick={() => router.push('/seller/dashboard')} className="w-full sm:w-auto px-8">
-              Go to Dashboard
+              <Button onClick={() => router.push('/seller/dashboard')} className="w-full sm:w-auto px-8 bg-[#41ab5d] hover:bg-green-600 text-white">
+                Go to Dashboard
             </Button>
           </div>
         ) : (
@@ -122,6 +131,7 @@ export default function KYBModal() {
                   name="googleMapsLink"
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="https://maps.google.com/... (Google Maps location link from address bar)"
+                  required
                 />
               </div>
 
@@ -171,7 +181,7 @@ export default function KYBModal() {
                 <Button type="button" variant="outline" className="mr-3" onClick={() => setIsOpen(false)} disabled={isLoading}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading} className="bg-[#41ab5d] hover:bg-green-600 text-white">
                   {isLoading ? 'Submitting...' : 'Submit for Verification'}
                 </Button>
               </div>
