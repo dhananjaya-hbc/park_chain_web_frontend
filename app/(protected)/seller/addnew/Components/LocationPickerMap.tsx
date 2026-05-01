@@ -1,19 +1,19 @@
-"use client";
+﻿"use client";
 
 /**
  * LocationPickerMap Component
  * 
- * An interactive Leaflet map component for selecting parking spot locations.
+ * An interactive Google Map component for selecting parking spot locations.
  * Features:
  * - Click anywhere on the map to capture location coordinates
  * - Auto-centers and animates to selected location
  * - Displays marker at selected position
- * - Uses shared BaseLeafletMap component for consistent Leaflet setup
+ * - Uses shared GoogleMapContainer component for consistent Google Maps setup
  */
 
-import { useEffect } from 'react';
-import { Marker, useMap, useMapEvents } from 'react-leaflet';
-import BaseLeafletMap from '@/components/custom/BaseLeafletMap';
+import { useEffect, useMemo } from 'react';
+import { AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
+import GoogleMapContainer from '@/components/custom/GoogleMapContainer';
 
 // Type alias for [latitude, longitude] coordinates
 export type MapPosition = [number, number];
@@ -29,54 +29,73 @@ interface LocationPickerMapProps {
 const DEFAULT_CENTER: MapPosition = [6.9271, 79.8612];
 
 /**
- * MapClickHandler Hook
+ * MapController Hook
  * Listens for map click events and extracts clicked coordinates.
- * Calls onSelect callback with latitude and longitude of clicked point.
- */
-function MapClickHandler({ onSelect }: { onSelect: (position: MapPosition) => void }) {
-    useMapEvents({
-        click(event) {
-            // Capture clicked coordinates and pass to parent
-            onSelect([event.latlng.lat, event.latlng.lng]);
-        },
-    });
-
-    return null;
-}
-
-/**
- * RecenterMap Hook
  * Automatically centers and animates the map to selected position.
- * Ensures minimum zoom level of 14 for better visibility.
  */
-function RecenterMap({ selectedPosition }: { selectedPosition: MapPosition | null }) {
+function MapController({ selectedPosition, onSelect, readOnly = false }: LocationPickerMapProps) {
     const map = useMap();
 
+    // Handle clicks
     useEffect(() => {
-        if (!selectedPosition) return;  // Do nothing if no position selected
-        // Set zoom to 14 if currently lower, otherwise maintain current zoom
-        const nextZoom = map.getZoom() < 14 ? 14 : map.getZoom();
-        // Smoothly animate map to selected position
-        map.flyTo(selectedPosition, nextZoom, { animate: true });
+        if (!map || readOnly) return;
+        
+        const clickListener = map.addListener('click', (e: google.maps.MapMouseEvent) => {
+            if (!e.latLng) return;
+            onSelect([e.latLng.lat(), e.latLng.lng()]);
+        });
+
+        return () => {
+            google.maps.event.removeListener(clickListener);
+        };
+    }, [map, onSelect, readOnly]);
+
+    // Handle recentering when position changes
+    useEffect(() => {
+        if (!map || !selectedPosition) return;
+        
+        const currentZoom = map.getZoom() || 12;
+        const nextZoom = currentZoom < 14 ? 14 : currentZoom;
+        
+        map.panTo({ lat: selectedPosition[0], lng: selectedPosition[1] });
+        map.setZoom(nextZoom);
     }, [map, selectedPosition]);
 
     return null;
 }
 
 export default function LocationPickerMap({ selectedPosition, onSelect, readOnly = false }: LocationPickerMapProps) {
-    return (
-        <BaseLeafletMap
-            center={selectedPosition ?? DEFAULT_CENTER}  // Center on selected position or default to Colombo
-            zoom={12}
-            minHeight="230px"
-        >
-            {/* Listen for map clicks and capture coordinates — disabled in readOnly mode */}
-            {!readOnly && <MapClickHandler onSelect={onSelect} />}
-            {/* Auto-center map when location is selected */}
-            <RecenterMap selectedPosition={selectedPosition} />
+    const center = useMemo(
+        () => (selectedPosition ? { lat: selectedPosition[0], lng: selectedPosition[1] } : { lat: DEFAULT_CENTER[0], lng: DEFAULT_CENTER[1] }),
+        [selectedPosition]
+    );
 
-            {/* Display marker at selected location */}
-            {selectedPosition && <Marker position={selectedPosition} />}
-        </BaseLeafletMap>
+    return (
+        <GoogleMapContainer 
+            defaultCenter={center} 
+            defaultZoom={12} 
+            mapId="seller_location_picker_map" 
+            gestureHandling={readOnly ? "none" : "greedy"}
+            disableDefaultUI={false}
+            style={{ width: '100%', height: '100%' }}
+        >
+            <MapController selectedPosition={selectedPosition} onSelect={onSelect} readOnly={readOnly} />
+
+            {/* Display custom styled marker at selected location */}
+            {selectedPosition && (
+                <AdvancedMarker position={{ lat: selectedPosition[0], lng: selectedPosition[1] }}>
+                    <div className="relative flex items-center justify-center w-12 h-12 pointer-events-none">
+                        {/* Outer pulse effect */}
+                        <div className="absolute inset-0 bg-[#2e7d32] rounded-full opacity-20 animate-ping" />
+                        
+                        {/* Inner pin */}
+                        <div className="absolute w-8 h-8 rounded-full border-2 border-white shadow-md flex items-center justify-center bg-[#2e7d32]">
+                            <span className="w-2.5 h-2.5 bg-white rounded-full" />
+                        </div>
+                    </div>
+                </AdvancedMarker>
+            )}
+        </GoogleMapContainer>
     );
 }
+

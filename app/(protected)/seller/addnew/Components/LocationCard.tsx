@@ -16,13 +16,13 @@ import dynamic from 'next/dynamic';
 
 import type { MapPosition } from './LocationPickerMap';
 
-// Dynamically import map component to avoid SSR issues with Leaflet
+// Dynamically import map component to avoid SSR issues with Google Maps
 const LocationPickerMap = dynamic(() => import('./LocationPickerMap'), {
     ssr: false,
     loading: () => (
         <div className="h-[260px] w-full rounded-xl border border-dashed border-gray-300 bg-gray-50 animate-pulse" />
     ),
-});
+}); 
 
 interface LocationCardProps {
     latitude: string;
