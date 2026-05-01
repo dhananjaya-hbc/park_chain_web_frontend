@@ -24,3 +24,6 @@ export default function BookingStatCards({ stats }: Props) {
     </div>
   );
 }
+
+
+
