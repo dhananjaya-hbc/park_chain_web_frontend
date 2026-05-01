@@ -4,12 +4,7 @@ import React, { useState } from 'react';
 import SpotMap from './MapView/SpotMap';
 import MapSearchBar from './SearchBar/MapSearchBar';
 
-/**
- * Main Component
- * 
- * Orchestrates the spot management view by managing state for search queries
- * and filter status, and passing them to the SpotMap and MapSearchBar components.
- */
+
 export default function Main() {
     const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
     const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');

@@ -11,12 +11,6 @@ interface MapSearchBarProps {
     onFilterChange: (status: 'all' | 'active' | 'inactive') => void;
 }
 
-/**
- * MapSearchBar Component
- * 
- * Provides a text search input and an expandable filter tab for 
- * querying and filtering spots on the map. Includes click-outside detection.
- */
 export default function MapSearchBar({
     searchQuery,
     onSearchChange,

@@ -13,6 +13,9 @@ export const API_ENDPOINTS = {
 
   SPOT_IMAGES : (spotId: string) => `/spots/${spotId}/images`,
 
+    // Users
+  USERS: '/users',
+
   // Bookings
   BOOKINGS: '/bookings',
 
