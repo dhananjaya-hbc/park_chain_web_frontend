@@ -18,8 +18,8 @@ describe('PersonalInfo Component', () => {
         
         const title = screen.getByText('Entity Details (KYB)')
         expect(title).toBeInTheDocument()
-        expect(title).toHaveClass('text-2xl')
-        expect(title).toHaveClass('font-bold')
+        expect(title).toHaveClass('text-lg')
+        expect(title).toHaveClass('font-semibold')
     })
 
     it('should display owner name field', () => {
@@ -107,8 +107,8 @@ describe('PersonalInfo Component', () => {
         
         const labels = screen.getAllByText(/Entity\/Spot Name|Owner Name|Spot Type|Google Maps Link|Address/)
         labels.forEach(label => {
-            expect(label).toHaveClass('text-gray-600')
-            expect(label).toHaveClass('font-semibold')
+            expect(label).toHaveClass('text-gray-500')
+            expect(label).toHaveClass('font-medium')
         })
     })
 
@@ -117,7 +117,7 @@ describe('PersonalInfo Component', () => {
         
         const value = screen.getByText('Test Owner')
         expect(value).toHaveClass('text-gray-900')
-        expect(value).toHaveClass('text-lg')
+        expect(value).toHaveClass('text-sm')
     })
 
     it('should truncate long Google Maps links', () => {
@@ -132,7 +132,8 @@ describe('PersonalInfo Component', () => {
         const { container } = render(<PersonalInfo />)
         
         const title = screen.getByText('Entity Details (KYB)')
-        expect(title).toHaveClass('border-b-2')
-        expect(title).toHaveClass('border-green-600')
+        expect(title).not.toHaveClass('border-b-2')
+        expect(container.firstChild).toHaveClass('border')
+        expect(container.firstChild).toHaveClass('border-gray-100')
     })
 })

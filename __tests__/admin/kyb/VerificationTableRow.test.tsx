@@ -34,7 +34,9 @@ describe('VerificationTableRow Component', () => {
         
         const tr = container.querySelector('tr')
         expect(tr).toBeInTheDocument()
-        expect(tr).toHaveClass('bg-white')
+        expect(tr).toHaveClass('border-b')
+        expect(tr).toHaveClass('border-gray-50')
+        expect(tr).toHaveClass('hover:bg-gray-50/50')
     })
 
     it('should display entity name with building icon', () => {
@@ -46,6 +48,7 @@ describe('VerificationTableRow Component', () => {
         
         const icon = entityName.parentElement?.querySelector('i')
         expect(icon).toHaveClass('ri-building-4-fill')
+        expect(icon).toHaveClass('text-gray-600')
     })
 
     it('should display spot type capitalized', () => {
@@ -62,7 +65,10 @@ describe('VerificationTableRow Component', () => {
         const address = screen.getByText('123 Main Street, Austin, TX 73301, USA')
         expect(address).toBeInTheDocument()
         expect(address).toHaveClass('truncate')
-        
+
+        const addressWrapper = address.parentElement
+        expect(addressWrapper).toHaveClass('max-w-[240px]')
+
         const date = screen.getByText('2025-01-15')
         expect(date).toBeInTheDocument()
     })
@@ -99,7 +105,7 @@ describe('VerificationTableRow Component', () => {
         
         const address = screen.getByText(longAddress)
         expect(address).toHaveClass('truncate')
-        expect(address).toHaveClass('max-w-[200px]')
+        expect(address.parentElement).toHaveClass('max-w-[240px]')
     })
 
     it('should have address title attribute for full text on hover', () => {
@@ -118,6 +124,7 @@ describe('VerificationTableRow Component', () => {
         cells.forEach(cell => {
             expect(cell).toHaveClass('px-6')
             expect(cell).toHaveClass('py-4')
+            expect(cell).toHaveClass('align-middle')
         })
     })
 })

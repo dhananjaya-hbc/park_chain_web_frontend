@@ -19,30 +19,30 @@ export default function PersonalInfo({ // Kept name for file pairing, represents
 }: KYBInfoProps) {
     const InfoField = ({ label, value, isLink = false }: { label: string, value: string, isLink?: boolean }) => (
         <div className="space-y-2">
-            <p className="text-gray-600 font-semibold">{label}</p>
+            <p className="text-sm font-medium text-gray-500">{label}</p>
             {isLink ? (
-                <a href={value} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-lg truncate block">
+                <a href={value} target="_blank" rel="noreferrer" className="text-sm sm:text-base text-blue-600 hover:text-blue-800 hover:underline truncate block">
                     {value}
                 </a>
             ) : (
-                <p className="text-gray-900 text-lg">{value}</p>
+                <p className="text-sm sm:text-base text-gray-900 break-words">{value}</p>
             )}
         </div>
     )
 
     return (
-        <div className="mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 border-b-2 border-green-600 pb-3 mb-6">
+        <div className="mb-8 rounded-xl border border-gray-100 bg-gray-50/50 p-5 sm:p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-5">
                 Entity Details (KYB)
             </h2>
             
-            <div className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <InfoField label="Entity/Spot Name" value={entityName} />
                     <InfoField label="Owner Name" value={ownerName} />
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <InfoField label="Spot Type" value={spotType} />
                     <InfoField label="Google Maps Link" value={googleMapsLink} isLink={true} />
                 </div>

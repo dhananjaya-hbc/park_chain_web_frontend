@@ -106,9 +106,8 @@ describe('VerificationHeader Component', () => {
 
         const dropdown = getFilterDropdown()
         const approvedOption = dropdown.getByRole('button', { name: 'Approved' })
-        expect(approvedOption).toHaveClass('bg-green-50')
-        expect(approvedOption).toHaveClass('text-green-700')
-        expect(approvedOption).toHaveClass('font-medium')
+        expect(approvedOption).toHaveClass('bg-[#197729]')
+        expect(approvedOption).toHaveClass('text-white')
     })
 
     it('should not highlight non-selected filter options', () => {
@@ -122,7 +121,7 @@ describe('VerificationHeader Component', () => {
 
         const dropdown = getFilterDropdown()
         const pendingOption = dropdown.getByRole('button', { name: 'Pending' })
-        expect(pendingOption).not.toHaveClass('bg-green-50')
+        expect(pendingOption).not.toHaveClass('bg-[#197729]')
         expect(pendingOption).toHaveClass('text-gray-700')
     })
 
@@ -131,6 +130,14 @@ describe('VerificationHeader Component', () => {
         
         const icon = container.querySelector('.ri-menu-line')
         expect(icon).toBeInTheDocument()
+    })
+
+    it('should render the compact pill buttons', () => {
+        render(<VerificationHeader filterHook={mockFilterHook} />)
+
+        expect(screen.getByRole('button', { name: 'Approved' })).toHaveClass('rounded-lg')
+        expect(screen.getByRole('button', { name: 'Rejected' })).toHaveClass('bg-gray-100')
+        expect(screen.getByRole('button', { name: 'Pending' })).toHaveClass('bg-gray-100')
     })
 
     it('should handle different selected filters', () => {
@@ -144,7 +151,7 @@ describe('VerificationHeader Component', () => {
 
         const dropdown = getFilterDropdown()
         const pendingOption = dropdown.getByRole('button', { name: 'Pending' })
-        expect(pendingOption).toHaveClass('bg-green-50')
+        expect(pendingOption).toHaveClass('bg-[#197729]')
         
         fireEvent.click(pendingOption)
         expect(mockFilterHook.handleFilterSelect).toHaveBeenCalledWith('pending')
