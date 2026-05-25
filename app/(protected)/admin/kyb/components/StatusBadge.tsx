@@ -6,30 +6,25 @@ interface StatusBadgeProps {
 
 const statusConfig = {
     pending: {
-        icon: 'ri-time-fill',
-        iconColor: 'text-amber-500',
+        className: 'bg-yellow-100 text-yellow-800',
         label: 'Pending',
     },
     verified: {
-        icon: 'ri-checkbox-circle-fill',
-        iconColor: 'text-green-600',
+        className: 'bg-green-100 text-green-800',
         label: 'Verified',
     },
     rejected: {
-        icon: 'ri-close-circle-fill',
-        iconColor: 'text-red-600',
+        className: 'bg-red-100 text-red-800',
         label: 'Rejected',
     },
 }
 
 export default function StatusBadge({ status }: StatusBadgeProps) {
     const config = statusConfig[status]
-    const iconSize = status === 'pending' ? 'text-base' : 'text-lg'
 
     return (
-        <div className="flex items-center justify-center gap-2">
-            <i className={`${config.icon} ${config.iconColor} ${iconSize}`}></i>
-            <span className="text-sm text-gray-900">{config.label}</span>
-        </div>
+        <span className={`inline-flex items-center justify-center text-xs font-semibold px-2.5 py-1 rounded-full ${config.className}`}>
+            {config.label}
+        </span>
     )
 }

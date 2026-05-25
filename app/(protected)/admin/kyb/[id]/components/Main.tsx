@@ -78,7 +78,7 @@ export default function Main() {
     if (!data) return <div className="text-center py-20 font-medium text-gray-500">No details found.</div>;
 
     return (
-        <div className="bg-white rounded-[30px] shadow-md p-6 sm:p-10">
+        <div className="bg-white rounded-xl shadow-xl overflow-hidden p-6 sm:p-8 lg:p-10">
             <VerificationHeader 
                 entityName={data.entityName} 
                 status={data.status} 
@@ -97,18 +97,18 @@ export default function Main() {
                 onSave={(newNotes) => setAdminNotes(newNotes)} 
             />
 
-            <div className="mt-8 flex items-center gap-4 border-t-2 border-gray-100 pt-6">
+            <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 border-t border-gray-100 pt-5">
                 <button 
                     onClick={() => updateStatus('verified')}
                     disabled={isUpdating || data.status === 'verified'}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-[#197729] hover:bg-[#145e21] text-white font-semibold px-5 py-2.5 rounded-lg text-sm transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isUpdating ? 'Saving...' : 'Approve KYB'}
                 </button>
                 <button 
                     onClick={() => updateStatus('rejected')}
                     disabled={isUpdating || data.status === 'rejected'}
-                    className="bg-red-100 text-red-600 hover:bg-red-200 font-semibold px-8 py-3 rounded-xl transition-colors border border-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-red-50 text-red-700 hover:bg-red-100 font-semibold px-5 py-2.5 rounded-lg text-sm transition-colors border border-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isUpdating ? 'Saving...' : 'Reject'}
                 </button>

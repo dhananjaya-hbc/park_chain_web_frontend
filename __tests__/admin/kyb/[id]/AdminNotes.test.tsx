@@ -9,8 +9,8 @@ describe('AdminNotes Component', () => {
         
         const title = screen.getByText('Admin Notes')
         expect(title).toBeInTheDocument()
-        expect(title).toHaveClass('text-2xl')
-        expect(title).toHaveClass('font-bold')
+        expect(title).toHaveClass('text-lg')
+        expect(title).toHaveClass('font-semibold')
     })
 
     it('should render textarea with placeholder', () => {
@@ -25,6 +25,7 @@ describe('AdminNotes Component', () => {
         
         const saveButton = screen.getByRole('button')
         expect(saveButton).toBeInTheDocument()
+        expect(saveButton).toHaveTextContent('Save Notes')
     })
 
     it('should initialize textarea with initial notes', () => {
@@ -79,9 +80,23 @@ describe('AdminNotes Component', () => {
         fireEvent.click(saveButton)
         
         expect(saveButton).toBeDisabled()
+        expect(saveButton).toHaveTextContent('Saving...')
         
         await waitFor(() => {
             expect(saveButton).not.toBeDisabled()
+        })
+    })
+
+    it('should show saved state and toast after successful save', async () => {
+        const mockOnSave = jest.fn().mockResolvedValue(undefined)
+        render(<AdminNotes onSave={mockOnSave} />)
+
+        const saveButton = screen.getByRole('button')
+        fireEvent.click(saveButton)
+
+        await waitFor(() => {
+            expect(screen.getByRole('button')).toHaveTextContent('✓ Saved')
+            expect(screen.getByText('Notes saved successfully')).toBeInTheDocument()
         })
     })
 
@@ -89,8 +104,7 @@ describe('AdminNotes Component', () => {
         render(<AdminNotes />)
         
         const title = screen.getByText('Admin Notes')
-        expect(title).toHaveClass('border-b-2')
-        expect(title).toHaveClass('border-green-600')
+        expect(title).not.toHaveClass('border-b-2')
     })
 
     it('should have proper textarea styling', () => {
@@ -98,7 +112,7 @@ describe('AdminNotes Component', () => {
         
         const textarea = screen.getByPlaceholderText(/Add any notes or observations/)
         expect(textarea).toHaveClass('w-full')
-        expect(textarea).toHaveClass('border-2')
+        expect(textarea).toHaveClass('border')
         expect(textarea).toHaveClass('border-gray-200')
         expect(textarea).toHaveClass('rounded-xl')
         expect(textarea).toHaveClass('p-4')
@@ -108,19 +122,20 @@ describe('AdminNotes Component', () => {
         render(<AdminNotes />)
         
         const saveButton = screen.getByRole('button')
-        expect(saveButton).toHaveClass('bg-green-600')
-        expect(saveButton).toHaveClass('hover:bg-green-700')
-        expect(saveButton).toHaveClass('text-white')
-        expect(saveButton).toHaveClass('font-semibold')
-        expect(saveButton).toHaveClass('px-8')
-        expect(saveButton).toHaveClass('py-3')
+        expect(saveButton).toHaveClass('bg-white')
+        expect(saveButton).toHaveClass('text-[#197729]')
+        expect(saveButton).toHaveClass('border-green-200')
+        expect(saveButton).toHaveClass('hover:bg-green-50')
+        expect(saveButton).toHaveClass('hover:border-green-300')
+        expect(saveButton).toHaveClass('hover:shadow-md')
+        expect(saveButton).toHaveClass('shadow-sm')
     })
 
     it('should focus on textarea with green border on focus', () => {
         render(<AdminNotes />)
         
         const textarea = screen.getByPlaceholderText(/Add any notes or observations/)
-        expect(textarea).toHaveClass('focus:border-green-600')
+        expect(textarea).toHaveClass('focus:border-[#4CAF50]')
     })
 
     it('should handle empty notes submission', async () => {

@@ -8,9 +8,9 @@ interface DocumentCardProps {
 }
 
 const DocumentCard = ({ title, imageUrl }: DocumentCardProps) => (
-    <div className="bg-gray-50 rounded-2xl p-5 space-y-3">
-        <h3 className="text-gray-900 font-semibold">{title}</h3>
-        <div className="border-2 border-gray-200 rounded-xl overflow-hidden h-64 bg-white relative">
+    <div className="rounded-xl border border-gray-100 bg-gray-50 p-5 space-y-3">
+        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+        <div className="rounded-lg border border-gray-200 overflow-hidden h-64 bg-white relative">
             <img 
                 src={imageUrl} 
                 alt={title}
@@ -18,7 +18,7 @@ const DocumentCard = ({ title, imageUrl }: DocumentCardProps) => (
             />
         </div>
         <div className="pt-2 text-center">
-            <a href={imageUrl} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:text-blue-800 font-medium">View Full Size Document ↗</a>
+            <a href={imageUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">View Full Size Document ↗</a>
         </div>
     </div>
 )
@@ -32,12 +32,12 @@ export default function DocumentsSection({ documentUrl }: DocumentsSectionProps)
     const docUrl = documentUrl || 'https://res.cloudinary.com/dgcqzodby/image/upload/v1771232008/image3_zbobvi.png'
 
     return (
-        <div className="mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 border-b-2 border-green-600 pb-3 mb-6">
+        <div className="mb-8 rounded-xl border border-gray-100 bg-white p-5 sm:p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-5">
                 Verification Document
             </h2>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-5">
                 <DocumentCard title="Proof of Ownership/Residency (Utility Bill/Deed)" imageUrl={docUrl} />
             </div>
         </div>

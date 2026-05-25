@@ -11,8 +11,8 @@ describe('DocumentsSection Component', () => {
         
         const title = screen.getByText('Verification Document')
         expect(title).toBeInTheDocument()
-        expect(title).toHaveClass('text-2xl')
-        expect(title).toHaveClass('font-bold')
+        expect(title).toHaveClass('text-lg')
+        expect(title).toHaveClass('font-semibold')
     })
 
     it('should render document card with title', () => {
@@ -65,7 +65,7 @@ describe('DocumentsSection Component', () => {
         const { container } = render(<DocumentsSection />)
         
         const card = container.querySelector('[class*="bg-gray-50"]')
-        expect(card).toHaveClass('rounded-2xl')
+        expect(card).toHaveClass('rounded-xl')
         expect(card).toHaveClass('p-5')
     })
 
@@ -97,15 +97,15 @@ describe('DocumentsSection Component', () => {
         const { container } = render(<DocumentsSection />)
         
         const title = screen.getByText('Verification Document')
-        expect(title).toHaveClass('border-b-2')
-        expect(title).toHaveClass('border-green-600')
+        expect(title).not.toHaveClass('border-b-2')
+        expect(container.firstChild).toHaveClass('border')
+        expect(container.firstChild).toHaveClass('border-gray-100')
     })
 
     it('should have proper spacing between sections', () => {
         const { container } = render(<DocumentsSection />)
         
-        const section = container.querySelector('[class*="mb-10"]')
-        expect(section).toBeInTheDocument()
+        expect(container.firstChild).toHaveClass('mb-8')
     })
 
     it('should handle undefined documentUrl gracefully', () => {
