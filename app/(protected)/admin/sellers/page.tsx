@@ -2,7 +2,7 @@
 
 import Main from './components/Main'
 
-export default function FeedbackPage() {
+export default function SellersPage() {
     return (
         <Main />
     )

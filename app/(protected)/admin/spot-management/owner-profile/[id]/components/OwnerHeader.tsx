@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface OwnerHeaderProps {
     name: string;
@@ -10,11 +10,21 @@ interface OwnerHeaderProps {
     joinDate: string;
     kycStatus: string;
     walletAddress?: string;
+    accountStatus?: 'active' | 'suspended';
+    onSuspendToggle?: () => void;
+    onRemove?: () => void;
 }
 
-export default function OwnerHeader({ name, email, phone, joinDate, kycStatus, walletAddress }: OwnerHeaderProps) {
+export default function OwnerHeader({ name, email, phone, joinDate, kycStatus, walletAddress, accountStatus = 'active', onSuspendToggle, onRemove }: OwnerHeaderProps) {
     const router = useRouter();
+    const pathname = usePathname();
+
     const formattedDate = new Date(joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    // Deduce if we are currently inside the sellers tab
+    const isSellersTab = pathname?.includes('/admin/sellers');
+    const backRoute = isSellersTab ? '/admin/sellers' : '/admin/spot-management';
+    const backText = isSellersTab ? 'Back to Sellers' : 'Back to Spot';
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
@@ -33,7 +43,7 @@ export default function OwnerHeader({ name, email, phone, joinDate, kycStatus, w
                         onClick={() => router.back()}
                         className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
                     >
-                        &larr; Back to Spot
+                        &larr; {backText}
                     </button>
                 </div>
 
@@ -45,6 +55,34 @@ export default function OwnerHeader({ name, email, phone, joinDate, kycStatus, w
                         }`}>
                             {kycStatus === 'APPROVED' ? 'Verified Host' : 'Pending Verification'}
                         </span>
+                        {accountStatus === 'suspended' && (
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                Suspended
+                            </span>
+                        )}
+                        
+                        <div className="ml-auto flex gap-2">
+                            {isSellersTab && (
+                                <>
+                                    <button 
+                                        onClick={onSuspendToggle}
+                                        className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border ${
+                                            accountStatus === 'suspended' 
+                                                ? 'text-green-700 bg-green-50 hover:bg-green-100 border-green-200' 
+                                                : 'text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200'
+                                        }`}
+                                    >
+                                        {accountStatus === 'suspended' ? 'Unblock Seller' : 'Block Seller'}
+                                    </button>
+                                    <button 
+                                        onClick={onRemove}
+                                        className="px-4 py-1.5 text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200"
+                                    >
+                                        Remove Seller
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
                     <p className="text-gray-500 text-sm mb-6">Host since {formattedDate}</p>
 

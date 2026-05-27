@@ -8,6 +8,7 @@ import OwnerStats from './components/OwnerStats';
 import SpotDetailsCard from '../../components/SpotDetailsCard/SpotDetailsCard';
 import { useSpots } from '@/hooks/useSpots';
 
+
 export default function OwnerProfilePage() {
     const params = useParams();
     const ownerId = params.id as string;
@@ -43,6 +44,7 @@ export default function OwnerProfilePage() {
                     phone: user.phone || "No phone provided",
                     wallet_address: user.wallet_address || user.walletAddress || "Not available",
                     kyc_status: user.kyc_status || "PENDING", 
+                    status: user.status || "active",
                     created_at: user.created_at || new Date().toISOString(),
                 });
             } catch (error) {
@@ -89,6 +91,38 @@ export default function OwnerProfilePage() {
         );
     }
 
+    const handleSuspendToggle = async () => {
+        try {
+            const endpoint = `/users/${ownerId}/status`; 
+            // Send request to backend
+            await apiService.patch(endpoint, { 
+                status: ownerData.status === 'suspended' ? 'active' : 'suspended' 
+            });
+            // Update local state to reflect change instantly
+            setOwnerData((prev: any) => ({
+                ...prev,
+                status: prev.status === 'suspended' ? 'active' : 'suspended'
+            }));
+            alert(`Seller successfully ${ownerData.status === 'suspended' ? 'unblocked' : 'blocked'}!`);
+        } catch (error) {
+            console.error("Failed to toggle status", error);
+            alert("Failed to update status. Please try again.");
+        }
+    };
+
+    const handleRemoveSeller = async () => {
+        try {
+            const endpoint = `/users/${ownerId}`;
+            await apiService.delete(endpoint);
+            alert("Seller removed successfully.");
+            // Return to previous page after successful deletion
+            window.history.back(); 
+        } catch (error) {
+            console.error("Failed to remove seller", error);
+            alert("Failed to remove seller. Please try again.");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50/50 p-6 font-sans">
             <div className="max-w-5xl mx-auto">
@@ -99,6 +133,17 @@ export default function OwnerProfilePage() {
                     joinDate={ownerData.created_at}
                     kycStatus={ownerData.kyc_status}
                     walletAddress={ownerData.wallet_address}
+                    accountStatus={ownerData.status || 'active'}
+                    onSuspendToggle={() => {
+                        if (confirm(`Are you sure you want to ${ownerData.status === 'suspended' ? 'unblock' : 'block'} this seller?`)) {
+                            handleSuspendToggle();
+                        }
+                    }}
+                    onRemove={() => {
+                        if (confirm("Are you sure you want to permanently remove this seller? This action cannot be undone.")) {
+                            handleRemoveSeller();
+                        }
+                    }}
                 />
 
                 <OwnerStats 

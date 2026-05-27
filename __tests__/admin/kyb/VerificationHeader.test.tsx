@@ -11,6 +11,18 @@ describe('VerificationHeader Component', () => {
         setIsFilterOpen: jest.fn(),
         dropdownRef: React.createRef<HTMLDivElement>(),
         handleFilterSelect: jest.fn(),
+        searchQuery: '',
+        setSearchQuery: jest.fn(),
+        sortOrder: 'newest' as 'newest' | 'oldest',
+        setSortOrder: jest.fn(),
+    }
+
+    const defaultProps = {
+        filterHook: mockFilterHook,
+        searchQuery: '',
+        setSearchQuery: jest.fn(),
+        sortOrder: 'newest' as 'newest' | 'oldest',
+        setSortOrder: jest.fn(),
     }
 
     beforeEach(() => {

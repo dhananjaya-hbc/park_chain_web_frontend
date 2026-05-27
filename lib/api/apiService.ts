@@ -71,6 +71,15 @@ class ApiService {
     return this.handleResponse(response);
   }
 
+  async patch(endpoint: string, body?: Record<string, unknown>) {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: 'PATCH',
+      headers: this.headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return this.handleResponse(response);
+  }
+
   async delete(endpoint: string) {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'DELETE',
