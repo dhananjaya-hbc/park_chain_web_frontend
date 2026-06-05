@@ -48,10 +48,10 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, sta
       };
 
   const canEdit = Number(spot?.pendingBookings ?? 0) === 0;
-  const canDelete = Number(spot?.totalBookings ?? 0) === 0;
+  const canDelete = Number(spot?.activeBookings ?? 0) === 0;
   const [inlineError, setInlineError] = React.useState<string>("");
   const showNoAccessError = () => {
-    setInlineError("Already have bookings for this spot. Cannot delete.");
+    setInlineError("Cannot delete this spot while there are active bookings.");
   };
   const showEditError = () => {
     setInlineError("Cannot edit this spot while there are pending bookings.");

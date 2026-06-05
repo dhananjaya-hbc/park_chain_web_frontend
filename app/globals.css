@@ -122,3 +122,26 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom scrollbar for spot list */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-muted;
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border hover:bg-ring;
+    border-radius: 10px;
+  }
+
+  /* Leaflet marker custom styles */
+  .custom-marker-icon {
+    background: transparent !important;
+    border: none !important;
+  }
+}

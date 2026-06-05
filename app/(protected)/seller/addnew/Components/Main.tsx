@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import AdminReviewAlert from './AdminReviewAlert';
 import GeneralInfoCard from './GeneralInfoCard';
 import PricingCapacityCard from './PricingCapacityCard';
 import SpotImagesCard from './SpotImagesCard';
@@ -74,10 +73,25 @@ export default function Main({ kybId }: { kybId?: string }) {
 
                 // Parse lat/lng from Google Maps link and auto-fill location
                 if (kybData.googleMapsLink) {
-                    const coords = parseLatLngFromMapsUrl(kybData.googleMapsLink);
-                    if (coords) {
-                        form.setLocation(coords.lat, coords.lng);
-                        setIsLocationLocked(true);
+                    try {
+                        const data = await apiService.post('/utils/map-link-to-coords', { link: kybData.googleMapsLink });
+                        if (data && data.success && data.latitude && data.longitude) {
+                            form.setLocation(String(data.latitude), String(data.longitude));
+                            setIsLocationLocked(true);
+                        } else {
+                            const coords = parseLatLngFromMapsUrl(kybData.googleMapsLink);
+                            if (coords) {
+                                form.setLocation(coords.lat, coords.lng);
+                                setIsLocationLocked(true);
+                            }
+                        }
+                    } catch (mapErr) {
+                        console.error('Failed to convert map link to coords:', mapErr);
+                        const coords = parseLatLngFromMapsUrl(kybData.googleMapsLink);
+                        if (coords) {
+                            form.setLocation(coords.lat, coords.lng);
+                            setIsLocationLocked(true);
+                        }
                     }
                 }
             } catch (error) {
@@ -186,8 +200,6 @@ export default function Main({ kybId }: { kybId?: string }) {
                     Fill in the details of your parking spot to get started
                 </p>
             </div>
-
-            <AdminReviewAlert />
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">

@@ -22,6 +22,12 @@ export const API_ENDPOINTS = {
   // Spots
   SPOTS: '/spots',
   PENDING_SPOTS: '/spots/pending',
+  ADMIN_TOGGLE_SPOT: (spotId: string) => `/spots/${spotId}/admin-toggle`,
+
+  SPOT_IMAGES : (spotId: string) => `/spots/${spotId}/images`,
+
+    // Users
+  USERS: '/users',
 
   // Bookings
   BOOKINGS: '/bookings',

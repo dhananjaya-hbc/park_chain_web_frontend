@@ -48,6 +48,7 @@ class ApiService {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'GET',
       headers: this.headers,
+      cache: 'no-store', // Disable caching so frontend always gets latest data
     });
     return this.handleResponse(response);
   }
@@ -70,11 +71,19 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  async delete(endpoint: string, body?: Record<string, unknown>) {
+  async patch(endpoint: string, body?: Record<string, unknown>) {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: 'PATCH',
+      headers: this.headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return this.handleResponse(response);
+  }
+
+  async delete(endpoint: string) {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'DELETE',
       headers: this.headers,
-      body: body ? JSON.stringify(body) : undefined,
     });
     return this.handleResponse(response);
   }

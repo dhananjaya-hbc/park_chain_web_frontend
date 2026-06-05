@@ -42,13 +42,14 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   let pageTitle = "Dashboard";
 
   const pageMap: Record<string, { id: string; title: string }> = {
-    '/admin/seller-verification': { id: 'verification', title: 'Seller Verification Requests' },
+    '/admin/kyb': { id: 'verification', title: 'KYB Spot Verification Requests' },
     '/admin/bookings': { id: 'bookings', title: 'All Bookings' },
     '/admin/transactions': { id: 'transactions', title: 'Transactions' },
     '/admin/users': { id: 'users', title: 'Users' },
-    '/admin/feedback': { id: 'feedback', title: 'Feedback' },
+    '/admin/sellers': { id: 'sellers', title: 'Sellers' },
     '/admin/settings': { id: 'settings', title: 'Settings' },
     '/admin/dashboard': { id: 'dashboard', title: 'Dashboard' },
+    '/admin/spot-management': { id: 'spot-management', title: 'Spot Management' },
   };
 
   for (const [path, config] of Object.entries(pageMap)) {
@@ -85,7 +86,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             disconnectLoading={disconnectLoading}
             adminWallet={adminWallet}
             title={pageTitle}
-            showSearch={true}
+            showSearch={false}
           />
 
           <div className="main-content px-6 pt-5 pb-6 bg-gray-100">

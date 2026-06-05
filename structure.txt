@@ -23,8 +23,8 @@ park_chain_web_frontend/
 │       │   │   └── 📄 page.tsx                # Admin dashboard → /admin/dashboard 
 │       │   ├── 📁 users/
 │       │   │   └── 📄 page.tsx                # User management → /admin/users 
-│       │   ├── 📁 seller-verification/
-│       │   │   └── 📄 page.tsx                # Seller verification → /admin/seller-verification ✅
+│       │   ├── 📁 kyb/
+│       │   │   └── 📄 page.tsx                # KYB spot verification → /admin/kyb ✅
 │       │   ├── 📁 feedback/
 │       │   │   └── 📄 page.tsx                # Feedback → /admin/feedback 
 │       │   └── 📁 settings/

@@ -2,6 +2,7 @@
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Unbounded, Sora } from "next/font/google";
+// @ts-ignore: Next.js handles global CSS imports at build time.
 import "./globals.css";
 import { NotificationProvider } from "@/components/providers/NotificationProvider";
 import { NotificationToast } from "@/components/notifications/NotificationToast";
