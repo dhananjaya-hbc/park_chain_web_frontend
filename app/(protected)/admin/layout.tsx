@@ -46,7 +46,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     '/admin/bookings': { id: 'bookings', title: 'All Bookings' },
     '/admin/transactions': { id: 'transactions', title: 'Transactions' },
     '/admin/users': { id: 'users', title: 'Users' },
-    '/admin/feedback': { id: 'feedback', title: 'Feedback' },
+    '/admin/sellers': { id: 'sellers', title: 'Sellers' },
     '/admin/settings': { id: 'settings', title: 'Settings' },
     '/admin/dashboard': { id: 'dashboard', title: 'Dashboard' },
     '/admin/spot-management': { id: 'spot-management', title: 'Spot Management' },
