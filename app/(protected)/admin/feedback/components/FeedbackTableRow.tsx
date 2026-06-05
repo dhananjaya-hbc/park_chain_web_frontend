@@ -1,21 +1,25 @@
 import React from 'react'
 
 interface FeedbackTableRowProps {
+    id: number
     name: string
     rating: number
     comment: string
-    roleId: string
+    spotTitle: string
     date: string
     userImage?: string
+    onDelete: (reviewId: number) => void
 }
 
 export default function FeedbackTableRow({
+    id,
     name,
     rating,
     comment,
-    roleId,
+    spotTitle,
     date,
-    userImage
+    userImage,
+    onDelete
 }: FeedbackTableRowProps) {
     // Generate stars based on rating
     const renderStars = () => {
@@ -55,12 +59,15 @@ export default function FeedbackTableRow({
                 <p className="text-sm text-gray-700 leading-relaxed">{comment}</p>
             </td>
             <td className="px-6 py-4">
-                <div className="text-sm text-gray-900 text-center whitespace-nowrap">{roleId}</div>
+                <div className="text-sm text-gray-900 text-center whitespace-nowrap">{spotTitle}</div>
                 <div className="text-xs text-gray-500 text-center whitespace-nowrap">{date}</div>
             </td>
             <td className="px-6 py-4 text-center rounded-r-[10px]">
-                <button className="px-4 py-2 border border-black rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-md whitespace-nowrap">
-                    View Details
+                <button 
+                    onClick={() => onDelete(id)}
+                    className="px-4 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 shadow-sm whitespace-nowrap transition-colors"
+                >
+                    Delete
                 </button>
             </td>
         </tr>

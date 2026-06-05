@@ -9,9 +9,10 @@ interface FeedbackHeaderProps {
         dropdownRef: React.RefObject<HTMLDivElement | null>
         handleFilterSelect: (filter: FeedbackFilterType) => void
     }
+    totalCount: number
 }
 
-export default function FeedbackHeader({ filterHook }: FeedbackHeaderProps) {
+export default function FeedbackHeader({ filterHook, totalCount }: FeedbackHeaderProps) {
     const { selectedFilter, isFilterOpen, setIsFilterOpen, dropdownRef, handleFilterSelect } = filterHook
 
     const filterOptions = [
@@ -23,7 +24,9 @@ export default function FeedbackHeader({ filterHook }: FeedbackHeaderProps) {
 
     return (
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-1 mb-2 p-4 sm:p-3 pb-0">
-            <h1 className="text-l font-bold text-gray-800">All Feedbacks (45,668)</h1>
+            <h1 className="text-l font-bold text-gray-800">
+                All Feedbacks ({totalCount.toLocaleString()})
+            </h1>
             
             <div className="flex flex-wrap items-center gap-2">
                 {/* Filter Button with Dropdown */}

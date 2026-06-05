@@ -9,6 +9,7 @@ import apiService from '@/lib/api/apiService';
 import { API_ENDPOINTS } from '@/lib/api/endpoints';
 import Link from 'next/link';
 import { xumm } from '@/lib/web3/xaman';
+import { useFcmToken } from '@/hooks/useFcmToken';
 
 export default function LoginPage() {
   const [error, setError] = useState<string>('');
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const hasRegistered = useRef(false);
   const { setRole } = useSessionStore();
   const router = useRouter();
+  const { initializeFcm } = useFcmToken();
 
   // Xaman listener — fires when user approves sign-in
   useEffect(() => {
@@ -76,6 +78,10 @@ export default function LoginPage() {
 
       // Also set cookie for middleware
       document.cookie = `park_chain_role=${role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+
+      // Initialize FCM notifications
+      console.log('🔔 Initializing push notifications...');
+      await initializeFcm();
 
       // Redirect logic based on KYC status
       if (response.user && response.user.kyc_status === 'APPROVED') {

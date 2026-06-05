@@ -1,6 +1,11 @@
+'use client';
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Unbounded, Sora } from "next/font/google";
 import "./globals.css";
+import { NotificationProvider } from "@/components/providers/NotificationProvider";
+import { NotificationToast } from "@/components/notifications/NotificationToast";
+import { FcmDiagnosticsWrapper } from "@/components/debug/FcmDiagnostics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,11 +27,6 @@ const sora = Sora({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Park Chain - Decentralized Parking Platform",
-  description: "Rent and manage parking slots with crypto payments",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -43,7 +43,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${unbounded.variable} ${sora.variable} antialiased`}
       >
-        {children}
+        <NotificationProvider>
+          {children}
+          <NotificationToast />
+          <FcmDiagnosticsWrapper />
+        </NotificationProvider>
       </body>
     </html>
   );
