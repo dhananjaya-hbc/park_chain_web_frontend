@@ -29,10 +29,23 @@ useEffect(() => {
           setIsSuccess(true);
           setIsFailed(false);
 
-          // Give the user a moment to see the success message before redirecting 
-          setTimeout(() => {
-            router.push(getRoleDashboard(role || 'seller'));
-          }, 2000);
+          // Fetch the user's profile status
+          try {
+            const profileResponse = await apiService.get('/users/profile');
+            // Give the user a moment to see the success message before redirecting 
+            setTimeout(() => {
+              if (profileResponse.data && profileResponse.data.profileCompleted) {
+                router.push(getRoleDashboard(role || 'seller'));
+              } else {
+                router.push('/seller/complete-profile');
+              }
+            }, 2000);
+          } catch (profileErr) {
+            console.error("Error checking profile status after KYC approval:", profileErr);
+            setTimeout(() => {
+              router.push('/seller/complete-profile');
+            }, 2000);
+          }
         } else if (response.kyc_status === 'DECLINED' || response.kyc_status === 'FAILED' || response.kyc_status === 'ABANDONED') {
           setStatus("Verification was not completed or declined by Didit.");      
           setIsFailed(true);

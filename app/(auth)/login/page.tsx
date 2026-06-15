@@ -85,8 +85,13 @@ export default function LoginPage() {
 
       // Redirect logic based on KYC status
       if (response.user && response.user.kyc_status === 'APPROVED') {
-        console.log('✅ User already verified. Redirecting to dashboard...');
-        router.push(getRoleDashboard(role));
+        if (response.user.profileCompleted === false) {
+          console.log('⚠️ Profile not completed. Redirecting to complete-profile...');
+          router.push('/seller/complete-profile');
+        } else {
+          console.log('✅ User already verified. Redirecting to dashboard...');
+          router.push(getRoleDashboard(role));
+        }
       } else {
         console.log('🚀 User not verified. Redirecting to KYC...');
         router.push('/kyc');

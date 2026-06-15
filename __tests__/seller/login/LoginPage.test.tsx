@@ -228,11 +228,12 @@ describe('Seller LoginPage', () => {
     expect(mockRouterPush).toHaveBeenCalledWith('/kyc');
   });
 
-  it('redirects to dashboard when KYC is APPROVED', async () => {
+  it('redirects to dashboard when KYC is APPROVED and profile is completed', async () => {
     (apiService.post as jest.Mock).mockResolvedValueOnce({
       token: 'mock-jwt-token',
       user: {
-        kyc_status: 'APPROVED'
+        kyc_status: 'APPROVED',
+        profileCompleted: true
       }
     });
 
@@ -243,6 +244,25 @@ describe('Seller LoginPage', () => {
     
     await waitFor(() => {
       expect(mockRouterPush).toHaveBeenCalledWith('/seller/dashboard');
+    });
+  });
+
+  it('redirects to complete-profile when KYC is APPROVED but profileCompleted is false', async () => {
+    (apiService.post as jest.Mock).mockResolvedValueOnce({
+      token: 'mock-jwt-token',
+      user: {
+        kyc_status: 'APPROVED',
+        profileCompleted: false
+      }
+    });
+
+    render(<LoginPage />);
+
+    const successHandler = getXummEventHandler('success');
+    await successHandler();
+    
+    await waitFor(() => {
+      expect(mockRouterPush).toHaveBeenCalledWith('/seller/complete-profile');
     });
   });
 
