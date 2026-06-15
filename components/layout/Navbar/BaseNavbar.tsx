@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { faSearch, faBars, faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface BaseNavbarProps {
     setIsOpen: (isOpen: boolean) => void;
@@ -31,6 +32,7 @@ export default function BaseNavbar({
 }: BaseNavbarProps) {
     const[isUserMenuOpen, setUserMenuOpen] = useState(false);
     const [isNotificationOpen, setNotificationOpen] = useState(false);
+    const { notifications, unreadCount, markAsRead, deleteNotification, markAllAsRead, isLoading } = useNotifications();
 
     const toggleUserMenu = () => {
         setUserMenuOpen(!isUserMenuOpen);
@@ -40,6 +42,15 @@ export default function BaseNavbar({
     const toggleNotification = () => {
         setNotificationOpen(!isNotificationOpen);
         setUserMenuOpen(false);
+    };
+
+    const handleNotificationClick = async (notificationId: string) => {
+        await markAsRead(notificationId);
+    };
+
+    const handleDeleteNotification = async (e: React.MouseEvent, notificationId: string) => {
+        e.stopPropagation();
+        await deleteNotification(notificationId);
     };
 
     return (
@@ -71,26 +82,78 @@ export default function BaseNavbar({
                 {/* Notification Dropdown */}
                 <div className="notification cursor-pointer bg-gray-100 rounded-lg w-12 h-12 hidden lg:flex justify-center items-center relative hover:bg-gray-200 transition-colors duration-200" onClick={toggleNotification}>
                     <i className="ri-notification-3-line text-green-700 text-xl"></i>
-                    <span className="badge text-[11px] font-bold text-white bg-red-500 w-5 h-5 flex items-center justify-center rounded-full absolute -top-1 -right-1 shadow-md">
-                        3
-                    </span>
+                    {unreadCount > 0 && (
+                        <span className="badge text-[11px] font-bold text-white bg-red-500 w-5 h-5 flex items-center justify-center rounded-full absolute -top-1 -right-1 shadow-md">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                    )}
 
                     {isNotificationOpen && (
-                        <ul className="absolute top-14 right-0 bg-white w-[350px] p-3 flex flex-col gap-2 rounded-2xl shadow-xl animate-fade-in z-50">
-                            <li className="text-sm text-gray-700">
-                                <Link href='/' className="w-full flex justify-between items-start">
-                                    <div className="flex items-start gap-2">
-                                        <div className="w-14 h-14 rounded-full bg-[#197729] flex items-center justify-center shrink-0">
-                                            <FontAwesomeIcon icon={faUser} className="text-white text-2xl" />
-                                        </div>
-                                        <div>
-                                            <span className="text-[#212529] font-sora text-lg block">Ronald Richards</span>
-                                            <p className="text-[#010102] text-xs mt-1">New parking reservation received. Review details in the dashboard.</p>
-                                        </div>
-                                    </div>
-                                    <span className="text-[#4f586d] text-xs font-medium shrink-0 ml-2">23 Mins ago</span> 
-                                </Link>
+                        <ul className="absolute top-14 right-0 bg-white w-[400px] max-h-[500px] overflow-y-auto flex flex-col rounded-2xl shadow-xl z-50 border border-gray-200">
+                            {/* Header */}
+                            <li className="sticky top-0 bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                                <span className="font-semibold text-gray-900">Notifications ({unreadCount} unread)</span>
+                                {unreadCount > 0 && (
+                                    <button 
+                                        onClick={() => markAllAsRead()}
+                                        className="text-xs text-green-700 hover:text-green-800 font-medium"
+                                    >
+                                        Mark all as read
+                                    </button>
+                                )}
                             </li>
+
+                            {/* Notifications List */}
+                            {isLoading ? (
+                                <li className="p-4 text-center text-gray-500 text-sm">Loading notifications...</li>
+                            ) : notifications.length === 0 ? (
+                                <li className="p-4 text-center text-gray-500 text-sm">No notifications yet</li>
+                            ) : (
+                                notifications.map((notification) => (
+                                    <li 
+                                        key={notification.id} 
+                                        className={`px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors ${
+                                            notification.isRead 
+                                                ? 'bg-white hover:bg-gray-50' 
+                                                : 'bg-blue-50 hover:bg-blue-100'
+                                        }`}
+                                        onClick={() => handleNotificationClick(notification.id)}
+                                    >
+                                        <div className="flex justify-between items-start gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-start gap-2">
+                                                    {/* Icon based on type */}
+                                                    <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${
+                                                        notification.type === 'success' ? 'bg-green-500' :
+                                                        notification.type === 'error' ? 'bg-red-500' :
+                                                        notification.type === 'warning' ? 'bg-yellow-500' :
+                                                        'bg-blue-500'
+                                                    }`}></div>
+                                                    <div className="flex-1">
+                                                        <h4 className={`font-semibold text-sm ${notification.isRead ? 'text-gray-700' : 'text-gray-900'}`}>
+                                                            {notification.title}
+                                                        </h4>
+                                                        <p className={`text-xs mt-1 line-clamp-2 ${notification.isRead ? 'text-gray-500' : 'text-gray-700'}`}>
+                                                            {notification.body}
+                                                        </p>
+                                                        <span className="text-xs text-gray-400 mt-1 block">
+                                                            {new Date(notification.timestamp).toLocaleTimeString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {/* Delete button */}
+                                            <button
+                                                onClick={(e) => handleDeleteNotification(e, notification.id)}
+                                                className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                                                title="Delete notification"
+                                            >
+                                                <i className="ri-close-line text-lg"></i>
+                                            </button>
+                                        </div>
+                                    </li>
+                                ))
+                            )}
                         </ul>
                     )}
                 </div>

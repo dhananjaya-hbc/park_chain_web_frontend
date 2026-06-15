@@ -8,6 +8,7 @@ import { useSessionStore } from '@/lib/stores/sessionStore';
 import apiService from '@/lib/api/apiService';
 import { API_ENDPOINTS } from '@/lib/api/endpoints';
 import Link from 'next/link';
+import { useFcmToken } from '@/hooks/useFcmToken';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -16,6 +17,7 @@ export default function AdminLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { setRole } = useSessionStore();
   const router = useRouter();
+  const { initializeFcm } = useFcmToken();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +53,10 @@ export default function AdminLoginPage() {
 
       // Also set cookie for middleware
       document.cookie = `park_chain_role=${role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+
+      // Initialize FCM notifications
+      console.log('🔔 Initializing push notifications...');
+      await initializeFcm();
 
       const dashboardUrl = getRoleDashboard(role);
       console.log('🚀 Redirecting to:', dashboardUrl);
