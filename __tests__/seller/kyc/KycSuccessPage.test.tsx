@@ -66,20 +66,51 @@ describe('Seller KYC Success Page', () => {
     });
   });
 
-  test('shows approved message and redirects to role dashboard after delay', async () => {
-    mockApiService.get.mockResolvedValue({ kyc_status: 'APPROVED' });
+  test('shows approved message and redirects to role dashboard after delay when profile is completed', async () => {
+    mockApiService.get.mockImplementation((url: string) => {
+      if (url.includes('/kyc-status')) {
+        return Promise.resolve({ kyc_status: 'APPROVED' });
+      }
+      if (url.includes('/users/profile')) {
+        return Promise.resolve({ data: { profileCompleted: true } });
+      }
+      return Promise.reject(new Error('Unknown URL'));
+    });
 
     render(<KycSuccessPage />);
 
     expect(await screen.findByText('Success! Your identity has been verified.')).toBeTruthy();
     expect(screen.getByText('Redirecting to your dashboard...')).toBeTruthy();
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(2000);
     });
 
     expect(mockGetRoleDashboard).toHaveBeenCalledWith('seller');
     expect(mockPush).toHaveBeenCalledWith('/seller/dashboard');
+  });
+
+  test('shows approved message and redirects to complete-profile after delay when profile is incomplete', async () => {
+    mockApiService.get.mockImplementation((url: string) => {
+      if (url.includes('/kyc-status')) {
+        return Promise.resolve({ kyc_status: 'APPROVED' });
+      }
+      if (url.includes('/users/profile')) {
+        return Promise.resolve({ data: { profileCompleted: false } });
+      }
+      return Promise.reject(new Error('Unknown URL'));
+    });
+
+    render(<KycSuccessPage />);
+
+    expect(await screen.findByText('Success! Your identity has been verified.')).toBeTruthy();
+    expect(screen.getByText('Redirecting to your dashboard...')).toBeTruthy();
+
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/seller/complete-profile');
   });
 
   test('shows retry UI for declined verification and routes back to KYC on click', async () => {
