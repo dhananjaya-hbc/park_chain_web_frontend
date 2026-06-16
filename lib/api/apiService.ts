@@ -1,6 +1,6 @@
 // lib/api/apiService.ts
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/$/, '');
 
 class ApiService {
   private token: string | null = null;
@@ -43,8 +43,14 @@ class ApiService {
     return headers;
   }
 
+  // Helper to build URL safely — no double slashes
+  private buildUrl(endpoint: string): string {
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    return `${API_URL}${cleanEndpoint}`;
+  }
+
   async get(endpoint: string) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(this.buildUrl(endpoint), {
       method: 'GET',
       headers: this.headers,
       cache: 'no-store',
@@ -53,7 +59,7 @@ class ApiService {
   }
 
   async post(endpoint: string, body?: Record<string, unknown>) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(this.buildUrl(endpoint), {
       method: 'POST',
       headers: this.headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -62,7 +68,7 @@ class ApiService {
   }
 
   async put(endpoint: string, body?: Record<string, unknown>) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(this.buildUrl(endpoint), {
       method: 'PUT',
       headers: this.headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -71,7 +77,7 @@ class ApiService {
   }
 
   async patch(endpoint: string, body?: Record<string, unknown>) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(this.buildUrl(endpoint), {
       method: 'PATCH',
       headers: this.headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -80,7 +86,7 @@ class ApiService {
   }
 
   async delete(endpoint: string, body?: Record<string, unknown>) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(this.buildUrl(endpoint), {
       method: 'DELETE',
       headers: this.headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -91,7 +97,7 @@ class ApiService {
   private async handleResponse(response: Response) {
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.error || 'Request failed');
+      throw new Error(data.error || data.message || 'Request failed');
     }
     return data;
   }
