@@ -11,15 +11,16 @@ import Link from 'next/link';
 import { xumm } from '@/lib/web3/xaman';
 import { useFcmToken } from '@/hooks/useFcmToken';
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const hasRegistered = useRef(false);
   const { setRole } = useSessionStore();
   const router = useRouter();
   const { initializeFcm } = useFcmToken();
 
-  // Xaman listener — fires when user approves sign-in
+  // Xaman listener
   useEffect(() => {
     if (!xumm) return;
 
@@ -41,7 +42,6 @@ export default function LoginPage() {
     xumm.on("retrieved", handleSuccess);
 
     return () => {
-      // Cleanup listeners on unmount
       if (xumm) {
         xumm.off("success", handleSuccess);
         xumm.off("retrieved", handleSuccess);
@@ -49,57 +49,39 @@ export default function LoginPage() {
     };
   }, []);
 
-  // Register/login with our backend using the Xaman wallet address
   const registerWithBackend = async (walletAddress: string) => {
     setIsLoading(true);
     setError('');
 
     try {
-      console.log('📝 Registering seller with Xaman wallet:', walletAddress);
+      console.log('📝 Registering new seller with Xaman:', walletAddress);
 
-      // Call backend — creates user if new, returns existing if found
       const response = await apiService.post(API_ENDPOINTS.XAMAN_LOGIN, {
         wallet_address: walletAddress,
         role: 'seller',
       });
 
-      console.log('✅ Backend authentication successful');
+      console.log('✅ Registration successful');
 
-      // Store JWT token
       const token = response.token;
       if (token) {
         apiService.setToken(token);
-        console.log('🔐 Token stored');
       }
 
-      // Set role and redirect
       const role: UserRole = 'seller';
       setRole(role);
-
-      // Also set cookie for middleware
       document.cookie = `park_chain_role=${role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
 
       // Initialize FCM notifications
       console.log('🔔 Initializing push notifications...');
       await initializeFcm();
 
-      // Redirect logic based on KYC status
-      if (response.user && response.user.kyc_status === 'APPROVED') {
-        if (response.user.profileCompleted === false) {
-          console.log('⚠️ Profile not completed. Redirecting to complete-profile...');
-          router.push('/seller/complete-profile');
-        } else {
-          console.log('✅ User already verified. Redirecting to dashboard...');
-          router.push(getRoleDashboard(role));
-        }
-      } else {
-        console.log('🚀 User not verified. Redirecting to KYC...');
-        router.push('/kyc');
-      }
+      const dashboardUrl = getRoleDashboard(role);
+      router.push(dashboardUrl);
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Registration failed';
-      console.error('❌ Backend registration failed:', errorMessage);
+      console.error('❌ Registration failed:', errorMessage);
       setError(errorMessage);
       hasRegistered.current = false;
     } finally {
@@ -107,8 +89,11 @@ export default function LoginPage() {
     }
   };
 
-  const handleXamanLogin = async (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleSignup = async () => {
+    if (!acceptTerms) {
+      setError('Please accept the terms and conditions');
+      return;
+    }
 
     if (!xumm) {
       setError('Xaman SDK is not initialized yet. Please refresh.');
@@ -120,20 +105,19 @@ export default function LoginPage() {
       setIsLoading(true);
       hasRegistered.current = false;
 
-      // Clear old session
       await xumm.logout();
 
-      console.log('🔗 Initiating Xaman login...');
+      console.log('🔗 Initiating Xaman signup...');
       await xumm.authorize();
     } catch (err) {
-      console.error('Xaman login failed:', err);
+      console.error('Xaman signup failed:', err);
       setError('Failed to connect with Xaman. Please try again.');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#41ab5d] via-[#52b86d] to-[#41ab5d]">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#41ab5d] via-[#52b86d] to-[#41ab5d] py-12">
       <div className="w-full max-w-md p-8 space-y-8">
         {/* Logo */}
         <div className="text-center">
@@ -144,62 +128,79 @@ export default function LoginPage() {
               </svg>
             </div>
           </div>
-          <h1 className="text-5xl font-bold text-white mb-2">Park Chain</h1>
-          <p className="text-[#2d5f42] text-sm">Sign in to your seller account</p>
+          <h1 className="text-4xl font-bold text-white mb-2">Join Park Chain</h1>
+          <p className="text-[#2d5f42] text-sm">Create your seller account</p>
         </div>
 
-        {/* Login Card */}
+        {/* Signup Card */}
         <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-8 border border-[#2d5f42]/20 shadow-xl">
           <div className="space-y-6">
-            {/* Error Message */}
+            {/* Info */}
+            <div className="p-4 rounded-lg bg-[#2c5f9e]/10 border border-[#2c5f9e]/30">
+              <p className="text-[#1a4d7e] text-sm">
+                <span className="font-semibold">Note:</span> You&apos;ll need the Xaman wallet app installed.
+                Your XRPL wallet address will be your identity on Park Chain.
+              </p>
+            </div>
+
+            {/* Terms */}
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 rounded border-[#2d5f42]/30 bg-white text-[#41ab5d] focus:ring-2 focus:ring-[#41ab5d]"
+              />
+              <label htmlFor="terms" className="text-[#2d5f42] text-sm">
+                I agree to the{' '}
+                <Link href="/terms" className="text-[#1a4d2e] font-medium hover:underline">
+                  Terms and Conditions
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" className="text-[#1a4d2e] font-medium hover:underline">
+                  Privacy Policy
+                </Link>
+              </label>
+            </div>
+
             {error && (
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                 <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
 
-            {/* Loading Status */}
-            {isLoading && (
-              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                <p className="text-green-60 0 text-sm">Connecting your wallet...</p>
-              </div>
-            )}
+            {/* Signup Button */}
+            <button
+              onClick={handleSignup}
+              disabled={isLoading || !acceptTerms}
+              className="w-full py-4 px-6 bg-[#41ab5d] text-white rounded-xl font-semibold hover:bg-[#368a4d] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                  </svg>
+                  Creating Account...
+                </span>
+              ) : (
+                'Sign Up with Xaman Wallet'
+              )}
+            </button>
 
-            <div className="space-y-3">
-              {/* Xaman Login Button */}
-              <button
-                type="button"
-                onClick={handleXamanLogin}
-                disabled={isLoading}
-                className="w-full py-4 px-6 bg-[#41ab5d] text-white rounded-xl font-semibold hover:bg-[#368a4d] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                    </svg>
-                    Setting up account...
-                  </span>
-                ) : (
-                  'Connect with Xaman Wallet'
-                )}
-              </button>
-            </div>
-
-            {/* Admin Login Link */}
-            <div className="text-center pt-2">
-              <Link
-                href="/admin-login"
-                className="text-[#2d5f42] text-sm hover:text-[#1a4d2e] transition-colors font-medium"
-              >
-                Login as Admin →
-              </Link>
+            {/* Login Link */}
+            <div className="text-center pt-4 border-t border-[#2d5f42]/20">
+              <p className="text-[#2d5f42] text-sm">
+                Already have an account?{' '}
+                <Link href="/login" className="text-[#1a4d2e] font-medium hover:underline">
+                  Sign in
+                </Link>
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
         <div className="text-center">
           <p className="text-[#2d5f42] text-xs">
             Secured with Xaman Wallet • XRPL Blockchain
