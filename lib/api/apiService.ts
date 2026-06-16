@@ -6,7 +6,6 @@ class ApiService {
   private token: string | null = null;
 
   constructor() {
-    // Load token from localStorage on init (client-side only)
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('park_chain_token');
     }
@@ -48,7 +47,7 @@ class ApiService {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'GET',
       headers: this.headers,
-      cache: 'no-store', // Disable caching so frontend always gets latest data
+      cache: 'no-store',
     });
     return this.handleResponse(response);
   }
@@ -80,10 +79,11 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  async delete(endpoint: string) {
+  async delete(endpoint: string, body?: Record<string, unknown>) {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'DELETE',
       headers: this.headers,
+      body: body ? JSON.stringify(body) : undefined,
     });
     return this.handleResponse(response);
   }
@@ -97,6 +97,5 @@ class ApiService {
   }
 }
 
-// Singleton instance
 const apiService = new ApiService();
 export default apiService;
