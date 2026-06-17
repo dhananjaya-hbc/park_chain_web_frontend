@@ -83,11 +83,22 @@ class TestApiService {
     return this.handleResponse(response);
   }
 
-  async delete(endpoint: string) {
+  async patch(endpoint: string, body?: Record<string, unknown>) {
+    const apiUrl   = 'http://localhost:3001/api';
+    const response = await fetch(`${apiUrl}${endpoint}`, {
+      method:  'PATCH',
+      headers: this.headers,
+      body:    body ? JSON.stringify(body) : undefined,
+    });
+    return this.handleResponse(response);
+  }
+
+  async delete(endpoint: string, body?: Record<string, unknown>) {
     const apiUrl   = 'http://localhost:3001/api';
     const response = await fetch(`${apiUrl}${endpoint}`, {
       method:  'DELETE',
       headers: this.headers,
+      body:    body ? JSON.stringify(body) : undefined,
     });
     return this.handleResponse(response);
   }
@@ -370,10 +381,58 @@ describe('ApiService', () => {
         expect.objectContaining({ method: 'DELETE' })
       );
     });
+
+    test('sends body in DELETE request when provided', async () => {
+      mockFetch({ deleted: true });
+
+      const body = { fcm_token: 'token-xyz' };
+      await apiService.delete('/notifications/token', body);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/notifications/token'),
+        expect.objectContaining({
+          method: 'DELETE',
+          body: JSON.stringify(body),
+        })
+      );
+    });
   });
 
   // ════════════════════════════════════════════════════
-  // GROUP 6: ERROR HANDLING
+  // GROUP 6: PATCH REQUEST
+  // ════════════════════════════════════════════════════
+  describe('PATCH Request', () => {
+
+    test('makes PATCH request correctly', async () => {
+      mockFetch({ updated: true });
+
+      await apiService.patch('/users/123/status', {
+        status: 'suspended',
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/users/123/status'),
+        expect.objectContaining({ method: 'PATCH' })
+      );
+    });
+
+    test('sends body in PATCH request', async () => {
+      mockFetch({ updated: true });
+
+      const body = { status: 'suspended' };
+      await apiService.patch('/users/123/status', body);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          body: JSON.stringify(body),
+        })
+      );
+    });
+  });
+
+  // ════════════════════════════════════════════════════
+  // GROUP 7: ERROR HANDLING
   // ════════════════════════════════════════════════════
   describe('Error Handling', () => {
 
