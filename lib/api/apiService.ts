@@ -1,6 +1,10 @@
-// lib/api/apiService.ts
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+let rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+// Normalize API_URL: strip trailing slash and ensure it ends with /api
+rawApiUrl = rawApiUrl.replace(/\/$/, '');
+if (!rawApiUrl.endsWith('/api')) {
+  rawApiUrl += '/api';
+}
+const API_URL = rawApiUrl;
 
 class ApiService {
   private token: string | null = null;
