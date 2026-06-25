@@ -44,6 +44,7 @@ interface RevenueLineChartProps {
   onPeriodChange?: (period: string) => void;
   currency?: "XRP" | "$";
   height?: string;
+  extraHeaderControls?: React.ReactNode;
 }
 
 export default function RevenueLineChart({
@@ -59,6 +60,7 @@ export default function RevenueLineChart({
   onPeriodChange,
   currency = "XRP",
   height = "75",
+  extraHeaderControls,
 }: RevenueLineChartProps) {
   const chartData = {
     labels,
@@ -127,6 +129,7 @@ export default function RevenueLineChart({
       <div className="flex justify-between items-center mb-4">
         <h3 className={titleClassName}>{title}</h3>
         <div className="flex items-center gap-3">
+          {extraHeaderControls}
           {showPeriodSelector && periods.length > 0 && (
             <div className="flex items-center gap-1 bg-gray-50 rounded-lg p-1">
               {periods.map((period) => (
@@ -155,7 +158,11 @@ export default function RevenueLineChart({
 
       {/* Chart */}
       <div style={{ height: `${height}px` }}>
-        <Line data={chartData} options={options} />
+        <Line 
+          key={`${labels.join(',')}-${datasets.map(d => d.values.join(',')).join(',')}`}
+          data={chartData} 
+          options={options} 
+        />
       </div>
     </div>
   );
