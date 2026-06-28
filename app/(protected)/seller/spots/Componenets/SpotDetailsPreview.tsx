@@ -10,6 +10,7 @@ interface SpotDetailsPreviewProps {
   onClose: () => void;
   onSpotDeleted?: () => void;
   onEdit?: () => void;
+  onBlock?: () => void;
   status?: "active" | "inactive";
   spot?: {
     id: string;
@@ -32,7 +33,7 @@ const includesAny = (key: string, words: string[]) => words.some((word) => key.i
 
 const toLooseNumber = (value: unknown) => Number((value as string | number | boolean | null | undefined) || 0);
 
-export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, status = "inactive", spot }: SpotDetailsPreviewProps) {
+export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onBlock, status = "inactive", spot }: SpotDetailsPreviewProps) {
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
@@ -279,6 +280,17 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, sta
                   className={`rounded-md bg-[#43a047] px-5 py-2 text-sm font-semibold text-white shadow-sm ${canEdit ? "" : "opacity-45"}`}
                 >
                   Edit
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInlineError("");
+                    if (onBlock) onBlock();
+                  }}
+                  className="rounded-md bg-[#f97316] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#ea6c0a] transition-colors"
+                >
+                  Block
                 </button>
 
                 <button

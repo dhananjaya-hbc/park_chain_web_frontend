@@ -7,6 +7,7 @@ import apiService from "@/lib/api/apiService";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import SpotDetailsPreview from "./SpotDetailsPreview";
 import EditSpot from "./EditSpot";
+import BlockSpot from "./BlockSpot";
 
 const SpotMap = dynamic(() => import("./map"), {
   ssr: false,
@@ -194,6 +195,7 @@ export default function SpotCard() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [showPreview, setShowPreview] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
+  const [isBlocking, setIsBlocking] = React.useState(false);
   const [currentSpot, setCurrentSpot] = React.useState<Spot | null>(null);
   const [previewSpot, setPreviewSpot] = React.useState<Spot | null>(null);
   const [bookingStatsBySpot, setBookingStatsBySpot] = React.useState<Map<string, SpotBookingStats>>(new Map());
@@ -216,6 +218,14 @@ export default function SpotCard() {
 
   const handleEditClose = React.useCallback(() => {
     setIsEditing(false);
+  }, []);
+
+  const handleBlockOpen = React.useCallback(() => {
+    setIsBlocking(true);
+  }, []);
+
+  const handleBlockClose = React.useCallback(() => {
+    setIsBlocking(false);
   }, []);
 
   const selectedPreviewSpot = previewSpot ?? currentSpot;
@@ -308,16 +318,18 @@ export default function SpotCard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {isEditing ? "Edit Parking Spot" : "Manage Spots"}
+            {isEditing ? "Edit Parking Spot" : isBlocking ? "Block Parking Spot" : "Manage Spots"}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             {isEditing
               ? "Pricing, capacity, and descriptions can be updated here."
+              : isBlocking
+              ? "Schedule or manage a block for this spot."
               : "View your spot locations and availability."}
           </p>
         </div>
 
-        {!showPreview && !isEditing && (
+        {!showPreview && !isEditing && !isBlocking && (
           <div className="flex items-center gap-3">
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -344,11 +356,21 @@ export default function SpotCard() {
               handleEditClose();
             }}
           />
+        ) : isBlocking ? (
+          <BlockSpot
+            spot={selectedPreviewSpot as any}
+            onClose={handleBlockClose}
+            onSpotUpdated={() => {
+              loadSpots();
+              handleBlockClose();
+            }}
+          />
         ) : showPreview ? (
           <SpotDetailsPreview
             onClose={handlePreviewClose}
             onSpotDeleted={loadSpots}
             onEdit={handleEditOpen}
+            onBlock={handleBlockOpen}
             status={currentSpotStatus}
             spot={selectedPreviewSpot as any}
           />
