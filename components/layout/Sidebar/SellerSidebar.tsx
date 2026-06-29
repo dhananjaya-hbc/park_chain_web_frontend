@@ -15,7 +15,6 @@ const sellerNavItems: NavItem[] =[
     { id: "bookings", label: "Booking Timeline", href: "/seller/bookings", iconClass: "ri-calendar-todo-line" },
     { id: "approvals", label: "Submissions", href: "/seller/approvals", iconClass: "ri-shield-check-line" },
     { id: "earnings", label: "Earnings", href: "/seller/earnings", iconClass: "ri-wallet-3-line" },
-    { id: "reviews", label: "Reviews", href: "/seller/reviews", iconClass: "ri-star-line" },
 ];
 
 export default function SellerSidebar(props: SellerSidebarProps) {
