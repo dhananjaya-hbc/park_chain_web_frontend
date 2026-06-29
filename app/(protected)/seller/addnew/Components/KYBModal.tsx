@@ -20,7 +20,7 @@ export default function KYBModal() {
 
     // Custom validation for Google Maps Link
     const googleMapsLink = formData.get('googleMapsLink')?.toString().trim() || '';
-    const googleMapsPattern = /^https?:\/\/(www\.)?google\.[a-z.]+\/maps\//i;
+    const googleMapsPattern = /google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|maps\.app\.goo\.gl/i;
     if (!googleMapsPattern.test(googleMapsLink)) {
       setIsLoading(false);
       setErrorMsg('Please enter a valid Google Maps link (copied from the address bar).');

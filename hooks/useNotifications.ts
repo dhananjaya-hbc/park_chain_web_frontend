@@ -55,6 +55,10 @@ export const useNotifications = () => {
    * Fetch all notifications from the backend
    */
   const fetchNotifications = useCallback(async () => {
+    if (!apiService.getToken()) {
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
       const response = await apiService.get(API_ENDPOINTS.NOTIFICATIONS_LIST);
@@ -86,6 +90,9 @@ export const useNotifications = () => {
    * Fetch only the unread count from the backend
    */
   const fetchUnreadCount = useCallback(async () => {
+    if (!apiService.getToken()) {
+      return;
+    }
     try {
       const response = await apiService.get(API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT);
       const count = response.unreadCount ?? response.count ?? 0;

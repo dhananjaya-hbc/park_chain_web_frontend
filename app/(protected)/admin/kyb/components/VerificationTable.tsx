@@ -7,8 +7,8 @@ import apiService from '@/lib/api/apiService'
 
 interface VerificationTableProps {
     selectedFilter: VerificationFilterType
-    searchQuery: string
-    sortOrder: SortOrderType
+    searchQuery?: string
+    sortOrder?: SortOrderType
 }
 
 interface VerificationData {
@@ -20,7 +20,7 @@ interface VerificationData {
     status: 'pending' | 'verified' | 'rejected';
 }
 
-export default function VerificationTable({ selectedFilter, searchQuery, sortOrder }: VerificationTableProps) {
+export default function VerificationTable({ selectedFilter, searchQuery = '', sortOrder = 'newest' }: VerificationTableProps) {
     const [verificationData, setVerificationData] = useState<VerificationData[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState('')

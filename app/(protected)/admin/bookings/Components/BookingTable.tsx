@@ -53,10 +53,52 @@ function StatusBadge({ status, type }: { status: string; type: 'booking' | 'paym
     );
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, endDateStr?: string): string {
     const date = new Date(dateStr);
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    const startFormat = `${months[date.getMonth()]} ${date.getDate()}`;
+
+    if (!endDateStr) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const check = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        
+        if (check.getTime() === today.getTime()) {
+            return `Today, ${startFormat}`;
+        }
+        if (check.getTime() === tomorrow.getTime()) {
+            return `Tomorrow, ${startFormat}`;
+        }
+        return `${startFormat}, ${date.getFullYear()}`;
+    }
+
+    const end = new Date(endDateStr);
+    const endFormat = `${months[end.getMonth()]} ${end.getDate()}`;
+
+    if (date.getFullYear() === end.getFullYear() &&
+        date.getMonth() === end.getMonth() &&
+        date.getDate() === end.getDate()) {
+        
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const check = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        
+        if (check.getTime() === today.getTime()) {
+            return `Today, ${startFormat}`;
+        }
+        if (check.getTime() === tomorrow.getTime()) {
+            return `Tomorrow, ${startFormat}`;
+        }
+        return `${startFormat}, ${date.getFullYear()}`;
+    } else {
+        return `${startFormat} - ${endFormat}`;
+    }
 }
 
 function formatTime(dateStr: string): string {
@@ -203,7 +245,7 @@ export default function BookingTable() {
 
                                 {/* Date & Time */}
                                 <div className="col-span-2">
-                                    <p className="text-sm text-gray-700">{formatDate(booking.start_time)}</p>
+                                    <p className="text-sm text-gray-700">{formatDate(booking.start_time, booking.end_time)}</p>
                                     <p className="text-xs text-gray-500">
                                         {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
                                     </p>

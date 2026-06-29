@@ -49,7 +49,22 @@ function StatusBadge({ status }: { status: string }) {
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  const startFormat = `${months[date.getMonth()]} ${date.getDate()}`;
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  const check = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  
+  if (check.getTime() === today.getTime()) {
+    return `Today, ${startFormat}`;
+  }
+  if (check.getTime() === tomorrow.getTime()) {
+    return `Tomorrow, ${startFormat}`;
+  }
+  return `${startFormat}, ${date.getFullYear()}`;
 }
 
 // --- Shorten Hash ---
