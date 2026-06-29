@@ -113,7 +113,11 @@ export default function SpotMap({ spots, onView, isLoading = false }: SpotMapPro
                   <div className={`absolute inset-0 rounded-full opacity-20 animate-ping ${isAdminBlocked ? 'bg-red-600' : 'bg-[#2e7d32]'}`} />
 
                   {/* Inner pin */}
-                  <div className={`absolute w-8 h-8 rounded-full border-2 border-white shadow-md flex items-center justify-center transition-all duration-300 ease-out ${isSelected ? 'bg-[#1b5e20] scale-125' : 'bg-[#2e7d32] group-hover:scale-110'}`}>
+                  <div className={`absolute w-8 h-8 rounded-full border-2 border-white shadow-md flex items-center justify-center transition-all duration-300 ease-out ${
+                    isAdminBlocked 
+                      ? (isSelected ? 'bg-red-800 scale-125' : 'bg-red-600 group-hover:scale-110')
+                      : (isSelected ? 'bg-[#1b5e20] scale-125' : 'bg-[#2e7d32] group-hover:scale-110')
+                  }`}>
                     <span className="w-2.5 h-2.5 bg-white rounded-full" />
                   </div>
                 </div>
