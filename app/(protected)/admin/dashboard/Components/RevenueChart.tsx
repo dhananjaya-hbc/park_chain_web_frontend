@@ -115,6 +115,7 @@ export default function RevenueChart() {
     <div className='mb-5'>
       <RevenueLineChart
         title={loading ? "Revenue Analytics (Loading...)" : "Revenue Analytics"}
+        titleClassName="text-base font-bold text-gray-900"
         labels={labels}
         datasets={[{ label: "Revenue", values }]}
         showPeriodSelector
