@@ -55,8 +55,24 @@ export default function CompleteProfilePage() {
     fetchProfile();
   }, []);
 
+  const validateFullName = (nameStr: string) => {
+    // Allows letters, spaces, and periods (common in Sri Lankan names with initials)
+    return /^[A-Za-z\s.]+$/.test(nameStr);
+  };
+
   const validateEmail = (emailStr: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
+  };
+
+  const validatePhone = (phoneStr: string) => {
+    // Clean string by removing spaces, hyphens, and parentheses
+    const cleaned = phoneStr.replace(/[\s()-]/g, "");
+    // Sri Lankan phone number pattern:
+    // Optional +94 or 0094 or 94 or 0
+    // Followed by mobile prefix 7x or landline prefix 11, 2x, 3x, 4x, 5x, 6x, 81, 91
+    // Followed by 7 digits
+    const slPhoneRegex = /^(?:\+94|0094|94|0)?(?:7[0-9]|11|2[1-7]|3[1-8]|4[157]|5[12457]|6[35-7]|81|91)\d{7}$/;
+    return slPhoneRegex.test(cleaned);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,25 +80,37 @@ export default function CompleteProfilePage() {
     setError("");
     setSuccess("");
 
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
+
+    if (!trimmedName) {
       setError("Full Name is required.");
       return;
     }
-    if (!email.trim() || !validateEmail(email)) {
+    if (!validateFullName(trimmedName)) {
+      setError("Please enter a valid Full Name (only letters, spaces, and dots are allowed).");
+      return;
+    }
+    if (!trimmedEmail || !validateEmail(trimmedEmail)) {
       setError("A valid Email Address is required.");
       return;
     }
-    if (!phone.trim()) {
+    if (!trimmedPhone) {
       setError("Phone Number is required.");
+      return;
+    }
+    if (!validatePhone(trimmedPhone)) {
+      setError("Please enter a valid Sri Lankan Phone Number (e.g. +94 77 123 4567 or 0771234567).");
       return;
     }
 
     try {
       setIsSubmitting(true);
       await apiService.put("/users/profile", {
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
+        name: trimmedName,
+        email: trimmedEmail,
+        phone: trimmedPhone,
       });
       setSuccess("Profile updated successfully! Redirecting...");
       setTimeout(() => {
