@@ -9,6 +9,8 @@ interface PricingCapacityCardProps {
     totalSlots: number;
     setTotalSlots: (total: number) => void;
     lockSlotCount?: boolean; // when true, slot count column is read-only
+    /** Map of slotType (lowercase) → minimum allowed slots (sweep-line result) */
+    minSlotsPerType?: Record<string, number>;
 }
 
 const headingBaseClass = 'pb-4 text-[14px] font-medium text-[#374151] tracking-normal';
@@ -22,7 +24,14 @@ const tableHeadings = [
     { label: 'Hourly rate (XRP)', className: `${headingBaseClass} pl-4 w-[25%] text-left` },
 ] as const;
 
-export default function PricingCapacityCard({ slots, setSlots, totalSlots, setTotalSlots, lockSlotCount = false }: PricingCapacityCardProps) {
+export default function PricingCapacityCard({
+    slots,
+    setSlots,
+    totalSlots,
+    setTotalSlots,
+    lockSlotCount = false,
+    minSlotsPerType = {},
+}: PricingCapacityCardProps) {
     const updateRow = (id: number, field: 'slotType' | 'slots' | 'rate', value: string | number) => {
         setSlots(slots.map((row) => {
             if (row.id !== id) return row;
@@ -59,14 +68,36 @@ export default function PricingCapacityCard({ slots, setSlots, totalSlots, setTo
     // A row's inputs should be disabled when a DIFFERENT row is partial
     const isRowLocked = (row: SlotRow) => hasPartialRow && partialRow?.id !== row.id;
 
+    // Sweep-line violation: find first row where current slots < minimum allowed
+    const violationRow = !lockSlotCount
+        ? slots.find((row) => {
+              const key = row.slotType.trim().toLowerCase();
+              const min = minSlotsPerType[key] ?? 0;
+              return min > 0 && row.slots > 0 && row.slots < min;
+          })
+        : undefined;
+
+    const violationMin = violationRow
+        ? (minSlotsPerType[violationRow.slotType.trim().toLowerCase()] ?? 0)
+        : 0;
+
     return (
         <div className="bg-white rounded-xl border border-gray-200 p-6 pb-10 shadow-sm">
             <div className="-mx-6 -mt-6 mb-6 rounded-t-xl bg-[#F9FAFB80] px-6 py-4 flex justify-between items-center">
                 <h2 className="text-sm font-bold text-gray-900 mb-1 leading-tight tracking-[0.7px]">Pricing &amp; Capacity</h2>
             </div>
+
+            {/* Partial-row warning banner */}
             {hasPartialRow && !lockSlotCount && (
                 <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
                     Fill both <strong>slot count</strong> and <strong>hourly rate</strong> for <strong>{partialRow?.slotType}</strong> before editing other rows.
+                </p>
+            )}
+
+            {/* Sweep-line violation banner */}
+            {violationRow && (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
+                    <strong>{violationRow.slotType}</strong> slots cannot be reduced below <strong>{violationMin}</strong> — that is the maximum number of concurrent bookings currently scheduled for this type.
                 </p>
             )}
 

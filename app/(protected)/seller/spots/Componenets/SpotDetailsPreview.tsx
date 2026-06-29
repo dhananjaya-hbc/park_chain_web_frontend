@@ -26,6 +26,8 @@ interface SpotDetailsPreviewProps {
     slotsPerType?: number[];
     pricesPerHour?: number[];
     imageUrl?: string;
+    isAvailable?: boolean;
+    isBlocked?: boolean;
   } | null;
 }
 
@@ -48,14 +50,20 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
         className: "bg-gray-100 text-gray-600",
       };
 
-  const canEdit = Number(spot?.pendingBookings ?? 0) === 0;
-  const canDelete = Number(spot?.activeBookings ?? 0) === 0;
+  const isAdminBlocked = spot?.isBlocked === true || spot?.isAvailable === false;
+  const canEdit = !isAdminBlocked;
+  const canBlock = !isAdminBlocked;
+  const canDelete = !isAdminBlocked && Number(spot?.activeBookings ?? 0) === 0;
   const [inlineError, setInlineError] = React.useState<string>("");
   const showNoAccessError = () => {
-    setInlineError("Cannot delete this spot while there are active bookings.");
+    if (isAdminBlocked) setInlineError("Cannot delete this spot because it is blocked by the admin.");
+    else setInlineError("Cannot delete this spot while there are active bookings.");
   };
   const showEditError = () => {
-    setInlineError("Cannot edit this spot while there are pending bookings.");
+    setInlineError("Cannot edit this spot because it is blocked by the admin.");
+  };
+  const showBlockError = () => {
+    setInlineError("Cannot block this spot because it is blocked by the admin.");
   };
 
   const handleDeleteConfirm = async () => {
@@ -201,12 +209,20 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
                       <span>{spot?.address || "452 Botanical Avenue, Green District, SF 94105"}</span>
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="inline-flex items-center rounded-full bg-[#dff4e3] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#2e7d32]">
-                        Approved
-                      </span>
-                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${statusBadge.className}`}>
-                        {statusBadge.label}
-                      </span>
+                      {isAdminBlocked ? (
+                        <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-red-700">
+                          Blocked
+                        </span>
+                      ) : (
+                        <>
+                          <span className="inline-flex items-center rounded-full bg-[#dff4e3] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#2e7d32]">
+                            Approved
+                          </span>
+                          <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${statusBadge.className}`}>
+                            {statusBadge.label}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -285,10 +301,14 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
                 <button
                   type="button"
                   onClick={() => {
-                    setInlineError("");
-                    if (onBlock) onBlock();
+                    if (!canBlock) {
+                      showBlockError();
+                    } else {
+                      setInlineError("");
+                      if (onBlock) onBlock();
+                    }
                   }}
-                  className="rounded-md bg-[#f97316] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#ea6c0a] transition-colors"
+                  className={`rounded-md bg-[#f97316] px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors ${canBlock ? "hover:bg-[#ea6c0a]" : "opacity-45"}`}
                 >
                   Block
                 </button>

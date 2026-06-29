@@ -19,6 +19,7 @@ interface Spot {
   totalBookings?: number;
   isBlocked?: boolean;
   isApproved?: boolean;
+  isAvailable?: boolean;
   pricePerHour: number;
   totalSlots?: number;
   vehicleTypes?: string[];
@@ -69,10 +70,10 @@ export default function SpotMap({ spots, onView, isLoading = false }: SpotMapPro
   return (
     <div className="relative w-full h-[500px] lg:h-[600px] rounded-2xl overflow-hidden shadow-lg border border-gray-100 bg-gray-50 flex-shrink-0">
       <div className="absolute inset-0">
-        <GoogleMapContainer 
-          defaultCenter={center} 
-          defaultZoom={12} 
-          mapId="seller_spots_map" 
+        <GoogleMapContainer
+          defaultCenter={center}
+          defaultZoom={12}
+          mapId="seller_spots_map"
           gestureHandling="greedy"
           disableDefaultUI={false}
           style={{ width: '100%', height: '100%' }}
@@ -80,70 +81,75 @@ export default function SpotMap({ spots, onView, isLoading = false }: SpotMapPro
           <FitBounds spots={spots} />
 
           {spots.map((spot) => {
-              const {
-                id,
-                latitude,
-                longitude,
-                name,
-                address,
-              } = spot;
-              const isActiveStatus = (spot.activeBookings || 0) > 0;
-              const statusClass = isActiveStatus
+            const {
+              id,
+              latitude,
+              longitude,
+              name,
+              address,
+            } = spot;
+            const isActiveStatus = (spot.activeBookings || 0) > 0;
+            const isAdminBlocked = spot.isBlocked || spot.isAvailable === false;
+            const statusClass = isAdminBlocked
+              ? "bg-red-100 text-red-700 border-red-200"
+              : isActiveStatus
                 ? "bg-green-100 text-green-700 border-green-200"
                 : "bg-gray-100 text-gray-600 border-gray-200";
-              const statusLabel = isActiveStatus ? "Active" : "Inactive";
-              
-              const isSelected = activeSpotId === id;
+            const statusLabel = isAdminBlocked
+              ? "Blocked"
+              : isActiveStatus ? "Active" : "Inactive";
 
-              return (
-                <AdvancedMarker
-                  key={id}
-                  position={{ lat: latitude, lng: longitude }}
-                  onClick={() => setActiveSpotId(id)}
-                  zIndex={isSelected ? 1000 : 1}
-                >
-                  <div className="relative flex items-center justify-center w-12 h-12 cursor-pointer group">
-                    {/* Outer pulse effect */}
-                    <div className="absolute inset-0 bg-[#2e7d32] rounded-full opacity-20 animate-ping" />
-                    
-                    {/* Inner pin */}
-                    <div className={`absolute w-8 h-8 rounded-full border-2 border-white shadow-md flex items-center justify-center transition-all duration-300 ease-out ${isSelected ? 'bg-[#1b5e20] scale-125' : 'bg-[#2e7d32] group-hover:scale-110'}`}>
-                       <span className="w-2.5 h-2.5 bg-white rounded-full" />
-                    </div>
+            const isSelected = activeSpotId === id;
+
+            return (
+              <AdvancedMarker
+                key={id}
+                position={{ lat: latitude, lng: longitude }}
+                onClick={() => setActiveSpotId(id)}
+                zIndex={isSelected ? 1000 : 1}
+              >
+                <div className="relative flex items-center justify-center w-12 h-12 cursor-pointer group">
+                  {/* Outer pulse effect */}
+                  <div className={`absolute inset-0 rounded-full opacity-20 animate-ping ${isAdminBlocked ? 'bg-red-600' : 'bg-[#2e7d32]'}`} />
+
+                  {/* Inner pin */}
+                  <div className={`absolute w-8 h-8 rounded-full border-2 border-white shadow-md flex items-center justify-center transition-all duration-300 ease-out ${isSelected ? 'bg-[#1b5e20] scale-125' : 'bg-[#2e7d32] group-hover:scale-110'}`}>
+                    <span className="w-2.5 h-2.5 bg-white rounded-full" />
                   </div>
+                </div>
 
-                  {isSelected && (
-                    <InfoWindow
-                      position={{ lat: latitude, lng: longitude }}
-                      onCloseClick={() => setActiveSpotId(null)}
-                      pixelOffset={[0, -24]}
-                    >
-                      <div className="text-sm min-w-[180px] p-2 font-sans flex flex-col gap-2">
-                        <div>
-                          <p className="font-bold text-gray-900 leading-tight mb-1">{name}</p>
-                          <p className="text-xs text-gray-500 leading-snug line-clamp-2">{address}</p>
-                        </div>
-                        
-                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-                          <span
-                            className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${statusClass}`}
-                          >
-                            {statusLabel}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => onView?.(spot)}
-                            className="inline-flex items-center justify-center rounded-full bg-[#2e7d32] px-3 py-1 text-xs font-semibold text-white hover:bg-[#1b5e20] transition-colors shadow-sm"
-                          >
-                            View Details
-                          </button>
-                        </div>
+                {isSelected && (
+                  <InfoWindow
+                    position={{ lat: latitude, lng: longitude }}
+                    onCloseClick={() => setActiveSpotId(null)}
+                    pixelOffset={[0, -24]}
+                  >
+                    <div className="text-sm min-w-[180px] p-2 font-sans flex flex-col gap-2">
+                      <div>
+                        <p className="font-bold text-gray-900 leading-tight mb-1">{name}</p>
+                        <p className="text-xs text-gray-500 leading-snug line-clamp-2">{address}</p>
                       </div>
-                    </InfoWindow>
-                  )}
-                </AdvancedMarker>
-              );
-            })}
+
+                      <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-100">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${statusClass}`}
+                        >
+                          {statusLabel}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => onView?.(spot)}
+                          className="inline-flex items-center justify-center rounded-full bg-[#2e7d32] px-3 py-1 text-xs font-semibold text-white hover:bg-[#1b5e20] transition-colors shadow-sm"
+                        >
+                          View Details
+                        </button>
+                      </div>
+                    </div>
+                  </InfoWindow>
+                )}
+              </AdvancedMarker>
+            );
+          })}
         </GoogleMapContainer>
       </div>
 
