@@ -11,6 +11,7 @@ interface SpotRow {
   location: string;
   approved: boolean;
   isAvailable: boolean;
+  isBlockedBySeller: boolean;
   earningsPerMonth: number;
 }
 
@@ -20,6 +21,7 @@ interface BackendSpot {
   address?: string;
   is_available?: boolean;
   is_approved?: boolean;
+  is_blocked_by_seller?: boolean;
 }
 
 interface BackendTransaction {
@@ -40,7 +42,8 @@ const ITEMS_PER_PAGE = 5;
 const FILTER_TABS = [
   { label: "All", value: "all" },
   { label: "Approved", value: "approved" },
-  { label: "Blocked", value: "blocked" },
+  { label: "Blocked (By Admin)", value: "blocked_admin" },
+  { label: "Blocked (By seller)", value: "blocked_seller" },
 ];
 
 export default function ParkingSpotsTable() {
@@ -84,13 +87,14 @@ export default function ParkingSpotsTable() {
         });
 
         const mappedRows: SpotRow[] = backendSpots
-          .filter((spot) => spot.is_approved === true )
+          .filter((spot) => spot.is_approved === true)
           .map((spot) => ({
             id: spot.id,
             title: spot.title,
             location: spot.address || "-",
             approved: spot.is_approved === true,
             isAvailable: spot.is_available !== false,
+            isBlockedBySeller: spot.is_blocked_by_seller === true,
             earningsPerMonth: monthlyEarningsBySpot[spot.id] || 0,
           }));
 
@@ -109,10 +113,10 @@ export default function ParkingSpotsTable() {
   const renderSpotId = (id: string) => {
     const parts = id.split("-");
     if (parts.length <= 4) return id;
-    
+
     const firstPart = parts.slice(0, 4).join("-");
     const secondPart = parts.slice(4).join("-");
-    
+
     return (
       <>
         {firstPart}-<br />
@@ -126,8 +130,10 @@ export default function ParkingSpotsTable() {
     let result = spots;
     if (activeFilter === "approved") {
       result = result.filter((spot) => spot.isAvailable);
-    } else if (activeFilter === "blocked") {
-      result = result.filter((spot) => !spot.isAvailable);
+    } else if (activeFilter === "blocked_admin") {
+      result = result.filter((spot) => !spot.isAvailable && !spot.isBlockedBySeller);
+    } else if (activeFilter === "blocked_seller") {
+      result = result.filter((spot) => spot.isBlockedBySeller);
     }
 
     if (!searchQuery.trim()) return result;
@@ -167,11 +173,10 @@ export default function ParkingSpotsTable() {
                   setActiveFilter(tab.value);
                   setCurrentPage(1);
                 }}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                  activeFilter === tab.value
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${activeFilter === tab.value
                     ? "bg-white text-gray-900 shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -241,11 +246,26 @@ export default function ParkingSpotsTable() {
                   </td>
 
                   <td className="px-6 py-4">
-                    {!spot.isAvailable ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-100">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                        Blocked
-                      </span>
+                    {spot.isBlockedBySeller ? (
+                      <div className="flex flex-col items-center gap-1 w-fit">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-100">
+                          <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                          Blocked
+                        </span>
+                        <span className="text-[10px] text-orange-600 font-medium">
+                          (By seller)
+                        </span>
+                      </div>
+                    ) : !spot.isAvailable ? (
+                      <div className="flex flex-col items-center gap-1 w-fit">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-100">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                          Blocked
+                        </span>
+                        <span className="text-[10px] text-red-600 font-medium">
+                          (By admin)
+                        </span>
+                      </div>
                     ) : spot.approved ? (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-100">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -294,4 +314,4 @@ export default function ParkingSpotsTable() {
       )}
     </div>
   );
-}
+}

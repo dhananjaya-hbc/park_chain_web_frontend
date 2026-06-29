@@ -2,8 +2,64 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
-import { X, Car, CarFront, Truck, BusFront, Bike, Check } from "lucide-react";
+import { X, Car, CarFront, Truck, BusFront, Bike, Check, Lock, Clock } from "lucide-react";
 import apiService from "@/lib/api/apiService";
+
+function BlockTimer({ endTime, onExpire }: { endTime: string; onExpire?: () => void }) {
+  const [parts, setParts] = useState({ d: 0, h: 0, m: 0, s: 0 });
+  const hasExpiredRef = useRef(false);
+
+  useEffect(() => {
+    hasExpiredRef.current = false;
+    const update = () => {
+      const end = new Date(endTime).getTime();
+      const now = Date.now();
+      const diff = end - now;
+      if (diff <= 0) {
+        setParts({ d: 0, h: 0, m: 0, s: 0 });
+        if (!hasExpiredRef.current) {
+          hasExpiredRef.current = true;
+          if (onExpire) onExpire();
+        }
+        return;
+      }
+      setParts({
+        d: Math.floor(diff / 86_400_000),
+        h: Math.floor((diff % 86_400_000) / 3_600_000),
+        m: Math.floor((diff % 3_600_000) / 60_000),
+        s: Math.floor((diff % 60_000) / 1_000),
+      });
+    };
+    update();
+    const interval = setInterval(update, 1_000);
+    return () => clearInterval(interval);
+  }, [endTime]);
+
+  const Segment = ({ value, label }: { value: number; label: string }) => (
+    <div className="flex flex-col items-center">
+      <span className="font-mono font-bold text-sm text-red-600 leading-none">
+        {String(value).padStart(2, "0")}
+      </span>
+      <span className="text-[8px] font-medium text-gray-400 uppercase tracking-wider mt-0.5">{label}</span>
+    </div>
+  );
+
+  const Sep = () => (
+    <span className="font-mono font-bold text-sm text-gray-300 leading-none pb-3">:</span>
+  );
+
+  return (
+    <div className="flex items-end gap-1 rounded-lg bg-gray-50 border border-gray-100 px-2.5 py-1.5">
+      <Segment value={parts.d} label="days" />
+      <Sep />
+      <Segment value={parts.h} label="hours" />
+      <Sep />
+      <Segment value={parts.m} label="min" />
+      <Sep />
+      <Segment value={parts.s} label="sec" />
+    </div>
+  );
+}
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 interface SpotDetailsPreviewProps {
@@ -11,6 +67,7 @@ interface SpotDetailsPreviewProps {
   onSpotDeleted?: () => void;
   onEdit?: () => void;
   onBlock?: () => void;
+  onSpotUpdated?: () => void;
   status?: "active" | "inactive";
   spot?: {
     id: string;
@@ -28,6 +85,9 @@ interface SpotDetailsPreviewProps {
     imageUrl?: string;
     isAvailable?: boolean;
     isBlocked?: boolean;
+    isBlockedBySeller?: boolean;
+    blockReason?: string;
+    blockEndTime?: string;
   } | null;
 }
 
@@ -35,10 +95,12 @@ const includesAny = (key: string, words: string[]) => words.some((word) => key.i
 
 const toLooseNumber = (value: unknown) => Number((value as string | number | boolean | null | undefined) || 0);
 
-export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onBlock, status = "inactive", spot }: SpotDetailsPreviewProps) {
+export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onBlock, onSpotUpdated, status = "inactive", spot }: SpotDetailsPreviewProps) {
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const [isUnblocking, setIsUnblocking] = useState(false);
+  const [popupMode, setPopupMode] = useState<'confirmUnblock' | 'unblockSuccess' | null>(null);
   const statusBadge =
     status === "active"
       ? {
@@ -78,6 +140,35 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
       setShowDeletePopup(false);
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleUnblock = async () => {
+    if (!spot?.id) return;
+    try {
+      setIsUnblocking(true);
+      await apiService.post(`${API_ENDPOINTS.SPOTS}/${spot.id}/unblock`, {});
+      setPopupMode("unblockSuccess");
+      if (onSpotUpdated) {
+        onSpotUpdated();
+      }
+    } catch (err) {
+      console.error("Failed to unblock spot", err);
+      setInlineError("Failed to unblock spot. Please try again.");
+    } finally {
+      setIsUnblocking(false);
+    }
+  };
+
+  const handleAutoExpire = async () => {
+    if (!spot?.id) return;
+    try {
+      await apiService.post(`${API_ENDPOINTS.SPOTS}/${spot.id}/unblock`, {});
+      if (onSpotUpdated) {
+        onSpotUpdated();
+      }
+    } catch (err) {
+      console.error("Failed to automatically unblock spot", err);
     }
   };
 
@@ -152,14 +243,11 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
   }, [pricingRows, getVehicleIcon, vehicleIconPool]);
 
 
-  const occupiedSpaces  = Math.max(0, Number(spot?.activeBookings ?? 0));
+  const occupiedSpaces = Math.max(0, Number(spot?.activeBookings ?? 0));
   const computedTotalSlots = Number(spot?.totalSlots ?? 0);
-  const fallbackSlots  = pricingRows.reduce((sum, row) => sum + toLooseNumber(row.slots), 0);
-  // totalSlots: prefer backend totalSlots, fall back to sum of pricing rows
+  const fallbackSlots = pricingRows.reduce((sum, row) => sum + toLooseNumber(row.slots), 0);
   const totalSlots = computedTotalSlots > 0 ? computedTotalSlots : fallbackSlots;
-  // availableSpaces: straight subtraction — never below 0 (stale bookings reads can lag)
   const availableSpaces = Math.max(0, totalSlots - occupiedSpaces);
-  // totalSpaces is used only for the capacity bar chart to avoid division-by-zero
   const totalSpaces = Math.max(1, totalSlots);
   const capacityPercent = Math.min(100, Math.round((occupiedSpaces / totalSpaces) * 100));
 
@@ -209,9 +297,13 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
                       <span>{spot?.address || "452 Botanical Avenue, Green District, SF 94105"}</span>
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {isAdminBlocked ? (
+                      {spot?.isBlockedBySeller ? (
+                        <span className="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-700">
+                          Blocked( By User )
+                        </span>
+                      ) : isAdminBlocked ? (
                         <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-red-700">
-                          Blocked
+                          Blocked( By Admin )
                         </span>
                       ) : (
                         <>
@@ -232,6 +324,55 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
                 </div>
               </div>
             </div>
+
+            {spot?.isBlockedBySeller && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#f5c6c6] bg-[#fdf2f2] border-l-4 border-l-[#991b1b] px-4 py-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#991b1b] shadow-sm relative">
+                    <Lock className="h-5 w-5 text-white" />
+                    <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white border border-[#991b1b]">
+                      <Clock className="h-2.5 w-2.5 text-[#991b1b]" />
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#991b1b]">
+                      Scheduled Block in Progress
+                    </p>
+                    <p className="text-xs text-[#991b1b] mt-0.5">
+                      Ends at: {spot?.blockEndTime ? (
+                        new Intl.DateTimeFormat("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }).format(new Date(spot.blockEndTime))
+                      ) : (
+                        "Unknown"
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-2">
+                  <span className="font-mono font-bold text-xl tracking-widest text-red-600">
+                    {spot?.blockEndTime ? (
+                      <BlockTimer endTime={spot?.blockEndTime || ""} onExpire={handleAutoExpire} />
+                    ) : (
+                      "--:--:--"
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPopupMode("confirmUnblock")}
+                    disabled={isUnblocking}
+                    className="rounded-md border border-[#e0e0e0] bg-white px-4 py-1.5 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-60"
+                  >
+                    {isUnblocking ? "Unblocking…" : "Unblock Spot"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-4 rounded-xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm">
               <h3 className="text-lg font-bold text-gray-900">Pricing & Capacity</h3>
@@ -298,20 +439,22 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
                   Edit
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!canBlock) {
-                      showBlockError();
-                    } else {
-                      setInlineError("");
-                      if (onBlock) onBlock();
-                    }
-                  }}
-                  className={`rounded-md bg-[#f97316] px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors ${canBlock ? "hover:bg-[#ea6c0a]" : "opacity-45"}`}
-                >
-                  Block
-                </button>
+                {!spot?.isBlockedBySeller && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!canBlock) {
+                        showBlockError();
+                      } else {
+                        setInlineError("");
+                        if (onBlock) onBlock();
+                      }
+                    }}
+                    className={`rounded-md bg-[#f97316] hover:bg-[#ea6c0a] px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors ${canBlock ? "" : "opacity-45"}`}
+                  >
+                    Block
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -335,7 +478,6 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
         </div>
       </div>
 
-      {/* Delete Confirmation Popup */}
       {showDeletePopup && typeof document !== "undefined" && ReactDOM.createPortal(
         <div className="fixed inset-0 z-[9999] bg-gray-100 flex items-center justify-center p-4">
           <div className="w-full max-w-[540px] rounded-xl bg-white border border-gray-200 shadow-[0_8px_20px_rgba(0,0,0,0.12)] overflow-hidden">
@@ -397,6 +539,67 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
                 </div>
               </>
             )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Portaled Popup — Unblock Confirmation */}
+      {popupMode && typeof document !== 'undefined' && ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[9999] bg-gray-100 flex items-center justify-center p-4">
+          <div className="w-full max-w-[540px] rounded-xl bg-white border border-gray-200 shadow-[0_8px_20px_rgba(0,0,0,0.12)] overflow-hidden">
+            <div className={`h-2 ${popupMode === 'confirmUnblock' ? 'bg-[#ef4444]' : 'bg-[#22c55e]'}`} />
+            <div className="py-14 px-8 text-center">
+              <div className={`mx-auto mb-8 h-16 w-16 rounded-full flex items-center justify-center ${popupMode === 'confirmUnblock' ? 'border-4 border-[#ef4444]' : 'bg-[#22c55e]'}`}>
+                {popupMode === 'confirmUnblock'
+                  ? <X className="w-8 h-8 text-[#ef4444]" strokeWidth={3} />
+                  : <Check className="w-8 h-8 text-white" strokeWidth={3} />
+                }
+              </div>
+
+              {popupMode === 'confirmUnblock' ? (
+                <>
+                  <h3 className="text-3xl font-bold text-[#1f2937]">Unblock Spot?</h3>
+                  <p className="mt-4 text-[15px] font-medium text-gray-500 leading-relaxed max-w-sm mx-auto">
+                    This spot will become visible to customers again and they will be able to book it. Are you sure?
+                  </p>
+                  <div className="mt-8 flex items-center justify-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setPopupMode(null)}
+                      className="h-11 min-w-[130px] rounded-md bg-[#d8dadd] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#cfd2d6]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleUnblock}
+                      disabled={isUnblocking}
+                      className="h-11 min-w-[130px] rounded-md bg-[#ef3636] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#dc2626] disabled:opacity-50"
+                    >
+                      {isUnblocking ? "Unblocking..." : "Yes, Unblock"}
+                    </button>
+                  </div>
+                </>
+              ) : popupMode === 'unblockSuccess' ? (
+                <>
+                  <h3 className="text-3xl font-bold text-gray-900">Spot Unblocked!</h3>
+                  <p className="mt-4 text-[15px] font-medium text-gray-500 leading-relaxed max-w-sm mx-auto">
+                    The spot is now successfully unblocked and available for customers again.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPopupMode(null);
+                      if (onClose) onClose();
+                    }}
+                    className="mt-8 inline-flex items-center justify-center rounded-lg bg-[#111827] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0f172a]"
+                  >
+                    Back to Spots
+                  </button>
+                </>
+              ) : null}
+            </div>
           </div>
         </div>,
         document.body

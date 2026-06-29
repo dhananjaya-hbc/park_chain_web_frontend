@@ -73,7 +73,7 @@ export default function PricingCapacityCard({
         ? slots.find((row) => {
               const key = row.slotType.trim().toLowerCase();
               const min = minSlotsPerType[key] ?? 0;
-              return min > 0 && row.slots > 0 && row.slots < min;
+              return min > 0 && row.slots < min;
           })
         : undefined;
 
@@ -87,19 +87,16 @@ export default function PricingCapacityCard({
                 <h2 className="text-sm font-bold text-gray-900 mb-1 leading-tight tracking-[0.7px]">Pricing &amp; Capacity</h2>
             </div>
 
-            {/* Partial-row warning banner */}
-            {hasPartialRow && !lockSlotCount && (
-                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
-                    Fill both <strong>slot count</strong> and <strong>hourly rate</strong> for <strong>{partialRow?.slotType}</strong> before editing other rows.
-                </p>
-            )}
-
-            {/* Sweep-line violation banner */}
-            {violationRow && (
+            {/* Show only one banner: violation takes priority over partial-row warning */}
+            {violationRow ? (
                 <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
                     <strong>{violationRow.slotType}</strong> slots cannot be reduced below <strong>{violationMin}</strong> — that is the maximum number of concurrent bookings currently scheduled for this type.
                 </p>
-            )}
+            ) : hasPartialRow && !lockSlotCount ? (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                    Fill both <strong>slot count</strong> and <strong>hourly rate</strong> for <strong>{partialRow?.slotType}</strong> before editing other rows.
+                </p>
+            ) : null}
 
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[500px]">

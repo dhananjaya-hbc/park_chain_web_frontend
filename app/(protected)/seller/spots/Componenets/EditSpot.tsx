@@ -16,9 +16,15 @@ export default function EditSpot({ spot, onClose, onSpotUpdated }: any) {
     const form = useAddNewSpotForm();
     const [localError, setLocalError] = useState<string | null>(null);
     const [popupMode, setPopupMode] = useState<'success' | 'confirmDiscard' | null>(null);
-
-    // Min slots per vehicle type derived from sweep-line algorithm on active bookings
     const [minSlotsPerType, setMinSlotsPerType] = useState<Record<string, number>>({});
+
+    useEffect(() => {
+        if (!localError) return;
+        const timer = setTimeout(() => {
+            setLocalError(null);
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [localError]);
 
     // Pre-fill form with current spot data from props
     useEffect(() => {
@@ -64,22 +70,15 @@ export default function EditSpot({ spot, onClose, onSpotUpdated }: any) {
         }
 
         // Fetch sweep-line min-slots per vehicle type from the backend
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-        fetch(`${baseUrl}${API_ENDPOINTS.SPOTS}/${spot.id}/min-slots`, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem('park_chain_token') || ''}`,
-            },
-        })
-            .then(r => r.ok ? r.json() : Promise.reject())
+        apiService.get(`${API_ENDPOINTS.SPOTS}/${spot.id}/min-slots`)
             .then(data => {
                 // Expected: { minSlotsPerType: { car: 3, bike: 1, ... } }
                 if (data?.minSlotsPerType && typeof data.minSlotsPerType === 'object') {
                     setMinSlotsPerType(data.minSlotsPerType);
                 }
             })
-            .catch(() => {
-                // If the endpoint doesn't exist yet, silently skip;
-                // the backend sweep-line in PUT /api/spots/:id still blocks invalid saves.
+            .catch((err) => {
+                console.error("Failed to fetch min-slots:", err);
                 setMinSlotsPerType({});
             });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -112,7 +111,7 @@ export default function EditSpot({ spot, onClose, onSpotUpdated }: any) {
             }
 
             // Client-side sweep-line check: block submit if any row is below minimum
-            for (const slot of activeSlots) {
+            for (const slot of form.formState.slots) {
                 const key = slot.slotType.trim().toLowerCase();
                 const min = minSlotsPerType[key] ?? 0;
                 if (min > 0 && slot.slots < min) {

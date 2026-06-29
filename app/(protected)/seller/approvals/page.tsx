@@ -55,9 +55,9 @@ export default function SellerApprovalsPage() {
 
         if (kyb.status === 'rejected') {
             return (
-                <button 
-                    onClick={() => router.push('/seller/addnew')} 
-                    className="whitespace-nowrap px-4 py-2 border border-red-500 text-red-600 rounded-lg text-sm font-bold hover:bg-red-50 transition-colors"
+                <button
+                    onClick={() => router.push('/seller/addnew')}
+                    className="w-40 whitespace-nowrap px-4 py-2 border border-red-500 text-red-600 rounded-lg text-sm font-bold hover:bg-red-50 transition-colors"
                 >
                     Do KYB Again
                 </button>
@@ -65,9 +65,9 @@ export default function SellerApprovalsPage() {
         }
         if (isVerified && kyb.spotCreated) {
             return (
-                <button 
+                <button
                     disabled
-                    className="whitespace-nowrap px-4 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg text-sm font-bold cursor-not-allowed"
+                    className="w-40 whitespace-nowrap px-4 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg text-sm font-bold cursor-not-allowed"
                 >
                     Spot Created
                 </button>
@@ -76,18 +76,18 @@ export default function SellerApprovalsPage() {
 
         if (isVerified) {
             return (
-                <button 
-                    onClick={() => router.push(`/seller/addnew?kybId=${kyb.id}`)} 
-                    className="whitespace-nowrap px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition-colors"
+                <button
+                    onClick={() => router.push(`/seller/addnew?kybId=${kyb.id}`)}
+                    className="w-40 whitespace-nowrap px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition-colors"
                 >
                     You can go ahead
                 </button>
             );
         }
         return (
-            <button 
-                disabled 
-                className="whitespace-nowrap px-4 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg text-sm font-bold cursor-not-allowed"
+            <button
+                disabled
+                className="w-40 whitespace-nowrap px-4 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg text-sm font-bold cursor-not-allowed"
             >
                 Under Review
             </button>
@@ -101,8 +101,13 @@ export default function SellerApprovalsPage() {
     };
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">KYB Approvals & Status</h1>
+        <div className="max-w-7xl mx-auto">
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-gray-800">KYB Approvals & Status</h1>
+                <p className="text-sm text-gray-500 mt-1">
+                    Track the verification status of your KYB submissions and proceed to spot creation.
+                </p>
+            </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 {loading ? (

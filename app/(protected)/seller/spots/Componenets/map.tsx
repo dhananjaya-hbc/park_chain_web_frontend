@@ -16,8 +16,8 @@ interface Spot {
   isActive: boolean;
   hasBooking?: boolean;
   activeBookings?: number;
-  totalBookings?: number;
   isBlocked?: boolean;
+  isBlockedBySeller?: boolean;
   isApproved?: boolean;
   isAvailable?: boolean;
   pricePerHour: number;
@@ -89,15 +89,20 @@ export default function SpotMap({ spots, onView, isLoading = false }: SpotMapPro
               address,
             } = spot;
             const isActiveStatus = (spot.activeBookings || 0) > 0;
+            const isSellerBlocked = spot.isBlockedBySeller;
             const isAdminBlocked = spot.isBlocked || spot.isAvailable === false;
-            const statusClass = isAdminBlocked
-              ? "bg-red-100 text-red-700 border-red-200"
-              : isActiveStatus
-                ? "bg-green-100 text-green-700 border-green-200"
-                : "bg-gray-100 text-gray-600 border-gray-200";
-            const statusLabel = isAdminBlocked
+            const statusClass = isSellerBlocked
+              ? "bg-orange-100 text-orange-700 border-orange-200"
+              : isAdminBlocked
+                ? "bg-red-100 text-red-700 border-red-200"
+                : isActiveStatus
+                  ? "bg-green-100 text-green-700 border-green-200"
+                  : "bg-gray-100 text-gray-600 border-gray-200";
+            const statusLabel = isSellerBlocked
               ? "Blocked"
-              : isActiveStatus ? "Active" : "Inactive";
+              : isAdminBlocked
+                ? "Blocked"
+                : isActiveStatus ? "Active" : "Inactive";
 
             const isSelected = activeSpotId === id;
 
@@ -110,13 +115,15 @@ export default function SpotMap({ spots, onView, isLoading = false }: SpotMapPro
               >
                 <div className="relative flex items-center justify-center w-12 h-12 cursor-pointer group">
                   {/* Outer pulse effect */}
-                  <div className={`absolute inset-0 rounded-full opacity-20 animate-ping ${isAdminBlocked ? 'bg-red-600' : 'bg-[#2e7d32]'}`} />
+                  <div className={`absolute inset-0 rounded-full opacity-20 animate-ping ${isSellerBlocked ? 'bg-orange-400' : isAdminBlocked ? 'bg-red-600' : 'bg-[#2e7d32]'}`} />
 
                   {/* Inner pin */}
                   <div className={`absolute w-8 h-8 rounded-full border-2 border-white shadow-md flex items-center justify-center transition-all duration-300 ease-out ${
-                    isAdminBlocked 
-                      ? (isSelected ? 'bg-red-800 scale-125' : 'bg-red-600 group-hover:scale-110')
-                      : (isSelected ? 'bg-[#1b5e20] scale-125' : 'bg-[#2e7d32] group-hover:scale-110')
+                    isSellerBlocked
+                      ? (isSelected ? 'bg-orange-400 scale-125' : 'bg-orange-300 group-hover:scale-110')
+                      : isAdminBlocked 
+                        ? (isSelected ? 'bg-red-800 scale-125' : 'bg-red-600 group-hover:scale-110')
+                        : (isSelected ? 'bg-[#1b5e20] scale-125' : 'bg-[#2e7d32] group-hover:scale-110')
                   }`}>
                     <span className="w-2.5 h-2.5 bg-white rounded-full" />
                   </div>

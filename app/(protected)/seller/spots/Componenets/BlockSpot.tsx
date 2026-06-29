@@ -22,43 +22,22 @@ interface BlockSpotProps {
     address: string;
     imageUrl?: string;
     isBlocked?: boolean;
+    isBlockedBySeller?: boolean;
+    blockReason?: string;
+    blockEndTime?: string;
   } | null;
   onClose: () => void;
   onSpotUpdated?: () => void;
 }
 
-function BlockTimer({ endTime }: { endTime: string }) {
-  const [timeLeft, setTimeLeft] = useState("--:--:--");
-
-  useEffect(() => {
-    const update = () => {
-      const end = new Date(endTime).getTime();
-      const now = Date.now();
-      const diff = end - now;
-      if (diff <= 0) {
-        setTimeLeft("00:00:00");
-        return;
-      }
-      const h = Math.floor(diff / 3_600_000);
-      const m = Math.floor((diff % 3_600_000) / 60_000);
-      const s = Math.floor((diff % 60_000) / 1_000);
-      setTimeLeft(
-        `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
-      );
-    };
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, [endTime]);
-
-  return (
-    <span className="font-mono font-bold text-xl text-[#ef4444] tracking-wider">
-      {timeLeft}
-    </span>
-  );
-}
-
 export default function BlockSpot({ spot, onClose, onSpotUpdated }: BlockSpotProps) {
+  const today = new Date();
+  const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+  const maxDate = new Date(today);
+  maxDate.setDate(maxDate.getDate() + 21);
+  const maxDateString = `${maxDate.getFullYear()}-${String(maxDate.getMonth() + 1).padStart(2, '0')}-${String(maxDate.getDate()).padStart(2, '0')}`;
+
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [startTime, setStartTime] = useState("");
@@ -66,27 +45,32 @@ export default function BlockSpot({ spot, onClose, onSpotUpdated }: BlockSpotPro
   const [duration, setDuration] = useState(0);
   const [reason, setReason] = useState("");
   const [isBlocking, setIsBlocking] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
   const [currentBlock, setCurrentBlock] = useState<CurrentBlock | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [popupMode, setPopupMode] = useState<'success' | 'confirmCancel' | 'confirmDiscard' | null>(null);
+  const [popupMode, setPopupMode] = useState<'success' | 'confirmDiscard' | null>(null);
   const [hasConflict, setHasConflict] = useState(false);
   const [isCheckingConflict, setIsCheckingConflict] = useState(false);
 
+  const isValidDateRange = React.useMemo(() => {
+    if (!startDate || !endDate || !startTime || !endTime) return false;
+    // Replace hyphens to ensure cross-browser parsing if necessary, though YYYY-MM-DDTHH:mm is standard.
+    const s = new Date(`${startDate}T${startTime}`);
+    const e = new Date(`${endDate}T${endTime}`);
+    return !isNaN(s.getTime()) && !isNaN(e.getTime()) && s < e;
+  }, [startDate, endDate, startTime, endTime]);
+
   // Calculate duration automatically
   useEffect(() => {
-    if (startDate && endDate && startTime && endTime) {
+    if (isValidDateRange) {
       const start = new Date(`${startDate}T${startTime}`);
       const end = new Date(`${endDate}T${endTime}`);
-      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-        const diffHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-        if (diffHours > 0) {
-          setDuration(Math.max(1, Math.round(diffHours)));
-        }
-      }
+      const diffMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+      setDuration(Math.max(1, Math.round(diffMinutes)));
+    } else {
+      setDuration(0);
     }
-  }, [startDate, endDate, startTime, endTime]);
+  }, [isValidDateRange, startDate, endDate, startTime, endTime]);
 
   // Try to load any active block for this spot
   useEffect(() => {
@@ -105,32 +89,23 @@ export default function BlockSpot({ spot, onClose, onSpotUpdated }: BlockSpotPro
   // Check for conflicting bookings
   useEffect(() => {
     if (!spot?.id) return;
-    if (startDate && endDate && startTime && endTime) {
+    if (isValidDateRange) {
       const checkConflict = async () => {
         try {
           setIsCheckingConflict(true);
-          const response = await apiService.get(API_ENDPOINTS.BOOKINGS);
-          const backendBookings = Array.isArray(response?.bookings) ? response.bookings : [];
+          const blockStart = new Date(`${startDate}T${startTime}`).toISOString();
+          const blockEnd = new Date(`${endDate}T${endTime}`).toISOString();
 
-          const blockStart = new Date(`${startDate}T${startTime}`).getTime();
-          const blockEnd = new Date(`${endDate}T${endTime}`).getTime();
-
-          const hasOverlap = backendBookings.some((booking: any) => {
-            const spotId = String(booking.spot_id || booking.spotId);
-            if (spotId !== String(spot.id)) return false;
-
-            const status = String(booking.booking_status || booking.status || "").toLowerCase();
-            if (status !== "active" && status !== "confirmed") return false;
-
-            const bookingStart = new Date(booking.start_time).getTime();
-            const bookingEnd = new Date(booking.end_time).getTime();
-
-            return blockStart < bookingEnd && blockEnd > bookingStart;
+          // Call the new backend endpoint for conflict checking
+          const response = await apiService.post(`${API_ENDPOINTS.SPOTS}/${spot.id}/check-conflicts`, {
+            startDateTime: blockStart,
+            endDateTime: blockEnd
           });
 
-          setHasConflict(hasOverlap);
+          // Assuming backend returns { hasConflict: true/false }
+          setHasConflict(response?.hasConflict === true);
         } catch (err) {
-          console.error("Failed to fetch bookings to check conflict", err);
+          console.error("Failed to check conflict", err);
         } finally {
           setIsCheckingConflict(false);
         }
@@ -139,7 +114,7 @@ export default function BlockSpot({ spot, onClose, onSpotUpdated }: BlockSpotPro
     } else {
       setHasConflict(false);
     }
-  }, [startDate, endDate, startTime, endTime, spot?.id]);
+  }, [isValidDateRange, spot?.id, startDate, endDate, startTime, endTime]);
 
   // Auto-clear messages
   useEffect(() => {
@@ -155,14 +130,19 @@ export default function BlockSpot({ spot, onClose, onSpotUpdated }: BlockSpotPro
       return;
     }
     try {
+      const blockStartObj = new Date(`${startDate}T${startTime}`);
+      const blockEndObj = new Date(`${endDate}T${endTime}`);
+
+      if (isNaN(blockStartObj.getTime()) || isNaN(blockEndObj.getTime()) || blockStartObj >= blockEndObj) {
+        setError("End date and time must be after the start date and time.");
+        return;
+      }
+
       setIsBlocking(true);
       setError("");
       await apiService.post(`${API_ENDPOINTS.SPOTS}/${spot.id}/block`, {
-        start_date: startDate,
-        end_date: endDate,
-        start_time: startTime,
-        end_time: endTime,
-        duration_hours: duration,
+        startDateTime: blockStartObj.toISOString(),
+        endDateTime: blockEndObj.toISOString(),
         reason: reason || undefined,
       });
       setPopupMode('success');
@@ -173,30 +153,8 @@ export default function BlockSpot({ spot, onClose, onSpotUpdated }: BlockSpotPro
     }
   };
 
-  const handleCancelBlockClick = () => {
-    setPopupMode('confirmCancel');
-  };
-
   const handleCancelForm = () => {
     setPopupMode('confirmDiscard');
-  };
-
-  const handleCancelBlockConfirm = async () => {
-    if (!spot?.id) return;
-    try {
-      setIsCancelling(true);
-      setError("");
-      await apiService.delete(`${API_ENDPOINTS.SPOTS}/${spot.id}/block`);
-      setCurrentBlock(null);
-      setPopupMode(null);
-      onSpotUpdated?.();
-      onClose();
-    } catch {
-      setError("Failed to cancel block. Please try again.");
-      setPopupMode(null);
-    } finally {
-      setIsCancelling(false);
-    }
   };
 
   const handleGoToSpots = () => {
@@ -268,48 +226,6 @@ export default function BlockSpot({ spot, onClose, onSpotUpdated }: BlockSpotPro
             </div>
           </div>
 
-          {/* ── Current block banner ── */}
-          {(currentBlock || spot?.isBlocked) && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dff4e3] bg-[#f6faf6] border-l-4 border-l-[#2e7d32] px-4 py-4">
-              <div className="flex items-center gap-4">
-                {/* Icon box — dark green with lock+clock */}
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#2e7d32] shadow-sm relative">
-                  <Lock className="h-5 w-5 text-white" />
-                  <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white border border-[#2e7d32]">
-                    <Clock className="h-2.5 w-2.5 text-[#2e7d32]" />
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900">
-                    {spot?.name} Currently Blocked
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {currentBlock?.reason || "Maintenance block scheduled for cleaning service"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Timer + Cancel Block stacked on the right */}
-              <div className="flex flex-col items-end gap-2">
-                <span className="font-mono font-bold text-xl tracking-widest text-[#ef4444]">
-                  {currentBlock?.end_time ? (
-                    <BlockTimer endTime={currentBlock.end_time} />
-                  ) : (
-                    "--:--:--"
-                  )}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleCancelBlockClick}
-                  disabled={isCancelling}
-                  className="rounded-md border border-[#e0e0e0] bg-white px-4 py-1.5 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-60"
-                >
-                  {isCancelling ? "Cancelling…" : "Cancel Block"}
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* ── Schedule a Block form ── */}
           <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm space-y-4">
             <div>
@@ -325,6 +241,8 @@ export default function BlockSpot({ spot, onClose, onSpotUpdated }: BlockSpotPro
                 <input
                   id="block-start-date"
                   type="date"
+                  min={todayDateString}
+                  max={maxDateString}
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] transition-all"
@@ -337,6 +255,8 @@ export default function BlockSpot({ spot, onClose, onSpotUpdated }: BlockSpotPro
                 <input
                   id="block-end-date"
                   type="date"
+                  min={startDate || todayDateString}
+                  max={maxDateString}
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] transition-all"
@@ -377,13 +297,19 @@ export default function BlockSpot({ spot, onClose, onSpotUpdated }: BlockSpotPro
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-gray-700">Duration</label>
                 <span className="rounded-md bg-[#e6f4ea] px-2.5 py-1 text-sm font-bold text-[#00695c]">
-                  {duration} Hours
+                  {duration === 0
+                    ? '0m'
+                    : duration < 60
+                      ? `${duration}m`
+                      : duration % 60 === 0
+                        ? `${Math.floor(duration / 60)}h`
+                        : `${Math.floor(duration / 60)}h ${duration % 60}m`}
                 </span>
               </div>
               <div className="mt-4 h-3 overflow-hidden rounded-full bg-gray-200">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-[#2e7d32] to-[#43a047] transition-all duration-300"
-                  style={{ width: `${Math.min(100, (duration / Math.max(24, duration || 1)) * 100)}%` }}
+                  style={{ width: `${Math.min(100, ((duration / 60) / Math.max(24, (duration / 60) || 1)) * 100)}%` }}
                 />
               </div>
               <div className="mt-1 flex justify-between text-xs text-gray-500">
@@ -404,41 +330,49 @@ export default function BlockSpot({ spot, onClose, onSpotUpdated }: BlockSpotPro
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Reason <span className="text-gray-400 font-normal"></span>
               </label>
-              <input
+              <select
                 id="block-reason"
-                type="text"
-                placeholder="e.g. Maintenance block scheduled for cleaning service"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] transition-all"
-              />
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] transition-all"
+              >
+                <option value="" disabled>Select a reason</option>
+                <option value="Maintenance Work">Maintenance Work</option>
+                <option value="Private Use">Private Use</option>
+                <option value="Cleaning in Progress">Cleaning in Progress</option>
+                <option value="Temporary Safety Issue">Temporary Safety Issue</option>
+                <option value="Event Reservation">Event Reservation</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
 
             {/* No-conflict / Conflict status */}
-            {hasConflict ? (
-              <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-                <X className="h-5 w-5 text-red-600" />
-                <div>
-                  <p className="text-sm font-bold text-red-800">
-                    Conflicting bookings found
-                  </p>
-                  <p className="text-xs text-red-600 mt-0.5">
-                    Spot can not be blocked for the selected time period.
-                  </p>
+            {isValidDateRange && (
+              hasConflict ? (
+                <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                  <X className="h-5 w-5 text-red-600" />
+                  <div>
+                    <p className="text-sm font-bold text-red-800">
+                      Conflicting bookings found
+                    </p>
+                    <p className="text-xs text-red-600 mt-0.5">
+                      Spot can not be blocked for the selected time period.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3">
-                <CheckCircle className="h-5 w-5 text-[#15803d]" />
-                <div>
-                  <p className="text-sm font-bold text-[#1f2937]">
-                    No conflicting bookings found.
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Spot can be blocked for the selected period.
-                  </p>
+              ) : (
+                <div className="flex items-center gap-3 rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3">
+                  <CheckCircle className="h-5 w-5 text-[#15803d]" />
+                  <div>
+                    <p className="text-sm font-bold text-[#1f2937]">
+                      No conflicting bookings found.
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Spot can be blocked for the selected period.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )
             )}
 
             {/* Error / Success */}
@@ -481,11 +415,11 @@ export default function BlockSpot({ spot, onClose, onSpotUpdated }: BlockSpotPro
       {popupMode && typeof document !== 'undefined' && ReactDOM.createPortal(
         <div className="fixed inset-0 z-[9999] bg-gray-100 flex items-center justify-center p-4">
           <div className="w-full max-w-[540px] rounded-xl bg-white border border-gray-200 shadow-[0_8px_20px_rgba(0,0,0,0.12)] overflow-hidden">
-            <div className={`h-2 ${popupMode === 'confirmCancel' || popupMode === 'confirmDiscard' ? 'bg-[#ef4444]' : 'bg-[#22c55e]'}`} />
+            <div className={`h-2 ${popupMode === 'confirmDiscard' ? 'bg-[#ef4444]' : 'bg-[#22c55e]'}`} />
             <div className="py-14 px-8 text-center">
-              <div className={`mx-auto mb-8 h-16 w-16 rounded-full flex items-center justify-center ${popupMode === 'confirmCancel' || popupMode === 'confirmDiscard' ? 'border-4 border-[#ef4444]' : 'bg-[#22c55e]'}`}>
-                {popupMode === 'confirmCancel' || popupMode === 'confirmDiscard'
-                  ? (popupMode === 'confirmCancel' ? <CalendarX className="w-8 h-8 text-[#ef4444]" strokeWidth={2} /> : <X className="w-8 h-8 text-[#ef4444]" strokeWidth={3} />)
+              <div className={`mx-auto mb-8 h-16 w-16 rounded-full flex items-center justify-center ${popupMode === 'confirmDiscard' ? 'border-4 border-[#ef4444]' : 'bg-[#22c55e]'}`}>
+                {popupMode === 'confirmDiscard'
+                  ? <X className="w-8 h-8 text-[#ef4444]" strokeWidth={3} />
                   : <Check className="w-8 h-8 text-white" strokeWidth={3} />
                 }
               </div>
@@ -527,32 +461,7 @@ export default function BlockSpot({ spot, onClose, onSpotUpdated }: BlockSpotPro
                     </button>
                   </div>
                 </>
-              ) : (
-                <>
-                  <h3 className="text-3xl font-bold text-[#1f2937]">Cancel Spot Blocking?</h3>
-                  <p className="mt-4 text-[15px] font-medium text-gray-500 leading-relaxed max-w-sm mx-auto">
-                    The spot will become visible again to customers after cancellation.
-                  </p>
-                  <div className="mt-8 flex items-center justify-center gap-4">
-                    <button
-                      type="button"
-                      onClick={() => setPopupMode(null)}
-                      disabled={isCancelling}
-                      className="h-11 min-w-[130px] rounded-md bg-[#d8dadd] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#cfd2d6] disabled:opacity-50"
-                    >
-                      Keep Blocking
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCancelBlockConfirm}
-                      disabled={isCancelling}
-                      className="h-11 min-w-[130px] rounded-md bg-[#ef3636] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#dc2626] disabled:opacity-50"
-                    >
-                      {isCancelling ? 'Cancelling...' : 'Yes, Cancel Blocking'}
-                    </button>
-                  </div>
-                </>
-              )}
+              ) : null}
             </div>
           </div>
         </div>,
