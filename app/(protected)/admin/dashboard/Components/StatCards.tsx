@@ -1,8 +1,11 @@
-import React from 'react'
+"use client";
+
+import React, { useState, useEffect } from 'react'
 import { faUsers, faStore, faDollarSign, faCalendarCheck } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-
+import apiService from '@/lib/api/apiService'
+import { API_ENDPOINTS } from '@/lib/api/endpoints'
 interface StatCardProps {
     title: string
     value: string | number
@@ -23,25 +26,66 @@ const StatCard = ({ title, value, icon, bgColor = 'bg-[#197729]' }: StatCardProp
 )
 
 export default function StatCards() {
+    const [totalUsers, setTotalUsers] = useState(0);
+    const [activeSellers, setActiveSellers] = useState(0);
+    const [platformRevenue, setPlatformRevenue] = useState(0);
+    const [totalBookings, setTotalBookings] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchDashboardStats = async () => {
+            try {
+                // Fetch Total Users
+                const usersResponse = await apiService.get(API_ENDPOINTS.USERS);
+                const users = Array.isArray(usersResponse) ? usersResponse : [];
+                setTotalUsers(users.length);
+
+                // Fetch Active Sellers
+                const sellersResponse = await apiService.get('/users?role=seller');
+                const sellers = Array.isArray(sellersResponse) ? sellersResponse : [];
+                const activeSellersCount = sellers.filter((s: any) => s.status === 'active' || s.is_active === true).length;
+                setActiveSellers(activeSellersCount);
+
+                // Fetch Platform Revenue
+                const balanceResponse = await apiService.get(API_ENDPOINTS.ADMIN_BALANCE);
+                if (balanceResponse?.earnings?.admin_profit_xrp) {
+                    setPlatformRevenue(parseFloat(balanceResponse.earnings.admin_profit_xrp));
+                }
+
+                // Fetch Total Bookings
+                const bookingsResponse = await apiService.get(API_ENDPOINTS.BOOKINGS);
+                if (bookingsResponse?.bookings && Array.isArray(bookingsResponse.bookings)) {
+                    setTotalBookings(bookingsResponse.bookings.length);
+                }
+            } catch (error) {
+                console.error("Failed to fetch dashboard stats", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchDashboardStats();
+    }, []);
+
     const stats = [
         {
             title: 'Total Users',
-            value: '2,063',
+            value: isLoading ? '...' : totalUsers.toLocaleString(),
             icon: faUsers,
         },
         {
             title: 'Active Sellers',
-            value: '2,500',
+            value: isLoading ? '...' : activeSellers.toLocaleString(),
             icon: faStore,
         },
         {
             title: 'Platform Revenue',
-            value: '5,613 XRP',
+            value: isLoading ? '...' : `${platformRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} XRP`,
             icon: faDollarSign,
         },
         {
             title: 'Total Bookings',
-            value: '9,547',
+            value: isLoading ? '...' : totalBookings.toLocaleString(),
             icon: faCalendarCheck,
         },
     ]

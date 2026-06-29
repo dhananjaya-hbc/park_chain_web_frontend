@@ -7,6 +7,7 @@ import apiService from "@/lib/api/apiService";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import SpotDetailsPreview from "./SpotDetailsPreview";
 import EditSpot from "./EditSpot";
+import BlockSpot from "./BlockSpot";
 
 const SpotMap = dynamic(() => import("./map"), {
   ssr: false,
@@ -27,6 +28,9 @@ interface Spot {
   isBlocked?: boolean;
   isApproved?: boolean;
   isAvailable?: boolean;
+  isBlockedBySeller?: boolean;
+  blockEndTime?: string;
+  blockReason?: string;
   pricePerHour: number;
   totalSlots?: number;
   vehicleTypes?: string[];
@@ -42,6 +46,8 @@ interface BackendBooking {
   spotId?: string;
   booking_status?: string;
   status?: string;
+  end_time?: string;
+  endTime?: string;
 }
 
 interface BackendSpot {
@@ -62,6 +68,12 @@ interface BackendSpot {
   is_blocked?: boolean;
   blocked?: boolean;
   isBlocked?: boolean;
+  isBlockedBySeller?: boolean;
+  is_blocked_by_seller?: boolean;
+  block_end_time?: string;
+  blockEndTime?: string;
+  block_reason?: string;
+  blockReason?: string;
   totalSlots?: number | string;
   total_slots?: number | string;
   vehicleTypes?: string[] | string;
@@ -177,8 +189,11 @@ const mapBackendSpotToSpot = (spot: BackendSpot, bookingStatsBySpot: Map<string,
     totalBookings: bookingStats.total,
     pendingBookings: bookingStats.pending,
     isBlocked,
+    isBlockedBySeller: isTrue(spot.isBlockedBySeller, spot.is_blocked_by_seller),
+    blockEndTime: spot.block_end_time ?? spot.blockEndTime,
+    blockReason: spot.block_reason ?? spot.blockReason,
     isApproved,
-    isAvailable: spot.is_available === true || spot.available === true,
+    isAvailable: spot.is_available !== false && spot.available !== false,
     totalSlots,
     vehicleTypes,
     slotsPerType,
@@ -192,8 +207,10 @@ export default function SpotCard() {
   const [spots, setSpots] = React.useState<Spot[]>([]);
   const [isLoadingSpots, setIsLoadingSpots] = React.useState(true);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [activeFilter, setActiveFilter] = React.useState("all");
   const [showPreview, setShowPreview] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
+  const [isBlocking, setIsBlocking] = React.useState(false);
   const [currentSpot, setCurrentSpot] = React.useState<Spot | null>(null);
   const [previewSpot, setPreviewSpot] = React.useState<Spot | null>(null);
   const [bookingStatsBySpot, setBookingStatsBySpot] = React.useState<Map<string, SpotBookingStats>>(new Map());
@@ -218,6 +235,14 @@ export default function SpotCard() {
     setIsEditing(false);
   }, []);
 
+  const handleBlockOpen = React.useCallback(() => {
+    setIsBlocking(true);
+  }, []);
+
+  const handleBlockClose = React.useCallback(() => {
+    setIsBlocking(false);
+  }, []);
+
   const selectedPreviewSpot = previewSpot ?? currentSpot;
 
   const currentSpotStatus: SpotDetailsStatus = React.useMemo(() => {
@@ -226,15 +251,21 @@ export default function SpotCard() {
   }, [selectedPreviewSpot]);
 
   const filteredSpots = React.useMemo(() => {
+    let result = spots.filter((spot) => spot.isApproved === true);
+
+    if (activeFilter === "blocked_admin") {
+      result = result.filter((spot) => !spot.isAvailable && !spot.isBlockedBySeller);
+    } else if (activeFilter === "blocked_seller") {
+      result = result.filter((spot) => spot.isBlockedBySeller);
+    }
+
     const q = searchQuery.trim().toLowerCase();
+    if (!q) return result;
 
-    return spots.filter((spot) => {
-      if (spot.isApproved !== true) return false;
-      if (!q) return true;
-
-      return spot.name.toLowerCase().includes(q) || spot.address.toLowerCase().includes(q);
-    });
-  }, [spots, searchQuery]);
+    return result.filter(
+      (spot) => spot.name.toLowerCase().includes(q) || spot.address.toLowerCase().includes(q)
+    );
+  }, [spots, searchQuery, activeFilter]);
 
   const loadSpots = React.useCallback(async () => {
     try {
@@ -260,7 +291,18 @@ export default function SpotCard() {
         current.total += 1;
 
         if (["pending", "confirmed", "active"].includes(bookingStatus)) {
-          current.active += 1;
+          const endTimeStr = booking.end_time || booking.endTime;
+          let isExpired = false;
+          if (endTimeStr) {
+            const endTime = new Date(endTimeStr).getTime();
+            if (Date.now() > endTime) {
+              isExpired = true;
+            }
+          }
+          
+          if (!isExpired) {
+            current.active += 1;
+          }
         }
         if (bookingStatus === "pending") {
           current.pending += 1;
@@ -308,17 +350,39 @@ export default function SpotCard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {isEditing ? "Edit Parking Spot" : "Manage Spots"}
+            {isEditing ? "Edit Parking Spot" : isBlocking ? "Block Parking Spot" : "Manage Spots"}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             {isEditing
               ? "Pricing, capacity, and descriptions can be updated here."
+              : isBlocking
+              ? "Schedule or manage a block for this spot."
               : "View your spot locations and availability."}
           </p>
         </div>
 
-        {!showPreview && !isEditing && (
-          <div className="flex items-center gap-3">
+        {!showPreview && !isEditing && !isBlocking && (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="flex items-center gap-1 bg-white border border-gray-200 p-1 rounded-lg shadow-sm self-start sm:self-auto">
+              {[
+                { label: "All", value: "all" },
+                { label: "Blocked (By Admin)", value: "blocked_admin" },
+                { label: "Blocked (By seller)", value: "blocked_seller" },
+              ].map((tab) => (
+                <button
+                  key={tab.value}
+                  onClick={() => setActiveFilter(tab.value)}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
+                    activeFilter === tab.value
+                      ? "bg-gray-100 text-gray-900 shadow-sm"
+                      : "bg-white text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -326,7 +390,7 @@ export default function SpotCard() {
                 placeholder="Search spot name or address"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] shadow-sm transition-all"
+                className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-3 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#43a047]/30 focus:border-[#43a047] shadow-sm transition-all"
               />
             </div>
           </div>
@@ -344,11 +408,22 @@ export default function SpotCard() {
               handleEditClose();
             }}
           />
+        ) : isBlocking ? (
+          <BlockSpot
+            spot={selectedPreviewSpot as any}
+            onClose={handleBlockClose}
+            onSpotUpdated={() => {
+              loadSpots();
+              handleBlockClose();
+            }}
+          />
         ) : showPreview ? (
           <SpotDetailsPreview
             onClose={handlePreviewClose}
             onSpotDeleted={loadSpots}
             onEdit={handleEditOpen}
+            onBlock={handleBlockOpen}
+            onSpotUpdated={loadSpots}
             status={currentSpotStatus}
             spot={selectedPreviewSpot as any}
           />
