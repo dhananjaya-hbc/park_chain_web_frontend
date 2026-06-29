@@ -4,12 +4,15 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import apiService from "@/lib/api/apiService";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Phone, ShieldCheck, AlertCircle } from "lucide-react";
+import { User, Mail, Phone, ShieldCheck, AlertCircle, Camera } from "lucide-react";
 
 export default function CompleteProfilePage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -43,6 +46,10 @@ export default function CompleteProfilePage() {
           if (profile.phoneNumber) {
             setPhone(profile.phoneNumber);
           }
+
+          if (profile.profileImageUrl) {
+            setPreviewUrl(profile.profileImageUrl);
+          }
         }
       } catch (err: any) {
         console.error("Failed to fetch profile:", err);
@@ -65,14 +72,21 @@ export default function CompleteProfilePage() {
   };
 
   const validatePhone = (phoneStr: string) => {
-    // Clean string by removing spaces, hyphens, and parentheses
     const cleaned = phoneStr.replace(/[\s()-]/g, "");
-    // Sri Lankan phone number pattern:
-    // Optional +94 or 0094 or 94 or 0
-    // Followed by mobile prefix 7x or landline prefix 11, 2x, 3x, 4x, 5x, 6x, 81, 91
-    // Followed by 7 digits
     const slPhoneRegex = /^(?:\+94|0094|94|0)?(?:7[0-9]|11|2[1-7]|3[1-8]|4[157]|5[12457]|6[35-7]|81|91)\d{7}$/;
     return slPhoneRegex.test(cleaned);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Image size must be less than 5MB.");
+        return;
+      }
+      setProfileImage(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -104,14 +118,41 @@ export default function CompleteProfilePage() {
       setError("Please enter a valid Sri Lankan Phone Number (e.g. +94 77 123 4567 or 0771234567).");
       return;
     }
+    if (!previewUrl && !profileImage) {
+      setError("Profile image is required.");
+      return;
+    }
 
     try {
       setIsSubmitting(true);
+
+      // 1. Upload profile image to Cloudinary if a new one is selected
+      if (profileImage) {
+        const formData = new FormData();
+        formData.append("image", profileImage);
+
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+        const imgResponse = await fetch(`${baseUrl}/users/profile/image`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('park_chain_token') || ''}`,
+          },
+          body: formData,
+        });
+
+        if (!imgResponse.ok) {
+          const imgErr = await imgResponse.json().catch(() => ({}));
+          throw new Error(imgErr.error || "Failed to upload profile image.");
+        }
+      }
+
+      // 2. Update user profile information
       await apiService.put("/users/profile", {
         name: trimmedName,
         email: trimmedEmail,
         phone: trimmedPhone,
       });
+
       setSuccess("Profile updated successfully! Redirecting...");
       setTimeout(() => {
         router.push("/seller/dashboard");
@@ -177,6 +218,30 @@ export default function CompleteProfilePage() {
           )}
 
           <div className="space-y-5">
+            {/* Profile Image Uploader */}
+            <div className="flex flex-col items-center justify-center pb-4 border-b border-gray-50">
+              <div className="relative group cursor-pointer">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-100 shadow-inner flex items-center justify-center bg-gray-50 group-hover:border-[#41ab5d]/30 transition-all duration-300">
+                  {previewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={previewUrl} alt="Profile preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-10 h-10 text-gray-400" />
+                  )}
+                </div>
+                <label htmlFor="profileImageInput" className="absolute bottom-0 right-0 bg-[#41ab5d] text-white p-2 rounded-full shadow-md cursor-pointer hover:bg-[#368a4d] transition-all duration-300 hover:scale-105">
+                  <Camera size={16} />
+                  <input
+                    id="profileImageInput"
+                    type="file"
+                    accept="image/png, image/jpeg, image/jpg"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              <p className="text-xs text-gray-400 mt-2 font-medium">Upload profile picture (Max 5MB)</p>
+            </div>
             {/* Full Name */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">

@@ -30,6 +30,7 @@ export interface Spot {
     owner_email: string;
     owner_phone?: string;
     owner_wallet?: string;
+    owner_image?: string;
     created_at: string;
     updated_at: string;
 }
