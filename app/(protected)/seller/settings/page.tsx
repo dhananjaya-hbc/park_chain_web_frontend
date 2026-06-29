@@ -10,7 +10,8 @@ import {
   ShieldCheck, 
   AlertCircle, 
   Copy,
-  Check
+  Check,
+  Camera
 } from "lucide-react";
 
 export default function SellerSettingsPage() {
@@ -18,6 +19,8 @@ export default function SellerSettingsPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,6 +49,9 @@ export default function SellerSettingsPage() {
           if (profile.walletAddress) {
             setWalletAddress(profile.walletAddress);
           }
+          if (profile.profileImageUrl) {
+            setPreviewUrl(profile.profileImageUrl);
+          }
         }
       } catch (err: any) {
         console.error("Failed to fetch profile:", err);
@@ -70,6 +76,18 @@ export default function SellerSettingsPage() {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Image size must be less than 5MB.");
+        return;
+      }
+      setProfileImage(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -90,11 +108,34 @@ export default function SellerSettingsPage() {
 
     try {
       setIsSubmitting(true);
+
+      // 1. Upload profile image to Cloudinary if selected
+      if (profileImage) {
+        const formData = new FormData();
+        formData.append("image", profileImage);
+
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+        const imgResponse = await fetch(`${baseUrl}/users/profile/image`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('park_chain_token') || ''}`,
+          },
+          body: formData,
+        });
+
+        if (!imgResponse.ok) {
+          const imgErr = await imgResponse.json().catch(() => ({}));
+          throw new Error(imgErr.error || "Failed to upload profile image.");
+        }
+      }
+
+      // 2. Update profile details
       await apiService.put("/users/profile", {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
       });
+
       setSuccess("Settings updated successfully!");
       setTimeout(() => {
         setSuccess("");
@@ -157,6 +198,30 @@ export default function SellerSettingsPage() {
           )}
 
           <div className="space-y-5">
+            {/* Profile Image Uploader */}
+            <div className="flex flex-col items-center justify-center pb-4 border-b border-gray-50">
+              <div className="relative group cursor-pointer">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-100 shadow-inner flex items-center justify-center bg-gray-50 group-hover:border-[#41ab5d]/30 transition-all duration-300">
+                  {previewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={previewUrl} alt="Profile preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-10 h-10 text-gray-400" />
+                  )}
+                </div>
+                <label htmlFor="profileImageInput" className="absolute bottom-0 right-0 bg-[#41ab5d] text-white p-2 rounded-full shadow-md cursor-pointer hover:bg-[#368a4d] transition-all duration-300 hover:scale-105">
+                  <Camera size={16} />
+                  <input
+                    id="profileImageInput"
+                    type="file"
+                    accept="image/png, image/jpeg, image/jpg"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              <p className="text-xs text-gray-400 mt-2 font-medium">Upload profile picture (Max 5MB)</p>
+            </div>
             {/* Full Name */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
