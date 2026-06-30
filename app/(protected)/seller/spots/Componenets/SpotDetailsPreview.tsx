@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import { X, Car, CarFront, Truck, BusFront, Bike, Check, Lock, Clock } from "lucide-react";
 import apiService from "@/lib/api/apiService";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 function BlockTimer({ endTime, onExpire }: { endTime: string; onExpire?: () => void }) {
   const [parts, setParts] = useState({ d: 0, h: 0, m: 0, s: 0 });
@@ -60,7 +61,7 @@ function BlockTimer({ endTime, onExpire }: { endTime: string; onExpire?: () => v
     </div>
   );
 }
-import { API_ENDPOINTS } from "@/lib/api/endpoints";
+
 
 interface SpotDetailsPreviewProps {
   onClose: () => void;
@@ -243,11 +244,70 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
   }, [pricingRows, getVehicleIcon, vehicleIconPool]);
 
 
-  const occupiedSpaces = Math.max(0, Number(spot?.activeBookings ?? 0));
+  // ── Live Occupancy via API ─────────────────────────────────────
+  const [occupancyData, setOccupancyData] = useState<{
+    bookedSlots: number;
+    totalSlots: number;
+    availableSlots: number;
+  } | null>(null);
+  const [occupancyLoading, setOccupancyLoading] = useState(false);
+  const [occupancyError, setOccupancyError] = useState(false);
+  const [occupancyRetry, setOccupancyRetry] = useState(0);
+
+  useEffect(() => {
+    const spotId = spot?.id;
+    if (!spotId) return;
+
+    setOccupancyLoading(true);
+    setOccupancyError(false);
+    setOccupancyData(null);
+
+    const now = new Date();
+    const startTime = now.toISOString();
+    const endTime = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+    const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api").replace(/\/$/, "");
+    const token = typeof window !== "undefined" ? localStorage.getItem("park_chain_token") : null;
+    const url = `${apiBase}/bookings/availability/${spotId}?startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}`;
+
+    fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json() as Promise<{
+          availability: { vehicleType: string; totalSlots: number; bookedSlots: number; availableSlots: number }[];
+        }>;
+      })
+      .then((data) => {
+        const list = Array.isArray(data?.availability) ? data.availability : [];
+        setOccupancyData({
+          totalSlots:    list.reduce((s, r) => s + (Number(r.totalSlots)    || 0), 0),
+          bookedSlots:   list.reduce((s, r) => s + (Number(r.bookedSlots)   || 0), 0),
+          availableSlots:list.reduce((s, r) => s + (Number(r.availableSlots)|| 0), 0),
+        });
+        setOccupancyLoading(false);
+      })
+      .catch((err) => {
+        console.error("[LiveOccupancy]", err);
+        setOccupancyError(true);
+        setOccupancyLoading(false);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spot?.id, occupancyRetry]);
+
+  const handleRetryOccupancy = () => setOccupancyRetry((n) => n + 1);
+
+
+  // Derived occupancy values
+  const occupiedSpaces = occupancyData?.bookedSlots ?? 0;
   const computedTotalSlots = Number(spot?.totalSlots ?? 0);
   const fallbackSlots = pricingRows.reduce((sum, row) => sum + toLooseNumber(row.slots), 0);
-  const totalSlots = computedTotalSlots > 0 ? computedTotalSlots : fallbackSlots;
-  const availableSpaces = Math.max(0, totalSlots - occupiedSpaces);
+  const totalSlots = occupancyData ? occupancyData.totalSlots : (computedTotalSlots > 0 ? computedTotalSlots : fallbackSlots);
+  const availableSpaces = occupancyData?.availableSlots ?? Math.max(0, totalSlots - occupiedSpaces);
   const totalSpaces = Math.max(1, totalSlots);
   const capacityPercent = Math.min(100, Math.round((occupiedSpaces / totalSpaces) * 100));
 
@@ -400,18 +460,50 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
                 <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-gray-500">
                   Live Occupancy
                 </p>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#2e7d32]">
-                  {capacityPercent}% Capacity
-                </span>
+                {occupancyLoading ? (
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 animate-pulse">Loading…</span>
+                ) : occupancyError ? (
+                  <button
+                    type="button"
+                    onClick={handleRetryOccupancy}
+                    className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-500 hover:underline"
+                  >
+                    Retry
+                  </button>
+                ) : (
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#2e7d32]">
+                    {capacityPercent}% Capacity
+                  </span>
+                )}
               </div>
 
-              <div className="mt-4 h-3 overflow-hidden rounded-full bg-gray-200">
-                <div className="h-full rounded-full bg-gradient-to-r from-[#2e7d32] to-[#43a047]" style={{ width: `${capacityPercent}%` }} />
-              </div>
+
+              {occupancyLoading ? (
+                <div className="mt-4 h-3 overflow-hidden rounded-full bg-gray-200 animate-pulse" />
+              ) : occupancyError ? (
+                <div className="mt-4 h-3 overflow-hidden rounded-full bg-red-100">
+                  <div className="h-full w-0 rounded-full bg-red-300" />
+                </div>
+              ) : (
+                <div className="mt-4 h-3 overflow-hidden rounded-full bg-gray-200">
+                  <div className="h-full rounded-full bg-gradient-to-r from-[#2e7d32] to-[#43a047] transition-all duration-500" style={{ width: `${capacityPercent}%` }} />
+                </div>
+              )}
 
               <div className="mt-3 flex items-center justify-between text-xs font-medium text-gray-500">
-                <span>{occupiedSpaces} Spaces Occupied</span>
-                <span>{availableSpaces} Spaces Available</span>
+                {occupancyLoading ? (
+                  <>
+                    <span className="inline-block h-3 w-28 rounded bg-gray-200 animate-pulse" />
+                    <span className="inline-block h-3 w-28 rounded bg-gray-200 animate-pulse" />
+                  </>
+                ) : occupancyError ? (
+                  <span className="text-red-400">Could not load occupancy data</span>
+                ) : (
+                  <>
+                    <span>{occupiedSpaces} Spaces Occupied</span>
+                    <span>{availableSpaces} Spaces Available</span>
+                  </>
+                )}
               </div>
             </div>
 

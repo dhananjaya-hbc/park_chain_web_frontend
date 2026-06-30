@@ -64,7 +64,7 @@ function formatTime(dateStr: string): string {
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
-const statuses = ['all', 'pending', 'confirmed', 'active', 'completed', 'cancelled'];
+const statuses = ['all', 'pending', 'confirmed', 'active', 'completed'];
 
 export default function BookingTable() {
     const [bookings, setBookings] = useState<Booking[]>([]);
