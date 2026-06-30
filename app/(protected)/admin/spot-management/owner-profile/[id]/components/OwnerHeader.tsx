@@ -10,12 +10,13 @@ interface OwnerHeaderProps {
     joinDate: string;
     kycStatus: string;
     walletAddress?: string;
+    profileImage?: string;
     accountStatus?: 'active' | 'suspended';
     onSuspendToggle?: () => void;
     onRemove?: () => void;
 }
 
-export default function OwnerHeader({ name, email, phone, joinDate, kycStatus, walletAddress, accountStatus = 'active', onSuspendToggle, onRemove }: OwnerHeaderProps) {
+export default function OwnerHeader({ name, email, phone, joinDate, kycStatus, walletAddress, profileImage, accountStatus = 'active', onSuspendToggle, onRemove }: OwnerHeaderProps) {
     const router = useRouter();
     const pathname = usePathname();
 
@@ -31,10 +32,15 @@ export default function OwnerHeader({ name, email, phone, joinDate, kycStatus, w
             <div className="bg-[#197729]/10 h-32 w-full"></div>
             <div className="px-8 pb-8 relative">
                 {/* Avatar */}
-                <div className="absolute -top-12 h-24 w-24 rounded-full border-4 border-white bg-white shadow-sm flex items-center justify-center">
-                    <div className="h-full w-full rounded-full bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-500 uppercase">
-                        {name ? name.charAt(0) : '?'}
-                    </div>
+                <div className="absolute -top-12 h-24 w-24 rounded-full border-4 border-white bg-white shadow-sm flex items-center justify-center overflow-hidden">
+                    {profileImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={profileImage} alt={name} className="h-full w-full object-cover rounded-full" />
+                    ) : (
+                        <div className="h-full w-full rounded-full bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-500 uppercase">
+                            {name ? name.charAt(0) : '?'}
+                        </div>
+                    )}
                 </div>
 
                 {/* Back Button */}

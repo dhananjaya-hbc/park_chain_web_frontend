@@ -1,15 +1,24 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import apiService from "@/lib/api/apiService";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Phone, ShieldCheck, AlertCircle, Camera } from "lucide-react";
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  ShieldCheck, 
+  AlertCircle, 
+  Copy,
+  Check,
+  Camera
+} from "lucide-react";
 
-export default function CompleteProfilePage() {
+export default function SellerSettingsPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [walletAddress, setWalletAddress] = useState("");
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -17,7 +26,7 @@ export default function CompleteProfilePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const router = useRouter();
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -28,32 +37,25 @@ export default function CompleteProfilePage() {
         if (response.data) {
           const profile = response.data;
           
-          // Pre-fill logic: 
-          // If name starts with "Xaman User", keep it blank
-          if (profile.fullName && !profile.fullName.startsWith("Xaman User")) {
+          if (profile.fullName) {
             setName(profile.fullName);
-          } else {
-            setName("");
           }
-
-          // If email ends with "@xaman.local", keep it blank
-          if (profile.email && !profile.email.endsWith("@xaman.local")) {
+          if (profile.email) {
             setEmail(profile.email);
-          } else {
-            setEmail("");
           }
-
           if (profile.phoneNumber) {
             setPhone(profile.phoneNumber);
           }
-
+          if (profile.walletAddress) {
+            setWalletAddress(profile.walletAddress);
+          }
           if (profile.profileImageUrl) {
             setPreviewUrl(profile.profileImageUrl);
           }
         }
       } catch (err: any) {
         console.error("Failed to fetch profile:", err);
-        setError("Failed to load profile details. Please try again.");
+        setError("Failed to load settings details. Please try again.");
       } finally {
         setIsLoading(false);
       }
@@ -62,19 +64,16 @@ export default function CompleteProfilePage() {
     fetchProfile();
   }, []);
 
-  const validateFullName = (nameStr: string) => {
-    // Allows letters, spaces, and periods (common in Sri Lankan names with initials)
-    return /^[A-Za-z\s.]+$/.test(nameStr);
-  };
-
   const validateEmail = (emailStr: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
   };
 
-  const validatePhone = (phoneStr: string) => {
-    const cleaned = phoneStr.replace(/[\s()-]/g, "");
-    const slPhoneRegex = /^(?:\+94|0094|94|0)?(?:7[0-9]|11|2[1-7]|3[1-8]|4[157]|5[12457]|6[35-7]|81|91)\d{7}$/;
-    return slPhoneRegex.test(cleaned);
+  const handleCopyWallet = () => {
+    if (walletAddress) {
+      navigator.clipboard.writeText(walletAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,39 +93,23 @@ export default function CompleteProfilePage() {
     setError("");
     setSuccess("");
 
-    const trimmedName = name.trim();
-    const trimmedEmail = email.trim();
-    const trimmedPhone = phone.trim();
-
-    if (!trimmedName) {
+    if (!name.trim()) {
       setError("Full Name is required.");
       return;
     }
-    if (!validateFullName(trimmedName)) {
-      setError("Please enter a valid Full Name (only letters, spaces, and dots are allowed).");
-      return;
-    }
-    if (!trimmedEmail || !validateEmail(trimmedEmail)) {
+    if (!email.trim() || !validateEmail(email)) {
       setError("A valid Email Address is required.");
       return;
     }
-    if (!trimmedPhone) {
+    if (!phone.trim()) {
       setError("Phone Number is required.");
-      return;
-    }
-    if (!validatePhone(trimmedPhone)) {
-      setError("Please enter a valid Sri Lankan Phone Number (e.g. +94 77 123 4567 or 0771234567).");
-      return;
-    }
-    if (!previewUrl && !profileImage) {
-      setError("Profile image is required.");
       return;
     }
 
     try {
       setIsSubmitting(true);
 
-      // 1. Upload profile image to Cloudinary if a new one is selected
+      // 1. Upload profile image to Cloudinary if selected
       if (profileImage) {
         const formData = new FormData();
         formData.append("image", profileImage);
@@ -146,20 +129,21 @@ export default function CompleteProfilePage() {
         }
       }
 
-      // 2. Update user profile information
+      // 2. Update profile details
       await apiService.put("/users/profile", {
-        name: trimmedName,
-        email: trimmedEmail,
-        phone: trimmedPhone,
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
       });
 
-      setSuccess("Profile updated successfully! Redirecting...");
+      setSuccess("Settings updated successfully!");
       setTimeout(() => {
-        router.push("/seller/dashboard");
-      }, 1500);
+        setSuccess("");
+      }, 3000);
     } catch (err: any) {
       console.error("Failed to update profile:", err);
-      setError(err.message || "Failed to update profile. Please try again.");
+      setError(err.message || "Failed to update settings. Please try again.");
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -168,38 +152,34 @@ export default function CompleteProfilePage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <div className="animate-spin h-10 w-10 border-4 border-[#41ab5d] border-t-transparent rounded-full mb-4"></div>
-        <p className="text-gray-500 text-sm animate-pulse">Loading profile information...</p>
+        <p className="text-gray-500 text-sm animate-pulse">Loading settings...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-[#1a4d2e] to-[#41ab5d] rounded-2xl p-6 md:p-8 text-white shadow-lg mb-8 relative overflow-hidden">
+    <div className="max-w-2xl mx-auto space-y-8">
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-[#1a4d2e] to-[#41ab5d] rounded-2xl p-6 md:p-8 text-white shadow-md relative overflow-hidden">
         <div className="absolute right-0 bottom-0 opacity-10 translate-y-6 translate-x-6">
           <ShieldCheck size={200} />
         </div>
         <div className="relative z-10">
-          <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
-            Step 2: Profile Setup
-          </span>
-          <h1 className="text-2xl md:text-3xl font-extrabold mt-3 tracking-tight">
-            Complete Your Seller Profile
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+            Account Settings
           </h1>
           <p className="text-white/80 text-sm mt-2 max-w-lg">
-            Your identity has been verified via KYC! Now, please provide your contact information to finalize setting up your account.
+            Manage your seller profile information.
           </p>
         </div>
       </div>
 
-      {/* Form Card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl">
+      {/* Profile Form */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-md overflow-hidden">
         <div className="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-base font-bold text-gray-900 leading-tight tracking-[0.5px]">
-            Contact Information
+          <h2 className="text-base font-bold text-gray-900 tracking-[0.5px]">
+            Profile Information
           </h2>
-          <span className="text-xs text-red-500 font-medium">* All fields required</span>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
@@ -258,7 +238,7 @@ export default function CompleteProfilePage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your full name"
-                  className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#41ab5d]/20 focus:border-[#41ab5d] transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
+                  className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#41ab5d]/20 focus:border-[#41ab5d] transition-all disabled:bg-gray-50"
                 />
               </div>
             </div>
@@ -279,7 +259,7 @@ export default function CompleteProfilePage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#41ab5d]/20 focus:border-[#41ab5d] transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
+                  className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#41ab5d]/20 focus:border-[#41ab5d] transition-all disabled:bg-gray-50"
                 />
               </div>
             </div>
@@ -300,27 +280,40 @@ export default function CompleteProfilePage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="e.g. +94 77 123 4567"
-                  className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#41ab5d]/20 focus:border-[#41ab5d] transition-all disabled:bg-gray-50 disabled:cursor-not-allowed"
+                  className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#41ab5d]/20 focus:border-[#41ab5d] transition-all disabled:bg-gray-50"
                 />
               </div>
             </div>
+
+            {/* Connected Web3 Wallet (Like Admin Side) */}
+            <div className="border-t border-gray-100 pt-6">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Connected Web3 Wallet</label>
+              <div className="flex items-center gap-2 mt-2 bg-gray-50 border border-gray-200 rounded-xl p-3">
+                <code className="text-xs font-mono text-gray-700 flex-1 truncate break-all">
+                  {walletAddress || "Not available"}
+                </code>
+                {walletAddress && (
+                  <button
+                    type="button"
+                    onClick={handleCopyWallet}
+                    className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200/50 rounded-lg transition-colors flex-shrink-0"
+                    title="Copy wallet address"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                )}
+              </div>
+            </div>
+
           </div>
 
-          {/* Submit Button */}
           <div className="pt-4 border-t border-gray-100 flex justify-end">
             <Button
               type="submit"
               disabled={isSubmitting || !name.trim() || !email.trim() || !phone.trim()}
-              className="py-6 px-8 text-sm font-semibold bg-[#41ab5d] hover:bg-[#368a4d] text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:pointer-events-none flex items-center gap-2"
+              className="py-6 px-8 text-sm font-semibold bg-[#41ab5d] hover:bg-[#368a4d] text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform active:scale-95 disabled:opacity-50 flex items-center gap-2"
             >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                  Saving Profile...
-                </>
-              ) : (
-                "Save & Continue"
-              )}
+              {isSubmitting ? "Saving Changes..." : "Save Profile Settings"}
             </Button>
           </div>
         </form>

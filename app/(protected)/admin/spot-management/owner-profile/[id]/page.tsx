@@ -46,6 +46,7 @@ export default function OwnerProfilePage() {
                     kyc_status: user.kyc_status || "PENDING", 
                     status: user.status || "active",
                     created_at: user.created_at || new Date().toISOString(),
+                    profile_image: user.profile_image || user.profileImageUrl || null
                 });
             } catch (error) {
                 console.error("Error fetching owner data:", error);
@@ -61,6 +62,7 @@ export default function OwnerProfilePage() {
                         wallet_address: firstSpot.owner_wallet || "",
                         kyc_status: "APPROVED", 
                         created_at: firstSpot.created_at || new Date().toISOString(),
+                        profile_image: firstSpot.owner_image || null
                     });
                 } else {
                     setOwnerData(null);
@@ -133,6 +135,7 @@ export default function OwnerProfilePage() {
                     joinDate={ownerData.created_at}
                     kycStatus={ownerData.kyc_status}
                     walletAddress={ownerData.wallet_address}
+                    profileImage={ownerData.profile_image}
                     accountStatus={ownerData.status || 'active'}
                     onSuspendToggle={() => {
                         if (confirm(`Are you sure you want to ${ownerData.status === 'suspended' ? 'unblock' : 'block'} this seller?`)) {

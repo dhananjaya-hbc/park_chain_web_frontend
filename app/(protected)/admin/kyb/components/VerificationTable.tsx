@@ -7,8 +7,8 @@ import apiService from '@/lib/api/apiService'
 
 interface VerificationTableProps {
     selectedFilter: VerificationFilterType
-    searchQuery: string
-    sortOrder: SortOrderType
+    searchQuery?: string
+    sortOrder?: SortOrderType
 }
 
 interface VerificationData {
@@ -20,7 +20,7 @@ interface VerificationData {
     status: 'pending' | 'verified' | 'rejected';
 }
 
-export default function VerificationTable({ selectedFilter, searchQuery, sortOrder }: VerificationTableProps) {
+export default function VerificationTable({ selectedFilter, searchQuery = '', sortOrder = 'newest' }: VerificationTableProps) {
     const [verificationData, setVerificationData] = useState<VerificationData[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState('')
@@ -67,12 +67,25 @@ export default function VerificationTable({ selectedFilter, searchQuery, sortOrd
             return matchesStatus && matchesSearch
         })
         .sort((a, b) => {
+            if (a.status === 'pending' && b.status !== 'pending') {
+                return -1
+            }
+            if (a.status !== 'pending' && b.status === 'pending') {
+                return 1
+            }
+
             const dateA = new Date(a.date).getTime()
             const dateB = new Date(b.date).getTime()
 
-            return sortOrder === 'newest'
-                ? dateB - dateA
-                : dateA - dateB
+            if (a.status === 'pending') {
+                // Pending requests: oldest first (1st come 1st serve)
+                return dateA - dateB
+            } else {
+                // Approved/Rejected requests: newest first (recently approved) if sorting is newest
+                return sortOrder === 'newest'
+                    ? dateB - dateA
+                    : dateA - dateB
+            }
         })
 
     if (isLoading) {

@@ -44,10 +44,52 @@ export function formatTime(dateStr: string): string {
   return `${hours}:${minutes} ${period}`;
 }
 
-export function formatDate(dateStr: string): string {
+export function formatDate(dateStr: string, endDateStr?: string): string {
   const date = new Date(dateStr);
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  const startFormat = `${months[date.getMonth()]} ${date.getDate()}`;
+
+  if (!endDateStr) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const check = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    if (check.getTime() === today.getTime()) {
+      return `Today, ${startFormat}`;
+    }
+    if (check.getTime() === tomorrow.getTime()) {
+      return `Tomorrow, ${startFormat}`;
+    }
+    return `${startFormat}, ${date.getFullYear()}`;
+  }
+
+  const end = new Date(endDateStr);
+  const endFormat = `${months[end.getMonth()]} ${end.getDate()}`;
+
+  if (date.getFullYear() === end.getFullYear() &&
+      date.getMonth() === end.getMonth() &&
+      date.getDate() === end.getDate()) {
+      
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const check = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    if (check.getTime() === today.getTime()) {
+      return `Today, ${startFormat}`;
+    }
+    if (check.getTime() === tomorrow.getTime()) {
+      return `Tomorrow, ${startFormat}`;
+    }
+    return `${startFormat}, ${date.getFullYear()}`;
+  } else {
+    return `${startFormat} - ${endFormat}`;
+  }
 }
 
 // --- Mini UI Components ---
@@ -199,7 +241,7 @@ export default function BookingList({
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3 text-emerald-500" />
-                        {formatDate(booking.start_time)}&nbsp;
+                        {formatDate(booking.start_time, booking.end_time)}&nbsp;
                         {formatTime(booking.start_time)} – {formatTime(booking.end_time)}
                       </span>
                       {booking.vehicle_type && (

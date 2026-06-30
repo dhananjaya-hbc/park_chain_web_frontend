@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 export default function KYBModal() {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(true); // Default open for demonstration
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +23,7 @@ export default function KYBModal() {
 
     // Custom validation for Google Maps Link
     const googleMapsLink = formData.get('googleMapsLink')?.toString().trim() || '';
-    const googleMapsPattern = /^https?:\/\/(www\.)?google\.[a-z.]+\/maps\//i;
+    const googleMapsPattern = /google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|maps\.app\.goo\.gl/i;
     if (!googleMapsPattern.test(googleMapsLink)) {
       setIsLoading(false);
       setErrorMsg('Please enter a valid Google Maps link (copied from the address bar).');
@@ -42,7 +45,7 @@ export default function KYBModal() {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Failed to submit verification');
+        throw new Error(errData.error || errData.message || 'Failed to submit verification');
       }
 
       setIsSubmitted(true);
@@ -54,6 +57,53 @@ export default function KYBModal() {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setIsDragActive(true);
+    } else if (e.type === "dragleave") {
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      // Validate file extension
+      const validExtensions = ['.png', '.jpg', '.jpeg', '.pdf'];
+      const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+      
+      if (validExtensions.includes(fileExtension) && file.size <= 10 * 1024 * 1024) {
+        setSelectedFile(file);
+        if (fileInputRef.current) {
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          fileInputRef.current.files = dataTransfer.files;
+        }
+      } else {
+        setErrorMsg('Invalid file type or size. Only PNG, JPG, or PDF under 10MB allowed.');
+      }
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -161,19 +211,72 @@ export default function KYBModal() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Proof of Ownership / Residency (Utility Bill &lt; 3 months)
                 </label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                  <div className="space-y-1 text-center">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    <div className="flex text-sm text-gray-600 justify-center">
-                      <label htmlFor="document" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                        <span>Upload a file</span>
-                        <input id="document" name="document" type="file" className="sr-only" required accept=".png,.jpg,.jpeg,.pdf" />
-                      </label>
+                <div 
+                  className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md transition-all duration-200 ${
+                    isDragActive 
+                      ? 'border-[#41ab5d] bg-green-50/50 scale-[1.01]' 
+                      : selectedFile 
+                      ? 'border-green-300 bg-green-50/10' 
+                      : 'border-gray-300 bg-white hover:border-gray-400'
+                  }`}
+                  onDragEnter={handleDrag}
+                  onDragOver={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDrop={handleDrop}
+                >
+                  <input 
+                    id="document" 
+                    name="document" 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleFileChange} 
+                    className="sr-only" 
+                    required={!selectedFile} 
+                    accept=".png,.jpg,.jpeg,.pdf" 
+                  />
+                  {selectedFile ? (
+                    <div className="flex flex-col items-center justify-center p-2 text-center animate-in fade-in zoom-in-95 duration-200">
+                      <div className="bg-green-100 text-[#197729] p-3 rounded-2xl mb-3 border border-green-200 flex items-center justify-center">
+                        {selectedFile.type.startsWith('image/') ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img 
+                            src={URL.createObjectURL(selectedFile)} 
+                            alt="Selected document" 
+                            className="h-16 w-16 object-cover rounded-lg" 
+                            onLoad={(e) => {
+                              // Revoke object URL after image loads to prevent memory leaks
+                              URL.revokeObjectURL((e.target as HTMLImageElement).src);
+                            }}
+                          />
+                        ) : (
+                          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        )}
+                      </div>
+                      <p className="text-sm font-bold text-gray-900 truncate max-w-xs">{selectedFile.name}</p>
+                      <p className="text-xs text-gray-500 mt-1">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                      <button
+                        type="button"
+                        onClick={handleRemoveFile}
+                        className="text-xs font-semibold text-red-500 hover:text-red-700 mt-3 transition-colors hover:underline"
+                      >
+                        Remove file
+                      </button>
                     </div>
-                    <p className="text-xs text-gray-500">PNG, JPG, PDF up to 10MB</p>
-                  </div>
+                  ) : (
+                    <div className="space-y-1 text-center">
+                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <div className="flex text-sm text-gray-600 justify-center">
+                        <label htmlFor="document" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                          <span>Upload a file</span>
+                        </label>
+                      </div>
+                      <p className="text-xs text-gray-500">PNG, JPG, PDF up to 10MB</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
