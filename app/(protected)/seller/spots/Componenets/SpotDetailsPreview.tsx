@@ -101,6 +101,9 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [isUnblocking, setIsUnblocking] = useState(false);
   const [popupMode, setPopupMode] = useState<'confirmUnblock' | 'unblockSuccess' | null>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewsStats, setReviewsStats] = useState<{ averageRating: string; totalReviews: number } | null>(null);
+  const [loadingReviews, setLoadingReviews] = useState(false);
   const statusBadge =
     status === "active"
       ? {
@@ -181,6 +184,29 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
 
     return () => window.clearTimeout(timer);
   }, [inlineError]);
+
+  useEffect(() => {
+    if (!spot?.id) {
+      setReviews([]);
+      setReviewsStats(null);
+      return;
+    }
+
+    const fetchReviews = async () => {
+      try {
+        setLoadingReviews(true);
+        const res = await apiService.get(`${API_ENDPOINTS.REVIEWS}/spot/${spot.id}`);
+        setReviews(res.data || []);
+        setReviewsStats(res.stats || { averageRating: "0.00", totalReviews: 0 });
+      } catch (err) {
+        console.error("Failed to fetch reviews:", err);
+      } finally {
+        setLoadingReviews(false);
+      }
+    };
+
+    fetchReviews();
+  }, [spot?.id]);
 
   const pricingRows = React.useMemo(() => {
     const vehicleTypes = Array.isArray(spot?.vehicleTypes) ? spot?.vehicleTypes : [];
@@ -296,7 +322,13 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
                       </svg>
                       <span>{spot?.address || "452 Botanical Avenue, Green District, SF 94105"}</span>
                     </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-2 flex flex-wrap gap-2 items-center">
+                      {reviewsStats && Number(reviewsStats.totalReviews) > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-800">
+                          <span className="text-amber-500 text-xs">★</span>
+                          <span>{reviewsStats.averageRating} ({reviewsStats.totalReviews} REVIEWS)</span>
+                        </span>
+                      )}
                       {spot?.isBlockedBySeller ? (
                         <span className="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-700">
                           Blocked( By User )
@@ -413,6 +445,64 @@ export default function SpotDetailsPreview({ onClose, onSpotDeleted, onEdit, onB
                 <span>{occupiedSpaces} Spaces Occupied</span>
                 <span>{availableSpaces} Spaces Available</span>
               </div>
+            </div>
+
+            {/* Customer Reviews Section */}
+            <div className="space-y-4 rounded-xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900">Customer Reviews</h3>
+
+              {loadingReviews ? (
+                <div className="flex justify-center py-6">
+                  <span className="text-sm font-semibold text-gray-500 animate-pulse">Loading reviews...</span>
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="text-center py-6 bg-gray-50/55 rounded-xl border border-dashed border-gray-200">
+                  <p className="text-xs text-gray-500 font-medium">No reviews available for this spot yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3.5 max-h-[260px] overflow-y-auto pr-1">
+                  {reviews.map((rev) => (
+                    <div key={rev.id} className="pb-3.5 border-b border-gray-100 last:border-0 last:pb-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex items-center gap-2.5">
+                          {rev.user_profile_image ? (
+                            <img
+                              src={rev.user_profile_image}
+                              alt={rev.user_name || "User"}
+                              className="w-7 h-7 rounded-full object-cover border border-gray-150"
+                            />
+                          ) : (
+                            <div className="w-7 h-7 rounded-full bg-[#e8f5e9] flex items-center justify-center text-xs font-extrabold text-[#2e7d32]">
+                              {(rev.user_name || "U")[0].toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-xs font-semibold text-gray-800 block">
+                              {rev.user_name || "Anonymous Driver"}
+                            </span>
+                            <span className="text-[9px] text-gray-400 block mt-0.5">
+                              {new Date(rev.created_at).toLocaleDateString(undefined, {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                          <span className="text-[10px] text-amber-500 font-bold">★</span>
+                          <span className="text-[10px] font-bold text-amber-700">{rev.rating}</span>
+                        </div>
+                      </div>
+                      {rev.comment && (
+                        <p className="mt-2 text-xs text-gray-600 italic bg-gray-50/70 p-2.5 rounded-lg border border-gray-100/80 leading-normal">
+                          "{rev.comment}"
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
