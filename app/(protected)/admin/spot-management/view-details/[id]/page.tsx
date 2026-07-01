@@ -17,16 +17,25 @@ export default function SpotDetailsPage() {
 
     const [spotData, setSpotData] = React.useState<any>(null);
     const [isLoading, setIsLoading] = React.useState(true);
+    const [reviews, setReviews] = React.useState<any[]>([]);
+    const [loadingReviews, setLoadingReviews] = React.useState(true);
 
     React.useEffect(() => {
         const fetchSpotData = async () => {
             try {
                 setIsLoading(true);
+                setLoadingReviews(true);
                 // Dynamically import apiService and endpoints to avoid top-level issues if not needed
                 const { default: apiService } = await import('@/lib/api/apiService');
                 const { API_ENDPOINTS } = await import('@/lib/api/endpoints');
                 
-                const response = await apiService.get(`${API_ENDPOINTS.SPOTS}/${spotId}`);
+                const [response, reviewsResponse] = await Promise.all([
+                    apiService.get(`${API_ENDPOINTS.SPOTS}/${spotId}`),
+                    apiService.get(`${API_ENDPOINTS.REVIEWS}/spot/${spotId}`).catch(err => {
+                        console.error("Failed to fetch reviews:", err);
+                        return { data: [], stats: { averageRating: "0.00", totalReviews: 0 } };
+                    })
+                ]);
                 const rawSpot = response.spot || response;
                 
                 // Ensure images are properly parsed if they come as stringified JSON or Postgres strings
@@ -44,6 +53,7 @@ export default function SpotDetailsPage() {
                 };
                 const fetchedImages = normalizeImages(rawSpot.image_urls || rawSpot.imageUrls);
 
+                setReviews(reviewsResponse.data || []);
                 setSpotData({
                     id: rawSpot.id || spotId,
                     title: rawSpot.name || rawSpot.title || "Unknown Spot",
@@ -51,8 +61,8 @@ export default function SpotDetailsPage() {
                     price: rawSpot.pricePerHour || rawSpot.prices_per_hour?.[0] ? `${rawSpot.pricePerHour || rawSpot.prices_per_hour[0]} XRP / hr` : "N/A",
                     description: rawSpot.description || "No description available.",
                     images: fetchedImages.length > 0 ? fetchedImages : ["/api/placeholder/800/400"],
-                    rating: rawSpot.rating || 0.0,
-                    reviewCount: rawSpot.reviewCount || 124,
+                    rating: Number(reviewsResponse.stats?.averageRating || 0),
+                    reviewCount: Number(reviewsResponse.stats?.totalReviews || 0),
                     amenities: rawSpot.amenities || ["CCTV", "Covered", "24/7 Access", "EV Charging"],
                     is_active: rawSpot.is_available !== false, // Maps admin status to is_available
                     latitude: Number(rawSpot.latitude) || 37.7749,
@@ -68,6 +78,7 @@ export default function SpotDetailsPage() {
                 
             } finally {
                 setIsLoading(false);
+                setLoadingReviews(false);
             }
         };
 
@@ -127,7 +138,7 @@ export default function SpotDetailsPage() {
                     <BookingHistory spotId={spotData.id} />
                     
                     {/* Reviews List Component */}
-                    <ReviewsList />
+                    <ReviewsList reviews={reviews} isLoading={loadingReviews} />
                 </div>
 
                 {/* RIGHT COLUMN (1/3 width) - Actions & Owner */}
