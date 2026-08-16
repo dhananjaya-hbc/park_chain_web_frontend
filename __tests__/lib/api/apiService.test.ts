@@ -19,98 +19,7 @@ Object.defineProperty(window, 'localStorage', {
   writable: true,
 });
 
-// ── NOW import after mocks are set up ─────────────────
-// ✅ Create a fresh instance for each test
-// instead of using the singleton
-
-class TestApiService {
-  private token: string | null = null;
-
-  setToken(token: string) {
-    this.token = token;
-    localStorage.setItem('park_chain_token', token);
-  }
-
-  clearToken() {
-    this.token = null;
-    localStorage.removeItem('park_chain_token');
-  }
-
-  getToken(): string | null {
-    if (!this.token) {
-      this.token = localStorage.getItem('park_chain_token');
-    }
-    return this.token;
-  }
-
-  private get headers(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    const token = this.getToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
-  }
-
-  async get(endpoint: string) {
-    const apiUrl   = 'http://localhost:3001/api';
-    const response = await fetch(`${apiUrl}${endpoint}`, {
-      method:  'GET',
-      headers: this.headers,
-    });
-    return this.handleResponse(response);
-  }
-
-  async post(endpoint: string, body?: Record<string, unknown>) {
-    const apiUrl   = 'http://localhost:3001/api';
-    const response = await fetch(`${apiUrl}${endpoint}`, {
-      method:  'POST',
-      headers: this.headers,
-      body:    body ? JSON.stringify(body) : undefined,
-    });
-    return this.handleResponse(response);
-  }
-
-  async put(endpoint: string, body?: Record<string, unknown>) {
-    const apiUrl   = 'http://localhost:3001/api';
-    const response = await fetch(`${apiUrl}${endpoint}`, {
-      method:  'PUT',
-      headers: this.headers,
-      body:    body ? JSON.stringify(body) : undefined,
-    });
-    return this.handleResponse(response);
-  }
-
-  async patch(endpoint: string, body?: Record<string, unknown>) {
-    const apiUrl   = 'http://localhost:3001/api';
-    const response = await fetch(`${apiUrl}${endpoint}`, {
-      method:  'PATCH',
-      headers: this.headers,
-      body:    body ? JSON.stringify(body) : undefined,
-    });
-    return this.handleResponse(response);
-  }
-
-  async delete(endpoint: string, body?: Record<string, unknown>) {
-    const apiUrl   = 'http://localhost:3001/api';
-    const response = await fetch(`${apiUrl}${endpoint}`, {
-      method:  'DELETE',
-      headers: this.headers,
-      body:    body ? JSON.stringify(body) : undefined,
-    });
-    return this.handleResponse(response);
-  }
-
-  private async handleResponse(response: Response) {
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || 'Request failed');
-    }
-    return data;
-  }
-}
+import apiService from '@/lib/api/apiService';
 
 // ── Helpers ───────────────────────────────────────────
 const mockFetch = (data: unknown, status = 200) => {
@@ -130,13 +39,10 @@ const mockFetchError = (error: string, status = 400) => {
 };
 
 describe('ApiService', () => {
-
-  let apiService: TestApiService;
-
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
-    apiService = new TestApiService(); // ✅ fresh instance each test
+    apiService.clearToken();
   });
 
   // ════════════════════════════════════════════════════
@@ -174,9 +80,9 @@ describe('ApiService', () => {
     });
 
     test('getToken reads from localStorage', () => {
+      (apiService as any).token = null;
       localStorage.setItem('park_chain_token', 'stored-token');
-      const freshService = new TestApiService();
-      expect(freshService.getToken()).toBe('stored-token');
+      expect(apiService.getToken()).toBe('stored-token');
     });
   });
 

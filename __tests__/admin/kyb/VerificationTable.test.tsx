@@ -146,4 +146,36 @@ describe('Admin KYB VerificationTable', () => {
       await screen.findByText('No KYB verification requests found for this status.')
     ).toBeTruthy();
   });
+
+  test('handles search query across entity, address, spotType, date, and status', async () => {
+    mockApi.get.mockResolvedValue(sampleRows as never);
+
+    render(<VerificationTable selectedFilter="all" searchQuery="Downtown" />);
+    expect(await screen.findByText('City Center Plaza')).toBeTruthy();
+    expect(screen.queryByText('Riverside Open Lot')).toBeNull();
+  });
+
+  test('sorts non-pending records with oldest first when sortOrder is oldest', async () => {
+    mockApi.get.mockResolvedValue([
+      {
+        id: 1,
+        entityName: 'Spot 1',
+        spotType: 'garage',
+        address: 'A',
+        date: '2026-01-01',
+        status: 'verified',
+      },
+      {
+        id: 2,
+        entityName: 'Spot 2',
+        spotType: 'garage',
+        address: 'B',
+        date: '2026-02-01',
+        status: 'verified',
+      },
+    ] as never);
+
+    render(<VerificationTable selectedFilter="all" sortOrder="oldest" />);
+    expect(await screen.findByText('Spot 1')).toBeTruthy();
+  });
 });

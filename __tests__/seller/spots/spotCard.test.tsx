@@ -215,4 +215,69 @@ describe("SpotCard Component", () => {
     });
   });
 
+  // ════════════════════════════════════════════════════
+  // GROUP 6: FILTER TABS
+  // ════════════════════════════════════════════════════
+  describe("Filter Tabs", () => {
+    test("filters by Blocked (By Admin) and Blocked (By seller)", async () => {
+      const complexSpots = [
+        {
+          id: "s1",
+          title: "Admin Blocked Spot",
+          address: "1st Ave",
+          is_approved: true,
+          is_available: false,
+          is_blocked_by_seller: false,
+        },
+        {
+          id: "s2",
+          title: "Seller Blocked Spot",
+          address: "2nd Ave",
+          is_approved: true,
+          is_available: true,
+          is_blocked_by_seller: true,
+        },
+        {
+          id: "s3",
+          title: "Normal Spot",
+          address: "3rd Ave",
+          is_approved: true,
+          is_available: true,
+          is_blocked_by_seller: false,
+        },
+      ];
+
+      (apiService.get as jest.Mock).mockResolvedValueOnce({
+        spots: complexSpots,
+        bookings: [],
+      });
+
+      render(<SpotCard />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Normal Spot/)).toBeTruthy();
+      });
+
+      // Click Blocked (By Admin)
+      fireEvent.click(screen.getByRole("button", { name: "Blocked (By Admin)" }));
+      await waitFor(() => {
+        expect(screen.getByText(/Admin Blocked Spot/)).toBeTruthy();
+        expect(screen.queryByText(/Normal Spot/)).toBeNull();
+      });
+
+      // Click Blocked (By seller)
+      fireEvent.click(screen.getByRole("button", { name: "Blocked (By seller)" }));
+      await waitFor(() => {
+        expect(screen.getByText(/Seller Blocked Spot/)).toBeTruthy();
+        expect(screen.queryByText(/Admin Blocked Spot/)).toBeNull();
+      });
+
+      // Click All
+      fireEvent.click(screen.getByRole("button", { name: "All" }));
+      await waitFor(() => {
+        expect(screen.getByText(/Normal Spot/)).toBeTruthy();
+      });
+    });
+  });
+
 });
