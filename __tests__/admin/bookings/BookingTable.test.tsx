@@ -110,12 +110,12 @@ describe('BookingTable Component', () => {
       render(<BookingTable />);
       await screen.findByText('All Bookings');
 
-      expect(screen.getByText('Driver / Spot')).toBeTruthy();
+      expect(screen.getByText('Driver & Spot')).toBeTruthy();
       expect(screen.getByText('Date & Time')).toBeTruthy();
       expect(screen.getByText('Vehicle')).toBeTruthy();
       expect(screen.getByText('Status')).toBeTruthy();
       expect(screen.getByText('Amount (XRP)')).toBeTruthy();
-      expect(screen.getByText('Split')).toBeTruthy();
+      expect(screen.getByText('Split Breakdown')).toBeTruthy();
     });
 
     test('shows search input', async () => {
@@ -137,7 +137,6 @@ describe('BookingTable Component', () => {
       expect(screen.getByText('Confirmed')).toBeTruthy();
       expect(screen.getByText('Active')).toBeTruthy();
       expect(screen.getByText('Completed')).toBeTruthy();
-      expect(screen.getByText('Cancelled')).toBeTruthy();
     });
   });
 
@@ -238,8 +237,9 @@ describe('BookingTable Component', () => {
       });
       render(<BookingTable />);
 
-      await screen.findByText('4.0000 XRP');
-      expect(screen.getByText('4.0000 XRP')).toBeTruthy();
+      await screen.findByText('4.0000');
+      expect(screen.getByText('4.0000')).toBeTruthy();
+      expect(screen.getAllByText('XRP').length).toBeGreaterThanOrEqual(1);
     });
 
     test('shows booking status badge', async () => {

@@ -183,10 +183,10 @@ describe('ParkingSpotsTable Component', () => {
   });
 
   // ════════════════════════════════════════════════════
-  // GROUP 5: VIEW ALL TOGGLE
+  // GROUP 5: PAGINATION
   // ════════════════════════════════════════════════════
-  describe('View All Toggle', () => {
-    test('shows View All Spots button when there are more than 3 spots', async () => {
+  describe('Pagination', () => {
+    test('shows pagination controls when there are more than ITEMS_PER_PAGE (5) spots', async () => {
       mockApi.get
         .mockResolvedValueOnce({
           spots: [
@@ -194,6 +194,8 @@ describe('ParkingSpotsTable Component', () => {
             makeSpot({ id: 's2', title: 'Spot 2' }),
             makeSpot({ id: 's3', title: 'Spot 3' }),
             makeSpot({ id: 's4', title: 'Spot 4' }),
+            makeSpot({ id: 's5', title: 'Spot 5' }),
+            makeSpot({ id: 's6', title: 'Spot 6' }),
           ],
         })
         .mockResolvedValueOnce({ transactions: [] })
@@ -202,11 +204,12 @@ describe('ParkingSpotsTable Component', () => {
       render(<ParkingSpotsTable />);
 
       await screen.findByText('Spot 1');
-      expect(screen.getByRole('button', { name: 'View All Spots' })).toBeTruthy();
-      expect(screen.queryByText('Spot 4')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Next' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Previous' })).toBeTruthy();
+      expect(screen.queryByText('Spot 6')).toBeNull();
     });
 
-    test('expands and collapses rows with View All Spots and View Less', async () => {
+    test('navigates pages with Next and Previous buttons', async () => {
       mockApi.get
         .mockResolvedValueOnce({
           spots: [
@@ -214,6 +217,8 @@ describe('ParkingSpotsTable Component', () => {
             makeSpot({ id: 's2', title: 'Spot 2' }),
             makeSpot({ id: 's3', title: 'Spot 3' }),
             makeSpot({ id: 's4', title: 'Spot 4' }),
+            makeSpot({ id: 's5', title: 'Spot 5' }),
+            makeSpot({ id: 's6', title: 'Spot 6' }),
           ],
         })
         .mockResolvedValueOnce({ transactions: [] })
@@ -223,13 +228,12 @@ describe('ParkingSpotsTable Component', () => {
 
       await screen.findByText('Spot 1');
 
-      fireEvent.click(screen.getByRole('button', { name: 'View All Spots' }));
-      expect(await screen.findByText('Spot 4')).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      expect(await screen.findByText('Spot 6')).toBeTruthy();
 
-      fireEvent.click(screen.getByRole('button', { name: 'View Less' }));
-      await waitFor(() => {
-        expect(screen.queryByText('Spot 4')).toBeNull();
-      });
+      fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
+      expect(await screen.findByText('Spot 1')).toBeTruthy();
+      expect(screen.queryByText('Spot 6')).toBeNull();
     });
   });
 

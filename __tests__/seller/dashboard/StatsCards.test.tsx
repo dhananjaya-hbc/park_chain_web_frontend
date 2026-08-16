@@ -45,6 +45,15 @@ describe("StatsCards Component", () => {
   // GROUP 2: API DATA LOGIC & CALCULATION
   // ════════════════════════════════════════════════════
   describe("Calculations", () => {
+    beforeEach(() => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          availability: [{ totalSlots: 4, bookedSlots: 3 }],
+        }),
+      }) as any;
+    });
+
     test("calculates earnings, bookings, spots, and occupancy correctly", async () => {
       // Mock explicit endpoints
       (apiService.get as jest.Mock).mockImplementation((url) => {
@@ -60,9 +69,9 @@ describe("StatsCards Component", () => {
         if (url.includes("/spots")) {
           return Promise.resolve({
             spots: [
-              { status: "approved", is_active: true, total_slots: 2 },
-              { status: "pending", is_active: false, total_slots: 1 },
-              { status: "active", total_slots: 1 }, // implicit active
+              { id: "1", status: "approved", is_active: true, total_slots: 2 },
+              { id: "2", status: "pending", is_approved: false, total_slots: 1 },
+              { id: "3", status: "active", total_slots: 1 }, // implicit active
             ],
           });
         }
@@ -82,7 +91,7 @@ describe("StatsCards Component", () => {
       // active spots: 2 out of 3 match the "approved" / "active" filters
       expect(screen.getByText("2")).toBeTruthy();
       
-      // occupancy: bookings (3) / total_slots (4) = 75%
+      // occupancy: booked (3*2) / total (4*2) = 75%
       expect(screen.getByText("75%")).toBeTruthy();
     });
   });

@@ -11,10 +11,6 @@ describe('VerificationHeader Component', () => {
         setIsFilterOpen: jest.fn(),
         dropdownRef: React.createRef<HTMLDivElement>(),
         handleFilterSelect: jest.fn(),
-        searchQuery: '',
-        setSearchQuery: jest.fn(),
-        sortOrder: 'newest' as 'newest' | 'oldest',
-        setSortOrder: jest.fn(),
     }
 
     const defaultProps = {
@@ -29,143 +25,72 @@ describe('VerificationHeader Component', () => {
         jest.clearAllMocks()
     })
 
-    const getFilterDropdown = () => {
-        const filterButton = screen.getByRole('button', { name: /Filter/i })
-        const filterContainer = filterButton.parentElement as HTMLElement
-        return within(filterContainer)
-    }
-
     it('should render header with title', () => {
-        render(<VerificationHeader filterHook={mockFilterHook} />)
-        
+        render(<VerificationHeader {...defaultProps} />)
         const title = screen.getByText(/Verification list/i)
         expect(title).toBeInTheDocument()
     })
 
-    it('should render filter button', () => {
-        render(<VerificationHeader filterHook={mockFilterHook} />)
-        
-        const filterButton = screen.getByRole('button', { name: /Filter/i })
-        expect(filterButton).toBeInTheDocument()
+    it('should render all filter option buttons', () => {
+        render(<VerificationHeader {...defaultProps} />)
+        expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Pending' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Approved' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Rejected' })).toBeInTheDocument()
     })
 
-    it('should show filter dropdown when isFilterOpen is true', () => {
-        const mockHookOpen = {
-            ...mockFilterHook,
-            isFilterOpen: true,
-        }
-        
-        render(<VerificationHeader filterHook={mockHookOpen} />)
-        
-        const allOption = screen.getByRole('button', { name: 'All' })
-        expect(allOption).toBeInTheDocument()
-    })
-
-    it('should not show filter dropdown when isFilterOpen is false', () => {
-        render(<VerificationHeader filterHook={mockFilterHook} />)
-        
-        const allOption = screen.queryByRole('button', { name: 'All' })
-        expect(allOption).not.toBeInTheDocument()
-    })
-
-    it('should toggle filter dropdown on button click', () => {
-        render(<VerificationHeader filterHook={mockFilterHook} />)
-        
-        const filterButton = screen.getByRole('button', { name: /Filter/i })
-        fireEvent.click(filterButton)
-        
-        expect(mockFilterHook.setIsFilterOpen).toHaveBeenCalledWith(true)
-    })
-
-    it('should display all filter options when dropdown is open', () => {
-        const mockHookOpen = {
-            ...mockFilterHook,
-            isFilterOpen: true,
-        }
-        
-        render(<VerificationHeader filterHook={mockHookOpen} />)
-
-        const dropdown = getFilterDropdown()
-        expect(dropdown.getByRole('button', { name: 'All' })).toBeInTheDocument()
-        expect(dropdown.getByRole('button', { name: 'Pending' })).toBeInTheDocument()
-        expect(dropdown.getByRole('button', { name: 'Approved' })).toBeInTheDocument()
-        expect(dropdown.getByRole('button', { name: 'Rejected' })).toBeInTheDocument()
-    })
-
-    it('should call handleFilterSelect when filter option is clicked', () => {
-        const mockHookOpen = {
-            ...mockFilterHook,
-            isFilterOpen: true,
-        }
-        
-        render(<VerificationHeader filterHook={mockHookOpen} />)
-
-        const dropdown = getFilterDropdown()
-        const pendingOption = dropdown.getByRole('button', { name: 'Pending' })
-        fireEvent.click(pendingOption)
-        
+    it('should call handleFilterSelect when a filter button is clicked', () => {
+        render(<VerificationHeader {...defaultProps} />)
+        const pendingBtn = screen.getByRole('button', { name: 'Pending' })
+        fireEvent.click(pendingBtn)
         expect(mockFilterHook.handleFilterSelect).toHaveBeenCalledWith('pending')
     })
 
     it('should highlight selected filter option', () => {
-        const mockHookOpen = {
+        const customFilterHook = {
             ...mockFilterHook,
-            isFilterOpen: true,
             selectedFilter: 'verified' as VerificationFilterType,
         }
-        
-        render(<VerificationHeader filterHook={mockHookOpen} />)
-
-        const dropdown = getFilterDropdown()
-        const approvedOption = dropdown.getByRole('button', { name: 'Approved' })
+        render(<VerificationHeader {...defaultProps} filterHook={customFilterHook} />)
+        const approvedOption = screen.getByRole('button', { name: 'Approved' })
         expect(approvedOption).toHaveClass('bg-[#197729]')
         expect(approvedOption).toHaveClass('text-white')
     })
 
-    it('should not highlight non-selected filter options', () => {
-        const mockHookOpen = {
-            ...mockFilterHook,
-            isFilterOpen: true,
-            selectedFilter: 'verified' as VerificationFilterType,
-        }
-        
-        render(<VerificationHeader filterHook={mockHookOpen} />)
-
-        const dropdown = getFilterDropdown()
-        const pendingOption = dropdown.getByRole('button', { name: 'Pending' })
-        expect(pendingOption).not.toHaveClass('bg-[#197729]')
-        expect(pendingOption).toHaveClass('text-gray-700')
-    })
-
-    it('should render filter icon in button', () => {
-        const { container } = render(<VerificationHeader filterHook={mockFilterHook} />)
-        
-        const icon = container.querySelector('.ri-menu-line')
-        expect(icon).toBeInTheDocument()
-    })
-
-    it('should render the compact pill buttons', () => {
-        render(<VerificationHeader filterHook={mockFilterHook} />)
-
+    it('should render the compact pill buttons with appropriate styles', () => {
+        render(<VerificationHeader {...defaultProps} />)
         expect(screen.getByRole('button', { name: 'Approved' })).toHaveClass('rounded-lg')
         expect(screen.getByRole('button', { name: 'Rejected' })).toHaveClass('bg-gray-100')
         expect(screen.getByRole('button', { name: 'Pending' })).toHaveClass('bg-gray-100')
     })
 
-    it('should handle different selected filters', () => {
-        const mockHookOpen = {
+    it('should handle search input change', () => {
+        render(<VerificationHeader {...defaultProps} />)
+        const searchInput = screen.getByPlaceholderText(/Search entity, spot, address.../i)
+        fireEvent.change(searchInput, { target: { value: 'Downtown' } })
+        expect(defaultProps.setSearchQuery).toHaveBeenCalledWith('Downtown')
+    })
+
+    it('should handle sort order select change', () => {
+        render(<VerificationHeader {...defaultProps} />)
+        const select = screen.getByRole('combobox')
+        fireEvent.change(select, { target: { value: 'oldest' } })
+        expect(defaultProps.setSortOrder).toHaveBeenCalledWith('oldest')
+    })
+
+    it('should handle pending and rejected filter active styling', () => {
+        const pendingHook = {
             ...mockFilterHook,
-            isFilterOpen: true,
             selectedFilter: 'pending' as VerificationFilterType,
         }
-        
-        render(<VerificationHeader filterHook={mockHookOpen} />)
+        const { rerender } = render(<VerificationHeader {...defaultProps} filterHook={pendingHook} />)
+        expect(screen.getByRole('button', { name: 'Pending' })).toHaveClass('bg-amber-100')
 
-        const dropdown = getFilterDropdown()
-        const pendingOption = dropdown.getByRole('button', { name: 'Pending' })
-        expect(pendingOption).toHaveClass('bg-[#197729]')
-        
-        fireEvent.click(pendingOption)
-        expect(mockFilterHook.handleFilterSelect).toHaveBeenCalledWith('pending')
+        const rejectedHook = {
+            ...mockFilterHook,
+            selectedFilter: 'rejected' as VerificationFilterType,
+        }
+        rerender(<VerificationHeader {...defaultProps} filterHook={rejectedHook} />)
+        expect(screen.getByRole('button', { name: 'Rejected' })).toHaveClass('bg-red-100')
     })
 })

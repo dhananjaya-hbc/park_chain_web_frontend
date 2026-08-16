@@ -29,6 +29,12 @@ describe("SpotDetailsPreview Component", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        availability: [{ totalSlots: 5, bookedSlots: 1, availableSlots: 4 }],
+      }),
+    }) as any;
   });
 
   // ════════════════════════════════════════════════════
@@ -76,10 +82,10 @@ describe("SpotDetailsPreview Component", () => {
   // GROUP 2: ACTION BUTTONS (EDIT/DELETE)
   // ════════════════════════════════════════════════════
   describe("Action Buttons logic", () => {
-    test("allows edit when there are no pending bookings", () => {
+    test("allows edit when spot is not blocked by admin", () => {
       render(
         <SpotDetailsPreview
-          spot={{ ...mockSpot, pendingBookings: 0 }}
+          spot={{ ...mockSpot, isBlocked: false, isAvailable: true }}
           onClose={mockOnClose}
           onEdit={mockOnEdit}
         />
@@ -92,10 +98,10 @@ describe("SpotDetailsPreview Component", () => {
       expect(mockOnEdit).toHaveBeenCalled();
     });
 
-    test("disables edit when pending bookings exist", () => {
+    test("disables edit when spot is blocked by admin", () => {
       render(
         <SpotDetailsPreview
-          spot={{ ...mockSpot, pendingBookings: 2 }}
+          spot={{ ...mockSpot, isBlocked: true }}
           onClose={mockOnClose}
           onEdit={mockOnEdit}
         />
@@ -103,7 +109,7 @@ describe("SpotDetailsPreview Component", () => {
       
       const editBtn = screen.getByText("Edit");
       fireEvent.click(editBtn);
-      expect(screen.getByText("Cannot edit this spot while there are pending bookings.")).toBeTruthy();
+      expect(screen.getByText("Cannot edit this spot because it is blocked by the admin.")).toBeTruthy();
     });
 
     test("disables delete when active bookings exist", () => {

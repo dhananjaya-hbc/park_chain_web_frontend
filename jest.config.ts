@@ -5,7 +5,7 @@ const config = {
   moduleNameMapper:         { '^@/(.*)$': '<rootDir>/$1' },
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: { jsx: 'react-jsx', ignoreDeprecations: '6.0', rootDir: '.' },
+      tsconfig: { jsx: 'react-jsx', rootDir: '.' },
     }],
   },
   testMatch: ['**/__tests__/**/*.test.(ts|tsx)'],

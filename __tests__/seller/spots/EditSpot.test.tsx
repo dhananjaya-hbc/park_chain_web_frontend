@@ -75,6 +75,7 @@ describe('EditSpot Component', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        (apiService.get as jest.Mock).mockResolvedValue({ minSlotsPerType: {} });
         global.fetch = jest.fn((url: string | URL | Request) => {
             const urlStr = typeof url === 'string' ? url : url.toString();
             if (urlStr.includes('image.jpg')) {
@@ -215,7 +216,7 @@ describe('EditSpot Component', () => {
                 formState: {
                     ...mockFormProps.formState,
                     slots: [
-                        { slotType: 'Car', slots: 5, rate: '0' } // Missing rate
+                        { slotType: 'Car', slots: 5, rate: '0' } // Incomplete row
                     ]
                 }
             };
@@ -233,7 +234,7 @@ describe('EditSpot Component', () => {
             fireEvent.click(saveBtn);
 
             await waitFor(() => {
-                expect(screen.getByText('Hourly rate missing for: Car.')).toBeTruthy();
+                expect(screen.getByText('At least one pricing row must be filled with a slot count and hourly rate.')).toBeTruthy();
             });
         });
 

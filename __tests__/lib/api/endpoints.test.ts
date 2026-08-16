@@ -98,20 +98,23 @@ describe('API_ENDPOINTS', () => {
 
     test('all endpoints start with /', () => {
       Object.values(API_ENDPOINTS).forEach((endpoint) => {
-        expect(endpoint).toMatch(/^\//);
+        const val = typeof endpoint === 'function' ? endpoint('test-id') : endpoint;
+        expect(val).toMatch(/^\//);
       });
     });
 
     test('no endpoint has trailing slash', () => {
       Object.values(API_ENDPOINTS).forEach((endpoint) => {
-        expect(endpoint).not.toMatch(/\/$/);
+        const val = typeof endpoint === 'function' ? endpoint('test-id') : endpoint;
+        expect(val).not.toMatch(/\/$/);
       });
     });
 
     test('no endpoint contains full URL', () => {
       Object.values(API_ENDPOINTS).forEach((endpoint) => {
-        expect(endpoint).not.toContain('http');
-        expect(endpoint).not.toContain('localhost');
+        const val = typeof endpoint === 'function' ? endpoint('test-id') : endpoint;
+        expect(val).not.toContain('http');
+        expect(val).not.toContain('localhost');
       });
     });
 

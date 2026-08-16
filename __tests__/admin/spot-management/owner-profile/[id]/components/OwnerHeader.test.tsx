@@ -8,6 +8,7 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({
     back: backMock,
   }),
+  usePathname: () => '/admin/spot-management/owner-profile/1',
 }));
 
 describe('OwnerHeader', () => {
@@ -46,7 +47,7 @@ describe('OwnerHeader', () => {
     );
 
     expect(screen.getByText('Pending Verification')).toBeInTheDocument();
-    expect(screen.getByText('Not provided')).toBeInTheDocument();
+    expect(screen.getByText('Not available')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('← Back to Spot'));
     expect(backMock).toHaveBeenCalled();
