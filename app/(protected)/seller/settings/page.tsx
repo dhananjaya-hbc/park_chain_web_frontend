@@ -64,8 +64,19 @@ export default function SellerSettingsPage() {
     fetchProfile();
   }, []);
 
+  const validateFullName = (nameStr: string) => {
+    // Allows letters, spaces, and periods (common in Sri Lankan names with initials)
+    return /^[A-Za-z\s.]+$/.test(nameStr);
+  };
+
   const validateEmail = (emailStr: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
+  };
+
+  const validatePhone = (phoneStr: string) => {
+    const cleaned = phoneStr.replace(/[\s()-]/g, "");
+    const slPhoneRegex = /^(?:\+94|0094|94|0)?(?:7[0-9]|11|2[1-7]|3[1-8]|4[157]|5[12457]|6[35-7]|81|91)\d{7}$/;
+    return slPhoneRegex.test(cleaned);
   };
 
   const handleCopyWallet = () => {
@@ -79,12 +90,23 @@ export default function SellerSettingsPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (file.size > 5 * 1024 * 1024) {
-        setError("Image size must be less than 5MB.");
+      
+      // Validate file type (image formats only)
+      const allowedImageTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+      if (!allowedImageTypes.includes(file.type)) {
+        setError("Only image files (JPG, PNG, JPEG, WEBP) are allowed.");
         return;
       }
+
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError("Image size must be less than 10MB.");
+        return;
+      }
+
       setProfileImage(file);
       setPreviewUrl(URL.createObjectURL(file));
+      setError("");
     }
   };
 
@@ -93,16 +115,28 @@ export default function SellerSettingsPage() {
     setError("");
     setSuccess("");
 
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+    const cleanEmail = email.trim();
+    const trimmedPhone = phone.trim();
+
+    if (!trimmedName) {
       setError("Full Name is required.");
       return;
     }
-    if (!email.trim() || !validateEmail(email)) {
+    if (!validateFullName(trimmedName)) {
+      setError("Please enter a valid Full Name (only letters, spaces, and dots are allowed).");
+      return;
+    }
+    if (!cleanEmail || !validateEmail(cleanEmail)) {
       setError("A valid Email Address is required.");
       return;
     }
-    if (!phone.trim()) {
+    if (!trimmedPhone) {
       setError("Phone Number is required.");
+      return;
+    }
+    if (!validatePhone(trimmedPhone)) {
+      setError("Please enter a valid Sri Lankan Phone Number (e.g. +94 77 123 4567 or 0771234567).");
       return;
     }
 
@@ -131,9 +165,9 @@ export default function SellerSettingsPage() {
 
       // 2. Update profile details
       await apiService.put("/users/profile", {
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
+        name: trimmedName,
+        email: cleanEmail,
+        phone: trimmedPhone,
       });
 
       setSuccess("Settings updated successfully!");
@@ -214,13 +248,13 @@ export default function SellerSettingsPage() {
                   <input
                     id="profileImageInput"
                     type="file"
-                    accept="image/png, image/jpeg, image/jpg"
+                    accept="image/png, image/jpeg, image/jpg, image/webp"
                     onChange={handleImageChange}
                     className="hidden"
                   />
                 </label>
               </div>
-              <p className="text-xs text-gray-400 mt-2 font-medium">Upload profile picture (Max 5MB)</p>
+              <p className="text-xs text-gray-400 mt-2 font-medium">Upload profile picture (Max 10MB)</p>
             </div>
             {/* Full Name */}
             <div>
@@ -257,7 +291,10 @@ export default function SellerSettingsPage() {
                   required
                   disabled={isSubmitting}
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value.replace(/\s/g, ''));
+                    if (error) setError("");
+                  }}
                   placeholder="name@example.com"
                   className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#41ab5d]/20 focus:border-[#41ab5d] transition-all disabled:bg-gray-50"
                 />
@@ -278,7 +315,10 @@ export default function SellerSettingsPage() {
                   required
                   disabled={isSubmitting}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    if (error) setError("");
+                  }}
                   placeholder="e.g. +94 77 123 4567"
                   className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#41ab5d]/20 focus:border-[#41ab5d] transition-all disabled:bg-gray-50"
                 />
