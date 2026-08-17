@@ -149,4 +149,51 @@ describe('Seller KYB Modal', () => {
     const cancelButton = screen.getByRole('button', { name: 'Cancel' }) as HTMLButtonElement;
     expect(cancelButton.disabled).toBe(true);
   });
+
+  test('shows validation error when file size is greater than 5MB', async () => {
+    render(<KYBModal />);
+    
+    // Fill text inputs
+    fireEvent.change(
+      screen.getByPlaceholderText('e.g. City Center Plaza Parking'),
+      { target: { value: 'City Center Plaza Parking' } }
+    );
+    fireEvent.change(screen.getByPlaceholderText('Enter full address'), {
+      target: { value: '12 Main Street, Downtown' },
+    });
+    fireEvent.change(
+      screen.getByPlaceholderText('https://maps.google.com/... (Google Maps location link from address bar)'),
+      { target: { value: 'https://maps.google.com/?q=12.9716,77.5946' } }
+    );
+    fireEvent.change(screen.getByRole('combobox', { name: 'Spot Type' }), {
+      target: { value: 'garage' },
+    });
+
+    const fileInput = document.getElementById('document') as HTMLInputElement;
+    // Create a 6MB file
+    const largeFile = new File([new ArrayBuffer(6 * 1024 * 1024)], 'large-bill.pdf', { type: 'application/pdf' });
+    Object.defineProperty(fileInput, 'files', {
+      value: [largeFile],
+      writable: false,
+      configurable: true,
+    });
+    fireEvent.change(fileInput);
+
+    expect(screen.getByText('File size must be 5 MB or less.')).toBeTruthy();
+  });
+
+  test('shows validation error when file format is unsupported', async () => {
+    render(<KYBModal />);
+    
+    const fileInput = document.getElementById('document') as HTMLInputElement;
+    const invalidFile = new File(['dummy content'], 'document.txt', { type: 'text/plain' });
+    Object.defineProperty(fileInput, 'files', {
+      value: [invalidFile],
+      writable: false,
+      configurable: true,
+    });
+    fireEvent.change(fileInput);
+
+    expect(screen.getByText('Please upload a PDF, JPG, or PNG file.')).toBeTruthy();
+  });
 });
