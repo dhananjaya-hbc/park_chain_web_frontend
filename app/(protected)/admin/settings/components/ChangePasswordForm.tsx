@@ -19,7 +19,8 @@ export default function ChangePasswordForm() {
         uppercase: false,
         lowercase: false,
         special: false,
-        number: false
+        number: false,
+        noSpace: false
     });
 
     const [isLoading, setIsLoading] = useState(false);
@@ -31,8 +32,9 @@ export default function ChangePasswordForm() {
             length: newPassword.length >= 12,
             uppercase: /[A-Z]/.test(newPassword),
             lowercase: /[a-z]/.test(newPassword),
-            special: /[^A-Za-z0-9]/.test(newPassword),
+            special: /[^A-Za-z0-9\s]/.test(newPassword),
             number: /[0-9]/.test(newPassword),
+            noSpace: !/\s/.test(newPassword)
         });
     }, [newPassword]);
 
@@ -128,7 +130,7 @@ export default function ChangePasswordForm() {
                         <input 
                             type={showOldPassword ? "text" : "password"} 
                             value={oldPassword}
-                            onChange={(e) => setOldPassword(e.target.value)}
+                            onChange={(e) => setOldPassword(e.target.value.replace(/\s/g, ''))}
                             placeholder="Enter current password"
                             className="bg-transparent border-none outline-none w-full text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
                         />
@@ -151,7 +153,7 @@ export default function ChangePasswordForm() {
                         <input 
                             type={showNewPassword ? "text" : "password"} 
                             value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
+                            onChange={(e) => setNewPassword(e.target.value.replace(/\s/g, ''))}
                             placeholder="Create new password"
                             className="bg-transparent border-none outline-none w-full text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
                         />
@@ -179,6 +181,7 @@ export default function ChangePasswordForm() {
                                 <ValidationItem isValid={validations.lowercase} text="One lowercase letter" />
                                 <ValidationItem isValid={validations.special} text="One special character" />
                                 <ValidationItem isValid={validations.number} text="One digit (0-9)" />
+                                <ValidationItem isValid={validations.noSpace} text="No spaces allowed" />
                             </ul>
                         </div>
                     )}
@@ -193,7 +196,7 @@ export default function ChangePasswordForm() {
                         <input 
                             type={showConfirmPassword ? "text" : "password"} 
                             value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            onChange={(e) => setConfirmPassword(e.target.value.replace(/\s/g, ''))}
                             placeholder="Confirm new password"
                             className="bg-transparent border-none outline-none w-full text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
                         />
