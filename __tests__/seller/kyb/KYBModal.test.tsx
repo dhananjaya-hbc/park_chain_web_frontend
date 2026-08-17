@@ -15,6 +15,10 @@ describe('Seller KYB Modal', () => {
     jest.clearAllMocks();
     localStorage.clear();
     global.fetch = jest.fn() as unknown as typeof fetch;
+    if (typeof window !== 'undefined') {
+      window.URL.createObjectURL = jest.fn().mockReturnValue('mock-object-url');
+      window.URL.revokeObjectURL = jest.fn();
+    }
   });
 
   afterAll(() => {
@@ -41,7 +45,7 @@ describe('Seller KYB Modal', () => {
     });
 
     const fileInput = document.getElementById('document') as HTMLInputElement;
-    const file = new File(['proof'], 'utility-bill.pdf', { type: 'application/pdf' });
+    const file = new File(['proof'], 'utility-bill.png', { type: 'image/png' });
     Object.defineProperty(fileInput, 'files', {
       value: [file],
       writable: false,
@@ -148,5 +152,52 @@ describe('Seller KYB Modal', () => {
 
     const cancelButton = screen.getByRole('button', { name: 'Cancel' }) as HTMLButtonElement;
     expect(cancelButton.disabled).toBe(true);
+  });
+
+  test('shows validation error when file size is greater than 5MB', async () => {
+    render(<KYBModal />);
+    
+    // Fill text inputs
+    fireEvent.change(
+      screen.getByPlaceholderText('e.g. City Center Plaza Parking'),
+      { target: { value: 'City Center Plaza Parking' } }
+    );
+    fireEvent.change(screen.getByPlaceholderText('Enter full address'), {
+      target: { value: '12 Main Street, Downtown' },
+    });
+    fireEvent.change(
+      screen.getByPlaceholderText('https://maps.google.com/... (Google Maps location link from address bar)'),
+      { target: { value: 'https://maps.google.com/?q=12.9716,77.5946' } }
+    );
+    fireEvent.change(screen.getByRole('combobox', { name: 'Spot Type' }), {
+      target: { value: 'garage' },
+    });
+
+    const fileInput = document.getElementById('document') as HTMLInputElement;
+    // Create a 6MB file
+    const largeFile = new File([new ArrayBuffer(6 * 1024 * 1024)], 'large-bill.png', { type: 'image/png' });
+    Object.defineProperty(fileInput, 'files', {
+      value: [largeFile],
+      writable: false,
+      configurable: true,
+    });
+    fireEvent.change(fileInput);
+
+    expect(screen.getByText('File size must be 5 MB or less.')).toBeTruthy();
+  });
+
+  test('shows validation error when file format is unsupported', async () => {
+    render(<KYBModal />);
+    
+    const fileInput = document.getElementById('document') as HTMLInputElement;
+    const invalidFile = new File(['dummy content'], 'document.txt', { type: 'text/plain' });
+    Object.defineProperty(fileInput, 'files', {
+      value: [invalidFile],
+      writable: false,
+      configurable: true,
+    });
+    fireEvent.change(fileInput);
+
+    expect(screen.getByText('Please upload a JPG or PNG file.')).toBeTruthy();
   });
 });

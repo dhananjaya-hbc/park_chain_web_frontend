@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { validateKYBDocument } from '@/lib/utils/fileValidation';
 
 export default function KYBModal() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -27,6 +28,22 @@ export default function KYBModal() {
     if (!googleMapsPattern.test(googleMapsLink)) {
       setIsLoading(false);
       setErrorMsg('Please enter a valid Google Maps link (copied from the address bar).');
+      return;
+    }
+
+    // Additional validation check before start of upload
+    const fileInput = fileInputRef.current;
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      const file = fileInput.files[0];
+      const validation = validateKYBDocument(file);
+      if (!validation.isValid) {
+        setIsLoading(false);
+        setErrorMsg(validation.error);
+        return;
+      }
+    } else if (!selectedFile) {
+      setIsLoading(false);
+      setErrorMsg('Please select a document to upload.');
       return;
     }
 
@@ -77,26 +94,40 @@ export default function KYBModal() {
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
-      // Validate file extension
-      const validExtensions = ['.png', '.jpg', '.jpeg', '.pdf'];
-      const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+      const validation = validateKYBDocument(file);
       
-      if (validExtensions.includes(fileExtension) && file.size <= 10 * 1024 * 1024) {
+      if (validation.isValid) {
         setSelectedFile(file);
+        setErrorMsg('');
         if (fileInputRef.current) {
           const dataTransfer = new DataTransfer();
           dataTransfer.items.add(file);
           fileInputRef.current.files = dataTransfer.files;
         }
       } else {
-        setErrorMsg('Invalid file type or size. Only PNG, JPG, or PDF under 10MB allowed.');
+        setErrorMsg(validation.error);
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      const validation = validateKYBDocument(file);
+      if (validation.isValid) {
+        setSelectedFile(file);
+        setErrorMsg('');
+      } else {
+        setErrorMsg(validation.error);
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
     }
   };
 
@@ -232,7 +263,7 @@ export default function KYBModal() {
                     onChange={handleFileChange} 
                     className="sr-only" 
                     required={!selectedFile} 
-                    accept=".png,.jpg,.jpeg,.pdf" 
+                    accept=".png,.jpg,.jpeg,image/png,image/jpeg" 
                   />
                   {selectedFile ? (
                     <div className="flex flex-col items-center justify-center p-2 text-center animate-in fade-in zoom-in-95 duration-200">
@@ -274,7 +305,7 @@ export default function KYBModal() {
                           <span>Upload a file</span>
                         </label>
                       </div>
-                      <p className="text-xs text-gray-500">PNG, JPG, PDF up to 10MB</p>
+                      <p className="text-xs text-gray-500">Accepted formats: JPG, PNG • Maximum size: 5 MB</p>
                     </div>
                   )}
                 </div>
