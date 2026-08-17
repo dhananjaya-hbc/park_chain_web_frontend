@@ -106,6 +106,10 @@ export default function KYBModal() {
         }
       } else {
         setErrorMsg(validation.error);
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
     }
   };
@@ -259,7 +263,7 @@ export default function KYBModal() {
                     onChange={handleFileChange} 
                     className="sr-only" 
                     required={!selectedFile} 
-                    accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" 
+                    accept=".png,.jpg,.jpeg,image/png,image/jpeg" 
                   />
                   {selectedFile ? (
                     <div className="flex flex-col items-center justify-center p-2 text-center animate-in fade-in zoom-in-95 duration-200">
@@ -301,7 +305,7 @@ export default function KYBModal() {
                           <span>Upload a file</span>
                         </label>
                       </div>
-                      <p className="text-xs text-gray-500">Accepted formats: PDF, JPG, PNG • Maximum size: 5 MB</p>
+                      <p className="text-xs text-gray-500">Accepted formats: JPG, PNG • Maximum size: 5 MB</p>
                     </div>
                   )}
                 </div>

@@ -15,6 +15,10 @@ describe('Seller KYB Modal', () => {
     jest.clearAllMocks();
     localStorage.clear();
     global.fetch = jest.fn() as unknown as typeof fetch;
+    if (typeof window !== 'undefined') {
+      window.URL.createObjectURL = jest.fn().mockReturnValue('mock-object-url');
+      window.URL.revokeObjectURL = jest.fn();
+    }
   });
 
   afterAll(() => {
@@ -41,7 +45,7 @@ describe('Seller KYB Modal', () => {
     });
 
     const fileInput = document.getElementById('document') as HTMLInputElement;
-    const file = new File(['proof'], 'utility-bill.pdf', { type: 'application/pdf' });
+    const file = new File(['proof'], 'utility-bill.png', { type: 'image/png' });
     Object.defineProperty(fileInput, 'files', {
       value: [file],
       writable: false,
@@ -171,7 +175,7 @@ describe('Seller KYB Modal', () => {
 
     const fileInput = document.getElementById('document') as HTMLInputElement;
     // Create a 6MB file
-    const largeFile = new File([new ArrayBuffer(6 * 1024 * 1024)], 'large-bill.pdf', { type: 'application/pdf' });
+    const largeFile = new File([new ArrayBuffer(6 * 1024 * 1024)], 'large-bill.png', { type: 'image/png' });
     Object.defineProperty(fileInput, 'files', {
       value: [largeFile],
       writable: false,
@@ -194,6 +198,6 @@ describe('Seller KYB Modal', () => {
     });
     fireEvent.change(fileInput);
 
-    expect(screen.getByText('Please upload a PDF, JPG, or PNG file.')).toBeTruthy();
+    expect(screen.getByText('Please upload a JPG or PNG file.')).toBeTruthy();
   });
 });

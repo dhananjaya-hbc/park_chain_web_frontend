@@ -9,8 +9,8 @@ export interface FileValidationResult {
  * Maximum size: 5 MB
  */
 export function validateKYBDocument(file: File): FileValidationResult {
-  const allowedMimeTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
-  const allowedExtensions = ['.pdf', '.png', '.jpg', '.jpeg'];
+  const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+  const allowedExtensions = ['.png', '.jpg', '.jpeg'];
   const maxSizeBytes = 5 * 1024 * 1024; // 5 MB
 
   const fileMime = file.type ? file.type.toLowerCase() : '';
@@ -23,7 +23,7 @@ export function validateKYBDocument(file: File): FileValidationResult {
   if (!hasValidMime && !hasValidExtension) {
     return {
       isValid: false,
-      error: 'Please upload a PDF, JPG, or PNG file.',
+      error: 'Please upload a JPG or PNG file.',
     };
   }
 
