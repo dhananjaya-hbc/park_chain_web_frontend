@@ -80,12 +80,23 @@ export default function CompleteProfilePage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (file.size > 5 * 1024 * 1024) {
-        setError("Image size must be less than 5MB.");
+      
+      // Validate file type (image formats only)
+      const allowedImageTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+      if (!allowedImageTypes.includes(file.type)) {
+        setError("Only image files (JPG, PNG, JPEG, WEBP) are allowed.");
         return;
       }
+
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError("Image size must be less than 10MB.");
+        return;
+      }
+
       setProfileImage(file);
       setPreviewUrl(URL.createObjectURL(file));
+      setError("");
     }
   };
 
@@ -234,13 +245,13 @@ export default function CompleteProfilePage() {
                   <input
                     id="profileImageInput"
                     type="file"
-                    accept="image/png, image/jpeg, image/jpg"
+                    accept="image/png, image/jpeg, image/jpg, image/webp"
                     onChange={handleImageChange}
                     className="hidden"
                   />
                 </label>
               </div>
-              <p className="text-xs text-gray-400 mt-2 font-medium">Upload profile picture (Max 5MB)</p>
+              <p className="text-xs text-gray-400 mt-2 font-medium">Upload profile picture (Max 10MB)</p>
             </div>
             {/* Full Name */}
             <div>
