@@ -274,7 +274,7 @@ export default function KYBModal() {
                           <span>Upload a file</span>
                         </label>
                       </div>
-                      <p className="text-xs text-gray-500">PNG, JPG, PDF up to 10MB</p>
+                      <p className="text-xs text-gray-500">PNG, JPG, PDF up to 5MB</p>
                     </div>
                   )}
                 </div>
