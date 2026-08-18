@@ -22,6 +22,22 @@ export default function KYBModal() {
 
     const formData = new FormData(e.target as HTMLFormElement);
 
+    // Validate Entity Name
+    const entityName = formData.get('entityName')?.toString().trim() || '';
+    if (entityName.length < 3 || entityName.length > 100) {
+      setIsLoading(false);
+      setErrorMsg('Entity/Spot name must be between 3 and 100 characters.');
+      return;
+    }
+
+    // Validate Address
+    const address = formData.get('address')?.toString().trim() || '';
+    if (address.length < 10 || !/[a-zA-Z]/.test(address) || !/[\s\d]/.test(address)) {
+      setIsLoading(false);
+      setErrorMsg('Please enter a valid full address (at least 10 characters).');
+      return;
+    }
+
     // Custom validation for Google Maps Link
     const googleMapsLink = formData.get('googleMapsLink')?.toString().trim() || '';
     const googleMapsPattern = /google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|maps\.app\.goo\.gl/i;
