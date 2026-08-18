@@ -200,4 +200,54 @@ describe('Seller KYB Modal', () => {
 
     expect(screen.getByText('Please upload a JPG or PNG file.')).toBeTruthy();
   });
+
+  test('shows validation error when entity name is too short', async () => {
+    render(<KYBModal />);
+    fillRequiredFields();
+    
+    fireEvent.change(
+      screen.getByPlaceholderText('e.g. City Center Plaza Parking'),
+      { target: { value: 'ab' } }
+    );
+    submitForm();
+
+    expect(await screen.findByText('Entity/Spot name must be between 3 and 100 characters.')).toBeTruthy();
+  });
+
+  test('shows validation error when entity name is too long', async () => {
+    render(<KYBModal />);
+    fillRequiredFields();
+    
+    fireEvent.change(
+      screen.getByPlaceholderText('e.g. City Center Plaza Parking'),
+      { target: { value: 'a'.repeat(101) } }
+    );
+    submitForm();
+
+    expect(await screen.findByText('Entity/Spot name must be between 3 and 100 characters.')).toBeTruthy();
+  });
+
+  test('shows validation error when address is too short', async () => {
+    render(<KYBModal />);
+    fillRequiredFields();
+    
+    fireEvent.change(screen.getByPlaceholderText('Enter full address'), {
+      target: { value: '123' },
+    });
+    submitForm();
+
+    expect(await screen.findByText('Please enter a valid full address (at least 10 characters).')).toBeTruthy();
+  });
+
+  test('shows validation error when address does not contain letters or spaces/digits', async () => {
+    render(<KYBModal />);
+    fillRequiredFields();
+    
+    fireEvent.change(screen.getByPlaceholderText('Enter full address'), {
+      target: { value: '!!!!!!!!!!' },
+    });
+    submitForm();
+
+    expect(await screen.findByText('Please enter a valid full address (at least 10 characters).')).toBeTruthy();
+  });
 });
