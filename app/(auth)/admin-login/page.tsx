@@ -22,15 +22,29 @@ export default function AdminLoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const cleanEmail = email.trim();
+    const cleanPassword = password.replace(/\s/g, '');
+
+    if (!cleanEmail || !cleanPassword) {
+      setError('Please enter both email and password.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError('');
 
-      console.log('🔐 Admin login attempt:', email);
+      console.log('🔐 Admin login attempt:', cleanEmail);
 
       const response = await apiService.post(API_ENDPOINTS.ADMIN_LOGIN, {
-        email,
-        password,
+        email: cleanEmail,
+        password: cleanPassword,
       });
 
       console.log('✅ Admin login successful');
@@ -98,7 +112,10 @@ export default function AdminLoginPage() {
                 type="email"
                 id="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value.replace(/\s/g, ''));
+                  if (error) setError('');
+                }}
                 placeholder="admin@parkchain.com"
                 className="w-full px-4 py-3 bg-white border border-[#2d5f42]/30 rounded-lg text-[#1a4d2e] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#41ab5d] focus:border-transparent"
                 required
@@ -113,7 +130,10 @@ export default function AdminLoginPage() {
                 type="password"
                 id="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value.replace(/\s/g, ''));
+                  if (error) setError('');
+                }}
                 placeholder="••••••••"
                 className="w-full px-4 py-3 bg-white border border-[#2d5f42]/30 rounded-lg text-[#1a4d2e] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#41ab5d] focus:border-transparent"
                 required
